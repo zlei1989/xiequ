@@ -1,72 +1,212 @@
 "use client";
 
-import { Card, Tag, Switch, Button, Space, message } from "antd";
-import { EditOutlined, FileTextOutlined } from "@ant-design/icons";
+import { Card, Tag, Button, Row, Col, message, Popconfirm } from "antd";
+import {
+  EditOutlined,
+  FileTextOutlined,
+  ThunderboltOutlined,
+  PauseCircleOutlined,
+  DeleteOutlined,
+} from "@ant-design/icons";
 import { useRouter } from "next/navigation";
-import { setDeviceSwitch } from "../actions";
+import { setDeviceSwitch, removeDevice } from "../actions";
 import type { DeviceItem } from "../types";
 
-export function DeviceCard({ device }: { device: DeviceItem }) {
+export function DeviceCard({
+  device,
+  onRefresh,
+}: {
+  device: DeviceItem;
+  onRefresh: () => void;
+}) {
   const router = useRouter();
 
-  async function onSwitchChange(checked: boolean) {
+  // 电压显示
+  const voltage =
+    device.state?.sensors && "voltage_0" in device.state.sensors
+      ? device.state.sensors.voltage_0
+      : undefined;
+
+  // 计算流程按钮行列（每行 2 列，匹配 IotCard 的 2 列网格）
+  const processes = device.processes || [];
+  const rowCount = Math.ceil(processes.length / 2);
+
+  /** 判断某流程是否正在执行 */
+  function isExec(index: number): boolean {
+    if (device.state?.switch === "on") {
+      if (typeof device.state.index === "number") {
+        return device.state.index === index;
+      }
+      return device.bootExec === index;
+    }
+    return false;
+  }
+
+  /** 点击执行/终止流程 */
+  async function onClickSwitch(index: number) {
     try {
-      await setDeviceSwitch(device.chipId, checked ? "on" : "off");
-      message.success(checked ? "已开启" : "已关闭");
+      if (isExec(index)) {
+        // 关闭
+        await setDeviceSwitch(device.chipId, "off", index);
+        message.success(`已终止 ${processes[index].name}`);
+      } else {
+        // 打开
+        await setDeviceSwitch(device.chipId, "on", index);
+        message.success(`已执行 ${processes[index].name}`);
+      }
+      onRefresh();
     } catch (err: any) {
       message.error(err.message || "操作失败");
     }
   }
 
+  /** 清除设备状态 */
+  async function onClickClear() {
+    try {
+      await setDeviceSwitch(device.chipId, "off");
+      message.success("已清除状态");
+      onRefresh();
+    } catch (err: any) {
+      message.error(err.message || "清除失败");
+    }
+  }
+
+  /** 删除设备 */
+  async function handleRemove() {
+    try {
+      await removeDevice(device.chipId);
+      message.success("设备已删除");
+      onRefresh();
+    } catch (err: any) {
+      message.error(err.message || "删除失败");
+    }
+  }
+
   return (
     <Card
-      title={device.name}
+      size="small"
+      title={device.name || `设备-${device.chipId}`}
       extra={
-        device.isOnline ? (
-          <Tag color="green">在线</Tag>
-        ) : (
-          <Tag color="default">离线</Tag>
-        )
-      }
-      style={{ marginBottom: 16 }}
-    >
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div>
-          <div style={{ color: "#666", fontSize: 13 }}>芯片: {device.chipId}</div>
-          {device.state?.switch === "on" && (
-            <div style={{ color: "#1890ff", fontSize: 13, marginTop: 4 }}>
-              运行中: {device.state.process?.name || `流程 #${device.state.index}`}
-            </div>
-          )}
-          {device.state?.message && (
-            <div style={{ color: "#999", fontSize: 13, marginTop: 4 }}>
-              {device.state.message}
-            </div>
-          )}
-        </div>
-        <Space align="center">
-          <Switch
-            checked={device.state?.switch === "on"}
-            onChange={onSwitchChange}
-            checkedChildren="开"
-            unCheckedChildren="关"
-          />
+        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
           <Button
-            icon={<EditOutlined />}
+            type="text"
             size="small"
-            onClick={() => router.push(`/watering/devices/${device.chipId}`)}
-          >
-            编辑
-          </Button>
-          <Button
             icon={<FileTextOutlined />}
-            size="small"
-            onClick={() => router.push(`/watering/logs/${device.chipId}`)}
+            onClick={() =>
+              router.push(
+                `/watering/logs/${device.chipId}?macAddress=${encodeURIComponent(device.macAddress)}`
+              )
+            }
           >
             日志
           </Button>
-        </Space>
+          <Button
+            type="text"
+            size="small"
+            icon={<EditOutlined />}
+            onClick={() =>
+              router.push(
+                `/watering/devices/${device.chipId}?macAddress=${encodeURIComponent(device.macAddress)}`
+              )
+            }
+          >
+            配置
+          </Button>
+          <Popconfirm title="确认清除设备状态？" onConfirm={onClickClear}>
+            <Button type="text" size="small" icon={<DeleteOutlined />} danger />
+          </Popconfirm>
+          <Popconfirm title="确认删除设备？不可恢复。" onConfirm={handleRemove}>
+            <Button type="text" size="small" danger>
+              删除
+            </Button>
+          </Popconfirm>
+        </div>
+      }
+      style={{ marginBottom: 12 }}
+    >
+      {/* 设备信息 */}
+      <Row gutter={8} style={{ marginBottom: 8 }}>
+        <Col span={voltage !== undefined ? 12 : 16}>
+          <span style={{ color: "#999", fontSize: 12 }}>芯片: </span>
+          <span style={{ fontSize: 13 }}>{device.chipId}</span>
+        </Col>
+        {voltage !== undefined && (
+          <Col span={12}>
+            <span style={{ color: "#999", fontSize: 12 }}>电压: </span>
+            <span style={{ fontSize: 13 }}>{voltage}V</span>
+          </Col>
+        )}
+        <Col span={8}>
+          <span style={{ color: "#999", fontSize: 12 }}>状态: </span>
+          {device.isOnline ? (
+            <Tag color="green" style={{ margin: 0 }}>
+              在线
+            </Tag>
+          ) : (
+            <Tag color="default" style={{ margin: 0 }}>
+              离线
+            </Tag>
+          )}
+        </Col>
+      </Row>
+
+      {/* 网卡地址 */}
+      <div style={{ color: "#999", fontSize: 12, marginBottom: 8 }}>
+        网卡: {device.macAddress}
       </div>
+
+      {/* 当前执行状态 */}
+      {device.state?.switch === "on" &&
+        device.state.process &&
+        device.state.process.name && (
+          <div style={{ color: "#1677ff", fontSize: 13, marginBottom: 8 }}>
+            运行中: {device.state.process.name}
+          </div>
+        )}
+
+      {/* 流程快捷按钮 — 匹配 IotCard 的 2 列网格 */}
+      {device.isOnline && processes.length > 0 && (
+        <div style={{ marginTop: 8 }}>
+          {Array.from({ length: rowCount }).map((_, row) => (
+            <Row gutter={8} key={row} style={{ marginBottom: 4 }}>
+              {Array.from({ length: 2 }).map((_, col) => {
+                const idx = row * 2 + col;
+                if (idx >= processes.length) return null;
+                const exec = isExec(idx);
+                return (
+                  <Col span={12} key={idx}>
+                    <Button
+                      type={exec ? "primary" : "default"}
+                      danger={exec}
+                      block
+                      size="small"
+                      icon={
+                        exec ? (
+                          <PauseCircleOutlined />
+                        ) : (
+                          <ThunderboltOutlined />
+                        )
+                      }
+                      disabled={!exec && device.idleSleep}
+                      onClick={() => onClickSwitch(idx)}
+                      style={{ marginBottom: 2 }}
+                    >
+                      {exec ? "终止" : "执行"}
+                      {processes[idx].name}
+                    </Button>
+                  </Col>
+                );
+              })}
+            </Row>
+          ))}
+        </div>
+      )}
+
+      {!device.isOnline && (
+        <div style={{ textAlign: "center", padding: 4 }}>
+          <Tag color="error">离线</Tag>
+        </div>
+      )}
     </Card>
   );
 }
