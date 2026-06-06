@@ -1,12 +1,22 @@
 "use client";
 
-import { Card, Tag, Switch, Button, Space } from "antd";
+import { Card, Tag, Switch, Button, Space, message } from "antd";
 import { EditOutlined, FileTextOutlined } from "@ant-design/icons";
 import { useRouter } from "next/navigation";
+import { setDeviceSwitch } from "../actions";
 import type { DeviceItem } from "../types";
 
 export function DeviceCard({ device }: { device: DeviceItem }) {
   const router = useRouter();
+
+  async function onSwitchChange(checked: boolean) {
+    try {
+      await setDeviceSwitch(device.chipId, checked ? "on" : "off");
+      message.success(checked ? "已开启" : "已关闭");
+    } catch (err: any) {
+      message.error(err.message || "操作失败");
+    }
+  }
 
   return (
     <Card
@@ -34,7 +44,13 @@ export function DeviceCard({ device }: { device: DeviceItem }) {
             </div>
           )}
         </div>
-        <Space>
+        <Space align="center">
+          <Switch
+            checked={device.state?.switch === "on"}
+            onChange={onSwitchChange}
+            checkedChildren="开"
+            unCheckedChildren="关"
+          />
           <Button
             icon={<EditOutlined />}
             size="small"
