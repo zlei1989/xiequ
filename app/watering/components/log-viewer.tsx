@@ -27,7 +27,7 @@ export function LogViewer({ logs }: { logs: any[] }) {
             </span>
             {log.state && (
               <pre style={{ fontSize: 12, color: "#666", margin: "4px 0" }}>
-                {JSON.stringify(typeof log.state === "string" ? JSON.parse(log.state) : log.state, null, 2)}
+                {JSON.stringify(log.state, null, 2)}
               </pre>
             )}
           </div>

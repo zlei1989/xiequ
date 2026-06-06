@@ -9,50 +9,50 @@ export function initDb() {
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS watering_devices (
-      chipId TEXT PRIMARY KEY,
+      chip_id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
-      macAddress TEXT NOT NULL,
-      processes TEXT NOT NULL DEFAULT '[]',
-      idleSleep INTEGER NOT NULL DEFAULT 0,
-      idleTimeout INTEGER NOT NULL DEFAULT 30000,
-      bootExec INTEGER NOT NULL DEFAULT -1,
-      execDelay INTEGER NOT NULL DEFAULT 0,
-      schedules TEXT NOT NULL DEFAULT '[]',
-      createdTime TEXT NOT NULL,
-      lastWriteTime TEXT NOT NULL
+      mac_address TEXT NOT NULL,
+      processes JSON NOT NULL DEFAULT '[]',
+      idle_sleep INTEGER NOT NULL DEFAULT 0,
+      idle_timeout INTEGER NOT NULL DEFAULT 30000,
+      boot_exec INTEGER NOT NULL DEFAULT -1,
+      exec_delay INTEGER NOT NULL DEFAULT 0,
+      schedules JSON NOT NULL DEFAULT '[]',
+      created_time TEXT NOT NULL,
+      last_write_time TEXT NOT NULL
     )
   `);
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS watering_device_state (
-      chipId TEXT PRIMARY KEY,
-      stateId TEXT NOT NULL,
+      chip_id TEXT PRIMARY KEY,
+      state_id TEXT NOT NULL,
       switch TEXT NOT NULL DEFAULT 'off',
-      buttons TEXT,
-      sensors TEXT,
-      loads TEXT,
-      currentIndex INTEGER,
-      currentProcess TEXT,
+      buttons JSON,
+      sensors JSON,
+      loads JSON,
+      current_index INTEGER,
+      current_process JSON,
       message TEXT,
-      lastTickTime INTEGER DEFAULT 0,
-      lastWriteTime TEXT NOT NULL,
-      FOREIGN KEY (chipId) REFERENCES watering_devices(chipId)
+      last_tick_time INTEGER DEFAULT 0,
+      last_write_time TEXT NOT NULL,
+      FOREIGN KEY (chip_id) REFERENCES watering_devices(chip_id)
     )
   `);
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS watering_logs (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      chipId TEXT NOT NULL,
+      chip_id TEXT NOT NULL,
       event TEXT NOT NULL,
-      state TEXT,
-      createdTime TEXT NOT NULL
+      state JSON,
+      created_time TEXT NOT NULL
     )
   `);
 
   db.exec(`
-    CREATE INDEX IF NOT EXISTS idx_watering_logs_chipId
-    ON watering_logs(chipId, createdTime DESC)
+    CREATE INDEX IF NOT EXISTS idx_watering_logs_chip_id
+    ON watering_logs(chip_id, created_time DESC)
   `);
 }
 
@@ -62,48 +62,50 @@ export function initDb() {
 export function getAllDevices(): DeviceItem[] {
   const db = getDb();
   const rows = db.prepare(`
-    SELECT d.*, s.stateId, s.switch, s.buttons, s.sensors, s.loads,
-           s.currentIndex, s.currentProcess, s.message,
-           s.lastTickTime as stateLastTickTime, s.lastWriteTime as stateLastWriteTime
+    SELECT d.chip_id, d.name, d.mac_address, d.processes, d.idle_sleep, d.idle_timeout,
+           d.boot_exec, d.exec_delay, d.schedules, d.created_time, d.last_write_time,
+           s.state_id, s.switch, s.buttons, s.sensors, s.loads,
+           s.current_index, s.current_process, s.message,
+           s.last_tick_time as state_last_tick_time, s.last_write_time as state_last_write_time
     FROM watering_devices d
-    LEFT JOIN watering_device_state s ON d.chipId = s.chipId
+    LEFT JOIN watering_device_state s ON d.chip_id = s.chip_id
     ORDER BY d.name
   `).all() as any[];
 
   const now = Date.now();
   return rows.map((row) => {
     const config: DeviceConfig = {
-      chipId: row.chipId,
+      chipId: row.chip_id,
       name: row.name,
-      macAddress: row.macAddress,
-      processes: JSON.parse(row.processes),
-      idleSleep: !!row.idleSleep,
-      idleTimeout: row.idleTimeout,
-      bootExec: row.bootExec,
-      execDelay: row.execDelay,
-      schedules: JSON.parse(row.schedules),
-      createdTime: row.createdTime,
-      lastWriteTime: row.lastWriteTime,
+      macAddress: row.mac_address,
+      processes: row.processes ?? [],
+      idleSleep: !!row.idle_sleep,
+      idleTimeout: row.idle_timeout,
+      bootExec: row.boot_exec,
+      execDelay: row.exec_delay,
+      schedules: row.schedules ?? [],
+      createdTime: row.created_time,
+      lastWriteTime: row.last_write_time,
     };
 
     const item: DeviceItem = { ...config };
 
-    if (row.stateId) {
+    if (row.state_id) {
       item.state = {
-        chipId: row.chipId,
-        stateId: row.stateId,
+        chipId: row.chip_id,
+        stateId: row.state_id,
         switch: row.switch,
-        buttons: row.buttons ? JSON.parse(row.buttons) : undefined,
-        sensors: row.sensors ? JSON.parse(row.sensors) : undefined,
-        loads: row.loads ? JSON.parse(row.loads) : undefined,
-        index: row.currentIndex ?? undefined,
-        process: row.currentProcess ? JSON.parse(row.currentProcess) : undefined,
+        buttons: row.buttons ?? undefined,
+        sensors: row.sensors ?? undefined,
+        loads: row.loads ?? undefined,
+        index: row.current_index ?? undefined,
+        process: row.current_process ?? undefined,
         message: row.message ?? undefined,
-        lastWriteTime: row.stateLastWriteTime,
+        lastWriteTime: row.state_last_write_time,
       };
-      item.lastTickTime = row.stateLastTickTime;
+      item.lastTickTime = row.state_last_tick_time;
       // 60 秒内心跳视为在线
-      item.isOnline = row.stateLastTickTime && (now - row.stateLastTickTime) <= 60 * 1000;
+      item.isOnline = row.state_last_tick_time && (now - row.state_last_tick_time) <= 60 * 1000;
     }
 
     return item;
@@ -115,20 +117,20 @@ export function getAllDevices(): DeviceItem[] {
  */
 export function getDeviceConfig(chipId: string): DeviceConfig | null {
   const db = getDb();
-  const row = db.prepare("SELECT * FROM watering_devices WHERE chipId = ?").get(chipId) as any;
+  const row = db.prepare("SELECT * FROM watering_devices WHERE chip_id = ?").get(chipId) as any;
   if (!row) return null;
   return {
-    chipId: row.chipId,
+    chipId: row.chip_id,
     name: row.name,
-    macAddress: row.macAddress,
-    processes: JSON.parse(row.processes),
-    idleSleep: !!row.idleSleep,
-    idleTimeout: row.idleTimeout,
-    bootExec: row.bootExec,
-    execDelay: row.execDelay,
-    schedules: JSON.parse(row.schedules),
-    createdTime: row.createdTime,
-    lastWriteTime: row.lastWriteTime,
+    macAddress: row.mac_address,
+    processes: row.processes ?? [],
+    idleSleep: !!row.idle_sleep,
+    idleTimeout: row.idle_timeout,
+    bootExec: row.boot_exec,
+    execDelay: row.exec_delay,
+    schedules: row.schedules ?? [],
+    createdTime: row.created_time,
+    lastWriteTime: row.last_write_time,
   };
 }
 
@@ -138,17 +140,24 @@ export function getDeviceConfig(chipId: string): DeviceConfig | null {
 export function saveDeviceConfig(config: DeviceConfig) {
   const db = getDb();
   db.prepare(`
-    INSERT INTO watering_devices (chipId, name, macAddress, processes, idleSleep, idleTimeout, bootExec, execDelay, schedules, createdTime, lastWriteTime)
-    VALUES (@chipId, @name, @macAddress, @processes, @idleSleep, @idleTimeout, @bootExec, @execDelay, @schedules, @createdTime, @lastWriteTime)
-    ON CONFLICT(chipId) DO UPDATE SET
-      name=@name, macAddress=@macAddress, processes=@processes, idleSleep=@idleSleep,
-      idleTimeout=@idleTimeout, bootExec=@bootExec, execDelay=@execDelay,
-      schedules=@schedules, lastWriteTime=@lastWriteTime
+    INSERT INTO watering_devices (chip_id, name, mac_address, processes, idle_sleep, idle_timeout, boot_exec, exec_delay, schedules, created_time, last_write_time)
+    VALUES (@chip_id, @name, @mac_address, @processes, @idle_sleep, @idle_timeout, @boot_exec, @exec_delay, @schedules, @created_time, @last_write_time)
+    ON CONFLICT(chip_id) DO UPDATE SET
+      name=@name, mac_address=@mac_address, processes=@processes, idle_sleep=@idle_sleep,
+      idle_timeout=@idle_timeout, boot_exec=@boot_exec, exec_delay=@exec_delay,
+      schedules=@schedules, last_write_time=@last_write_time
   `).run({
-    ...config,
-    processes: JSON.stringify(config.processes),
-    idleSleep: config.idleSleep ? 1 : 0,
-    schedules: JSON.stringify(config.schedules),
+    chip_id: config.chipId,
+    name: config.name,
+    mac_address: config.macAddress,
+    processes: config.processes,
+    idle_sleep: config.idleSleep ? 1 : 0,
+    idle_timeout: config.idleTimeout,
+    boot_exec: config.bootExec,
+    exec_delay: config.execDelay,
+    schedules: config.schedules,
+    created_time: config.createdTime,
+    last_write_time: config.lastWriteTime,
   });
 }
 
@@ -157,8 +166,8 @@ export function saveDeviceConfig(config: DeviceConfig) {
  */
 export function deleteDevice(chipId: string) {
   const db = getDb();
-  db.prepare("DELETE FROM watering_device_state WHERE chipId = ?").run(chipId);
-  db.prepare("DELETE FROM watering_devices WHERE chipId = ?").run(chipId);
+  db.prepare("DELETE FROM watering_device_state WHERE chip_id = ?").run(chipId);
+  db.prepare("DELETE FROM watering_devices WHERE chip_id = ?").run(chipId);
 }
 
 /**
@@ -166,19 +175,19 @@ export function deleteDevice(chipId: string) {
  */
 export function getDeviceState(chipId: string): DeviceState | null {
   const db = getDb();
-  const row = db.prepare("SELECT * FROM watering_device_state WHERE chipId = ?").get(chipId) as any;
+  const row = db.prepare("SELECT * FROM watering_device_state WHERE chip_id = ?").get(chipId) as any;
   if (!row) return null;
   return {
-    chipId: row.chipId,
-    stateId: row.stateId,
+    chipId: row.chip_id,
+    stateId: row.state_id,
     switch: row.switch,
-    buttons: row.buttons ? JSON.parse(row.buttons) : undefined,
-    sensors: row.sensors ? JSON.parse(row.sensors) : undefined,
-    loads: row.loads ? JSON.parse(row.loads) : undefined,
-    index: row.currentIndex ?? undefined,
-    process: row.currentProcess ? JSON.parse(row.currentProcess) : undefined,
+    buttons: row.buttons ?? undefined,
+    sensors: row.sensors ?? undefined,
+    loads: row.loads ?? undefined,
+    index: row.current_index ?? undefined,
+    process: row.current_process ?? undefined,
     message: row.message ?? undefined,
-    lastWriteTime: row.lastWriteTime,
+    lastWriteTime: row.last_write_time,
   };
 }
 
@@ -188,24 +197,24 @@ export function getDeviceState(chipId: string): DeviceState | null {
 export function saveDeviceState(state: DeviceState) {
   const db = getDb();
   db.prepare(`
-    INSERT INTO watering_device_state (chipId, stateId, switch, buttons, sensors, loads, currentIndex, currentProcess, message, lastTickTime, lastWriteTime)
-    VALUES (@chipId, @stateId, @switch, @buttons, @sensors, @loads, @currentIndex, @currentProcess, @message, @lastTickTime, @lastWriteTime)
-    ON CONFLICT(chipId) DO UPDATE SET
-      stateId=@stateId, switch=@switch, buttons=@buttons, sensors=@sensors, loads=@loads,
-      currentIndex=@currentIndex, currentProcess=@currentProcess, message=@message,
-      lastTickTime=@lastTickTime, lastWriteTime=@lastWriteTime
+    INSERT INTO watering_device_state (chip_id, state_id, switch, buttons, sensors, loads, current_index, current_process, message, last_tick_time, last_write_time)
+    VALUES (@chip_id, @state_id, @switch, @buttons, @sensors, @loads, @current_index, @current_process, @message, @last_tick_time, @last_write_time)
+    ON CONFLICT(chip_id) DO UPDATE SET
+      state_id=@state_id, switch=@switch, buttons=@buttons, sensors=@sensors, loads=@loads,
+      current_index=@current_index, current_process=@current_process, message=@message,
+      last_tick_time=@last_tick_time, last_write_time=@last_write_time
   `).run({
-    chipId: state.chipId,
-    stateId: state.stateId,
+    chip_id: state.chipId,
+    state_id: state.stateId,
     switch: state.switch,
-    buttons: state.buttons ? JSON.stringify(state.buttons) : null,
-    sensors: state.sensors ? JSON.stringify(state.sensors) : null,
-    loads: state.loads ? JSON.stringify(state.loads) : null,
-    currentIndex: state.index ?? null,
-    currentProcess: state.process ? JSON.stringify(state.process) : null,
+    buttons: state.buttons ?? null,
+    sensors: state.sensors ?? null,
+    loads: state.loads ?? null,
+    current_index: state.index ?? null,
+    current_process: state.process ?? null,
     message: state.message ?? null,
-    lastTickTime: Date.now(),
-    lastWriteTime: state.lastWriteTime,
+    last_tick_time: Date.now(),
+    last_write_time: state.lastWriteTime,
   });
 }
 
@@ -215,9 +224,9 @@ export function saveDeviceState(state: DeviceState) {
 export function updateTick(chipId: string) {
   const db = getDb();
   const now = Date.now();
-  const existing = db.prepare("SELECT 1 FROM watering_device_state WHERE chipId = ?").get(chipId);
+  const existing = db.prepare("SELECT 1 FROM watering_device_state WHERE chip_id = ?").get(chipId);
   if (existing) {
-    db.prepare("UPDATE watering_device_state SET lastTickTime = ? WHERE chipId = ?").run(now, chipId);
+    db.prepare("UPDATE watering_device_state SET last_tick_time = ? WHERE chip_id = ?").run(now, chipId);
   }
 }
 
@@ -226,9 +235,16 @@ export function updateTick(chipId: string) {
  */
 export function getDeviceLogs(chipId: string, limit = 100) {
   const db = getDb();
-  return db.prepare(
-    "SELECT * FROM watering_logs WHERE chipId = ? ORDER BY createdTime DESC LIMIT ?"
-  ).all(chipId, limit);
+  const rows = db.prepare(
+    "SELECT id, chip_id, event, state, created_time FROM watering_logs WHERE chip_id = ? ORDER BY created_time DESC LIMIT ?"
+  ).all(chipId, limit) as any[];
+  return rows.map((row) => ({
+    id: row.id,
+    chipId: row.chip_id,
+    event: row.event,
+    state: row.state ?? undefined,
+    createdTime: row.created_time,
+  }));
 }
 
 /**
@@ -236,10 +252,10 @@ export function getDeviceLogs(chipId: string, limit = 100) {
  */
 export function writeDeviceLog(chipId: string, event: string, state?: Record<string, unknown>) {
   const db = getDb();
-  db.prepare("INSERT INTO watering_logs (chipId, event, state, createdTime) VALUES (?, ?, ?, ?)").run(
+  db.prepare("INSERT INTO watering_logs (chip_id, event, state, created_time) VALUES (?, ?, ?, ?)").run(
     chipId,
     event,
-    state ? JSON.stringify(state) : null,
+    state ?? null,
     new Date().toISOString()
   );
 }
@@ -249,5 +265,5 @@ export function writeDeviceLog(chipId: string, event: string, state?: Record<str
  */
 export function clearDeviceLogs(chipId: string) {
   const db = getDb();
-  db.prepare("DELETE FROM watering_logs WHERE chipId = ?").run(chipId);
+  db.prepare("DELETE FROM watering_logs WHERE chip_id = ?").run(chipId);
 }
