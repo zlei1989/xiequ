@@ -7,7 +7,11 @@ import { useRouter } from "next/navigation";
 import { useDeviceConfig } from "../../hooks/use-device-config";
 import { DeviceEditor } from "../../components/device-editor";
 
-export default function DeviceDetailPage({ params }: { params: Promise<{ chipId: string }> }) {
+export default function DeviceDetailPage({
+  params,
+}: {
+  params: Promise<{ chipId: string }>;
+}) {
   const { chipId } = use(params);
   const router = useRouter();
   const { config, loading, save, remove } = useDeviceConfig(chipId);
@@ -23,20 +27,40 @@ export default function DeviceDetailPage({ params }: { params: Promise<{ chipId:
   }
 
   if (loading || !config) {
-    return <Spin />;
+    return (
+      <div style={{ textAlign: "center", padding: 48 }}>
+        <Spin />
+      </div>
+    );
   }
 
   return (
     <div>
-      <Button
-        icon={<ArrowLeftOutlined />}
-        type="text"
-        onClick={() => router.push("/watering")}
-        style={{ marginBottom: 16 }}
+      {/* 页面内顶栏操作按钮 — 匹配 iot-wfm EditView header extra */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          padding: "12px 16px",
+          background: "#fff",
+          borderBottom: "1px solid #f0f0f0",
+        }}
       >
-        返回设备列表
-      </Button>
-      <DeviceEditor config={config} onSave={save} onRemove={handleRemove} />
+        <h3 style={{ margin: 0, fontSize: 16 }}>{config.name || "设备配置"}</h3>
+        <Button icon={<ArrowLeftOutlined />} onClick={() => router.back()}>
+          返回
+        </Button>
+      </div>
+
+      <DeviceEditor
+        config={config}
+        onSave={async (data) => {
+          await save(data);
+          message.success("已保存");
+        }}
+        onRemove={handleRemove}
+      />
     </div>
   );
 }
