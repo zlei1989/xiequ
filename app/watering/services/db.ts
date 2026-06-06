@@ -2,10 +2,27 @@ import { getDb } from "@/lib/db";
 import type { DeviceConfig, DeviceState, DeviceItem } from "../types";
 
 /**
+ * sql.js 的 getAsObject() 将 JSON 列作为字符串返回（不自动解析）。
+ * 此辅助函数安全地将 JSON 字符串解析为对象/数组，如果已经是对象则直接返回。
+ */
+function parseJSON<T>(value: unknown, fallback: T): T {
+  if (value === null || value === undefined) return fallback;
+  if (typeof value === "object") return value as T;
+  if (typeof value === "string") {
+    try {
+      return JSON.parse(value) as T;
+    } catch {
+      return fallback;
+    }
+  }
+  return fallback;
+}
+
+/**
  * 初始化浇花模块数据库表
  */
-export function initDb() {
-  const db = getDb();
+export async function initDb() {
+  const db = await getDb();
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS watering_devices (
@@ -59,8 +76,8 @@ export function initDb() {
 /**
  * 获取所有设备（含状态和在线信息）
  */
-export function getAllDevices(): DeviceItem[] {
-  const db = getDb();
+export async function getAllDevices(): Promise<DeviceItem[]> {
+  const db = await getDb();
   const rows = db.prepare(`
     SELECT d.chip_id, d.name, d.mac_address, d.processes, d.idle_sleep, d.idle_timeout,
            d.boot_exec, d.exec_delay, d.schedules, d.created_time, d.last_write_time,
@@ -78,12 +95,12 @@ export function getAllDevices(): DeviceItem[] {
       chipId: row.chip_id,
       name: row.name,
       macAddress: row.mac_address,
-      processes: row.processes ?? [],
+      processes: parseJSON(row.processes, [] as DeviceConfig["processes"]),
       idleSleep: !!row.idle_sleep,
       idleTimeout: row.idle_timeout,
       bootExec: row.boot_exec,
       execDelay: row.exec_delay,
-      schedules: row.schedules ?? [],
+      schedules: parseJSON(row.schedules, [] as DeviceConfig["schedules"]),
       createdTime: row.created_time,
       lastWriteTime: row.last_write_time,
     };
@@ -95,11 +112,11 @@ export function getAllDevices(): DeviceItem[] {
         chipId: row.chip_id,
         stateId: row.state_id,
         switch: row.switch,
-        buttons: row.buttons ?? undefined,
-        sensors: row.sensors ?? undefined,
-        loads: row.loads ?? undefined,
+        buttons: parseJSON(row.buttons, undefined as Record<string, number> | undefined),
+        sensors: parseJSON(row.sensors, undefined as Record<string, number> | undefined),
+        loads: parseJSON(row.loads, undefined as Record<string, number> | undefined),
         index: row.current_index ?? undefined,
-        process: row.current_process ?? undefined,
+        process: parseJSON(row.current_process, undefined as DeviceState["process"]),
         message: row.message ?? undefined,
         lastWriteTime: row.state_last_write_time,
       };
@@ -115,20 +132,20 @@ export function getAllDevices(): DeviceItem[] {
 /**
  * 获取单个设备配置
  */
-export function getDeviceConfig(chipId: string): DeviceConfig | null {
-  const db = getDb();
+export async function getDeviceConfig(chipId: string): Promise<DeviceConfig | null> {
+  const db = await getDb();
   const row = db.prepare("SELECT * FROM watering_devices WHERE chip_id = ?").get(chipId) as any;
   if (!row) return null;
   return {
     chipId: row.chip_id,
     name: row.name,
     macAddress: row.mac_address,
-    processes: row.processes ?? [],
+    processes: parseJSON(row.processes, [] as DeviceConfig["processes"]),
     idleSleep: !!row.idle_sleep,
     idleTimeout: row.idle_timeout,
     bootExec: row.boot_exec,
     execDelay: row.exec_delay,
-    schedules: row.schedules ?? [],
+    schedules: parseJSON(row.schedules, [] as DeviceConfig["schedules"]),
     createdTime: row.created_time,
     lastWriteTime: row.last_write_time,
   };
@@ -137,8 +154,8 @@ export function getDeviceConfig(chipId: string): DeviceConfig | null {
 /**
  * 保存设备配置
  */
-export function saveDeviceConfig(config: DeviceConfig) {
-  const db = getDb();
+export async function saveDeviceConfig(config: DeviceConfig) {
+  const db = await getDb();
   db.prepare(`
     INSERT INTO watering_devices (chip_id, name, mac_address, processes, idle_sleep, idle_timeout, boot_exec, exec_delay, schedules, created_time, last_write_time)
     VALUES (@chip_id, @name, @mac_address, @processes, @idle_sleep, @idle_timeout, @boot_exec, @exec_delay, @schedules, @created_time, @last_write_time)
@@ -147,25 +164,25 @@ export function saveDeviceConfig(config: DeviceConfig) {
       idle_timeout=@idle_timeout, boot_exec=@boot_exec, exec_delay=@exec_delay,
       schedules=@schedules, last_write_time=@last_write_time
   `).run({
-    chip_id: config.chipId,
-    name: config.name,
-    mac_address: config.macAddress,
-    processes: config.processes,
-    idle_sleep: config.idleSleep ? 1 : 0,
-    idle_timeout: config.idleTimeout,
-    boot_exec: config.bootExec,
-    exec_delay: config.execDelay,
-    schedules: config.schedules,
-    created_time: config.createdTime,
-    last_write_time: config.lastWriteTime,
+    "@chip_id": config.chipId,
+    "@name": config.name,
+    "@mac_address": config.macAddress,
+    "@processes": JSON.stringify(config.processes),
+    "@idle_sleep": config.idleSleep ? 1 : 0,
+    "@idle_timeout": config.idleTimeout,
+    "@boot_exec": config.bootExec,
+    "@exec_delay": config.execDelay,
+    "@schedules": JSON.stringify(config.schedules),
+    "@created_time": config.createdTime,
+    "@last_write_time": config.lastWriteTime,
   });
 }
 
 /**
  * 删除设备
  */
-export function deleteDevice(chipId: string) {
-  const db = getDb();
+export async function deleteDevice(chipId: string) {
+  const db = await getDb();
   db.prepare("DELETE FROM watering_device_state WHERE chip_id = ?").run(chipId);
   db.prepare("DELETE FROM watering_devices WHERE chip_id = ?").run(chipId);
 }
@@ -173,19 +190,19 @@ export function deleteDevice(chipId: string) {
 /**
  * 获取设备状态
  */
-export function getDeviceState(chipId: string): DeviceState | null {
-  const db = getDb();
+export async function getDeviceState(chipId: string): Promise<DeviceState | null> {
+  const db = await getDb();
   const row = db.prepare("SELECT * FROM watering_device_state WHERE chip_id = ?").get(chipId) as any;
   if (!row) return null;
   return {
     chipId: row.chip_id,
     stateId: row.state_id,
     switch: row.switch,
-    buttons: row.buttons ?? undefined,
-    sensors: row.sensors ?? undefined,
-    loads: row.loads ?? undefined,
+    buttons: parseJSON(row.buttons, undefined as Record<string, number> | undefined),
+    sensors: parseJSON(row.sensors, undefined as Record<string, number> | undefined),
+    loads: parseJSON(row.loads, undefined as Record<string, number> | undefined),
     index: row.current_index ?? undefined,
-    process: row.current_process ?? undefined,
+    process: parseJSON(row.current_process, undefined as DeviceState["process"]),
     message: row.message ?? undefined,
     lastWriteTime: row.last_write_time,
   };
@@ -194,8 +211,8 @@ export function getDeviceState(chipId: string): DeviceState | null {
 /**
  * 保存设备状态（upsert）
  */
-export function saveDeviceState(state: DeviceState) {
-  const db = getDb();
+export async function saveDeviceState(state: DeviceState) {
+  const db = await getDb();
   db.prepare(`
     INSERT INTO watering_device_state (chip_id, state_id, switch, buttons, sensors, loads, current_index, current_process, message, last_tick_time, last_write_time)
     VALUES (@chip_id, @state_id, @switch, @buttons, @sensors, @loads, @current_index, @current_process, @message, @last_tick_time, @last_write_time)
@@ -204,25 +221,25 @@ export function saveDeviceState(state: DeviceState) {
       current_index=@current_index, current_process=@current_process, message=@message,
       last_tick_time=@last_tick_time, last_write_time=@last_write_time
   `).run({
-    chip_id: state.chipId,
-    state_id: state.stateId,
-    switch: state.switch,
-    buttons: state.buttons ?? null,
-    sensors: state.sensors ?? null,
-    loads: state.loads ?? null,
-    current_index: state.index ?? null,
-    current_process: state.process ?? null,
-    message: state.message ?? null,
-    last_tick_time: Date.now(),
-    last_write_time: state.lastWriteTime,
+    "@chip_id": state.chipId,
+    "@state_id": state.stateId,
+    "@switch": state.switch,
+    "@buttons": state.buttons ? JSON.stringify(state.buttons) : null,
+    "@sensors": state.sensors ? JSON.stringify(state.sensors) : null,
+    "@loads": state.loads ? JSON.stringify(state.loads) : null,
+    "@current_index": state.index ?? null,
+    "@current_process": state.process ? JSON.stringify(state.process) : null,
+    "@message": state.message ?? null,
+    "@last_tick_time": Date.now(),
+    "@last_write_time": state.lastWriteTime,
   });
 }
 
 /**
  * 更新心跳时间
  */
-export function updateTick(chipId: string) {
-  const db = getDb();
+export async function updateTick(chipId: string) {
+  const db = await getDb();
   const now = Date.now();
   const existing = db.prepare("SELECT 1 FROM watering_device_state WHERE chip_id = ?").get(chipId);
   if (existing) {
@@ -233,8 +250,8 @@ export function updateTick(chipId: string) {
 /**
  * 获取设备日志
  */
-export function getDeviceLogs(chipId: string, limit = 100) {
-  const db = getDb();
+export async function getDeviceLogs(chipId: string, limit = 100) {
+  const db = await getDb();
   const rows = db.prepare(
     "SELECT id, chip_id, event, state, created_time FROM watering_logs WHERE chip_id = ? ORDER BY created_time DESC LIMIT ?"
   ).all(chipId, limit) as any[];
@@ -242,7 +259,7 @@ export function getDeviceLogs(chipId: string, limit = 100) {
     id: row.id,
     chipId: row.chip_id,
     event: row.event,
-    state: row.state ?? undefined,
+    state: parseJSON(row.state, undefined as Record<string, unknown> | undefined),
     createdTime: row.created_time,
   }));
 }
@@ -250,8 +267,8 @@ export function getDeviceLogs(chipId: string, limit = 100) {
 /**
  * 写入设备日志
  */
-export function writeDeviceLog(chipId: string, event: string, state?: Record<string, unknown>) {
-  const db = getDb();
+export async function writeDeviceLog(chipId: string, event: string, state?: Record<string, unknown>) {
+  const db = await getDb();
   db.prepare("INSERT INTO watering_logs (chip_id, event, state, created_time) VALUES (?, ?, ?, ?)").run(
     chipId,
     event,
@@ -263,7 +280,7 @@ export function writeDeviceLog(chipId: string, event: string, state?: Record<str
 /**
  * 清空设备日志
  */
-export function clearDeviceLogs(chipId: string) {
-  const db = getDb();
+export async function clearDeviceLogs(chipId: string) {
+  const db = await getDb();
   db.prepare("DELETE FROM watering_logs WHERE chip_id = ?").run(chipId);
 }
