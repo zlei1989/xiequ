@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Input,
   InputNumber,
@@ -17,8 +17,10 @@ import {
   EditOutlined,
   DeleteOutlined,
   CloseOutlined,
+  SaveOutlined,
 } from "@ant-design/icons";
 import type { DeviceConfig, Process, Step, Interrupt, Schedule } from "../types";
+import type { GpioInfo } from "../hooks/use-device-config";
 import { ProcessEditor } from "./process-editor";
 import { ProcessStepEditor } from "./process-step-editor";
 import { ProcessInterruptEditor } from "./process-interrupt-editor";
@@ -26,15 +28,24 @@ import { ScheduleEditor } from "./schedule-editor";
 
 export function DeviceEditor({
   config,
+  gpio,
   onSave,
   onRemove,
+  saveRef,
 }: {
   config: DeviceConfig;
+  gpio: GpioInfo;
   onSave: (data: Partial<DeviceConfig>) => Promise<void>;
   onRemove: () => Promise<void>;
+  saveRef: React.MutableRefObject<() => Promise<void>>;
 }) {
   const [form, setForm] = useState<DeviceConfig>(config);
   const [saving, setSaving] = useState(false);
+
+  // 将 handleSave 暴露给父组件 Header 的保存按钮
+  useEffect(() => {
+    saveRef.current = handleSave;
+  });
 
   // ---- 嵌套 Drawer 状态（匹配 IotEditor 的 visible refs）----
   const [processVisible, setProcessVisible] = useState(false);
@@ -73,11 +84,13 @@ export function DeviceEditor({
   // ---- 流程操作 ----
   function addProcess() {
     const item: Process = {
+      key: crypto.randomUUID(),
       name: "新流程",
       steps: [
         {
+          key: crypto.randomUUID(),
           name: "新步骤",
-          component: "load_0",
+          component: gpio.loads[0] ?? "load_0",
           value: { begin: 255, end: 0 },
           delay: 0,
           timeout: 600000,
@@ -109,8 +122,9 @@ export function DeviceEditor({
   function addStep() {
     const proc = { ...form.processes[processIndex] };
     const item: Step = {
+      key: crypto.randomUUID(),
       name: "新步骤",
-      component: "load_0",
+      component: gpio.loads[0] ?? "load_0",
       value: { begin: 0, end: 0 },
       delay: 0,
       timeout: 600000,
@@ -141,8 +155,9 @@ export function DeviceEditor({
   // ---- 中断操作 ----
   function addInterrupt() {
     const item: Interrupt = {
+      key: crypto.randomUUID(),
       name: "新中断",
-      component: "sensor_0",
+      component: gpio.sensors[0] ?? "sensor_0",
       state: 0,
       intercept: 100,
       delay: 0,
@@ -180,6 +195,7 @@ export function DeviceEditor({
   // ---- 定时操作 ----
   function addSchedule() {
     const item: Schedule = {
+      key: crypto.randomUUID(),
       type: "day",
       value: 8 * 3600 * 1000,
       interval: 1,
@@ -346,7 +362,7 @@ export function DeviceEditor({
         <Table
           dataSource={form.processes}
           columns={processColumns}
-          rowKey={(_, index) => String(index)}
+          rowKey="key"
           pagination={false}
           size="small"
           bordered
@@ -368,7 +384,7 @@ export function DeviceEditor({
         <Table
           dataSource={form.schedules}
           columns={scheduleColumns}
-          rowKey={(_, index) => String(index)}
+          rowKey="key"
           pagination={false}
           size="small"
           bordered
@@ -383,6 +399,18 @@ export function DeviceEditor({
           添加
         </Button>
       </div>
+
+      {/* ---- 保存按钮（底部） ---- */}
+      <Button
+        type="primary"
+        icon={<SaveOutlined />}
+        onClick={handleSave}
+        loading={saving}
+        block
+        style={{ marginBottom: 12 }}
+      >
+        保存配置
+      </Button>
 
       {/* ---- 删除设备按钮 ---- */}
       <Popconfirm title="确认删除设备？不可恢复。" onConfirm={onRemove}>
@@ -399,7 +427,7 @@ export function DeviceEditor({
       <Drawer
         title="编辑流程"
         placement="bottom"
-        height="80%"
+        size="80%"
         open={processVisible}
         onClose={() => setProcessVisible(false)}
         destroyOnClose
@@ -438,7 +466,7 @@ export function DeviceEditor({
       <Drawer
         title="编辑步骤"
         placement="bottom"
-        height="75%"
+        size="75%"
         open={stepVisible}
         onClose={() => setStepVisible(false)}
         destroyOnClose
@@ -462,6 +490,7 @@ export function DeviceEditor({
         {stepIndex > -1 && processIndex > -1 && (
           <ProcessStepEditor
             step={form.processes[processIndex].steps[stepIndex]}
+            gpio={gpio}
             onChange={(updated) => updateStep(stepIndex, updated)}
             onRemove={deleteStep}
             onEditInterrupt={(intIdx) => {
@@ -477,7 +506,7 @@ export function DeviceEditor({
       <Drawer
         title="编辑中断"
         placement="bottom"
-        height="70%"
+        size="70%"
         open={interruptVisible}
         onClose={() => setInterruptVisible(false)}
         destroyOnClose
@@ -508,6 +537,7 @@ export function DeviceEditor({
                   interruptIndex
                 ]
               }
+              gpio={gpio}
               onChange={(updated) => updateInterrupt(interruptIndex, updated)}
               onRemove={deleteInterrupt}
             />
@@ -518,7 +548,7 @@ export function DeviceEditor({
       <Drawer
         title="编辑定时任务"
         placement="bottom"
-        height="70%"
+        size="70%"
         open={scheduleVisible}
         onClose={() => setScheduleVisible(false)}
         destroyOnClose
