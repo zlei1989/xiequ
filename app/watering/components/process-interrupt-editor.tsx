@@ -16,7 +16,7 @@ export function ProcessInterruptEditor({
   onRemove: () => void;
 }) {
   const sensorOptions = (gpio.sensors ?? []).map((k) => ({
-    value: `sensor_${k}`,
+    value: k,
     label: k,
   }));
   return (

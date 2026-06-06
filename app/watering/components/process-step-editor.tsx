@@ -5,12 +5,12 @@ import { PlusOutlined, EditOutlined } from "@ant-design/icons";
 import type { Step, Interrupt } from "../types";
 import type { GpioInfo } from "../hooks/use-device-config";
 
-/** 从 GPIO 键名列表生成 Select options，带前缀 */
-function toOptions(keys: string[] | undefined, prefix: string) {
+/** 从 GPIO 键名列表生成 Select options（键名已含前缀如 load_0） */
+function toOptions(keys: string[] | undefined) {
   if (!keys || keys.length === 0) {
     return [];
   }
-  return keys.map((k) => ({ value: `${prefix}${k}`, label: k }));
+  return keys.map((k) => ({ value: k, label: k }));
 }
 
 export function ProcessStepEditor({
@@ -28,8 +28,8 @@ export function ProcessStepEditor({
   onEditInterrupt: (index: number) => void;
   onAddInterrupt: () => void;
 }) {
-  const loadOptions = toOptions(gpio.loads, "load_");
-  const buttonOptions = toOptions(gpio.buttons, "button_");
+  const loadOptions = toOptions(gpio.loads);
+  const buttonOptions = toOptions(gpio.buttons);
   const interruptColumns = [
     { title: "#", dataIndex: "_idx", width: 40, render: (_: any, __: any, index: number) => index + 1 },
     { title: "名称", dataIndex: "name", key: "name" },

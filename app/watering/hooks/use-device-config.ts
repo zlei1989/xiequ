@@ -27,10 +27,16 @@ export function useDeviceConfig(chipId: string) {
         // DeviceItem 中 processes/schedules 已是对象，直接使用
         setConfig(found as unknown as DeviceConfig);
         // 从设备 state 中提取 GPIO 键名
+        // 注意：固件将按钮以 sensor:button_x 发送，按钮实际存储在 sensors 列中
+        const rawSensors = Object.keys(found.state?.sensors ?? {});
+        const rawButtons = Object.keys(found.state?.buttons ?? {});
         setGpio({
           loads: Object.keys(found.state?.loads ?? {}),
-          sensors: Object.keys(found.state?.sensors ?? {}),
-          buttons: Object.keys(found.state?.buttons ?? {}),
+          sensors: rawSensors.filter((k) => !k.startsWith("button_")),
+          buttons: [
+            ...rawButtons,
+            ...rawSensors.filter((k) => k.startsWith("button_")),
+          ],
         });
       }
     } finally {
