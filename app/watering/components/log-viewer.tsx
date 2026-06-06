@@ -1,38 +1,167 @@
 "use client";
 
-import { Timeline, Tag } from "antd";
+import { Timeline, Tag, Divider } from "antd";
+
+const eventLabels: Record<string, string> = {
+  bootstrap: "开机",
+  execute: "执行",
+  finish: "完成",
+  terminate: "终止",
+  change: "变更",
+  heartbeat: "心跳",
+  offline: "离线",
+};
 
 const eventColors: Record<string, string> = {
   bootstrap: "green",
-  execute: "blue",
+  execute: "orange",
   finish: "orange",
-  terminate: "red",
+  terminate: "orange",
+  change: "blue",
   heartbeat: "default",
+  offline: "gray",
 };
 
+type LogItem = {
+  event: string;
+  createdTime: string;
+  state?: any;
+  stateId?: string;
+  message?: string;
+  process?: { name?: string };
+  cause?: string;
+};
+
+/** 按 stateId 分组，每组按时间排序（倒序：最新的 stateId 组在前，组内正序）*/
+function groupByStateId(logs: LogItem[]): Array<{ stateId: string; items: LogItem[] }> {
+  const map: Record<string, LogItem[]> = {};
+  for (const log of logs) {
+    const key = log.stateId || "_unknown";
+    if (!map[key]) map[key] = [];
+    map[key].push(log);
+  }
+  // 组内按时间正序
+  for (const key of Object.keys(map)) {
+    map[key].sort(
+      (a, b) =>
+        new Date(a.createdTime).getTime() - new Date(b.createdTime).getTime()
+    );
+  }
+  // 组间按最新一条时间倒序（最新的组在前）
+  return Object.entries(map)
+    .map(([stateId, items]) => ({ stateId, items }))
+    .sort((a, b) => {
+      const lastA = new Date(a.items[a.items.length - 1].createdTime).getTime();
+      const lastB = new Date(b.items[b.items.length - 1].createdTime).getTime();
+      return lastB - lastA;
+    });
+}
+
+/** 计算用时 */
+function formatDuration(items: LogItem[]): string {
+  if (items.length < 2) return "";
+  const begin = new Date(items[0].createdTime).getTime();
+  const end = new Date(items[items.length - 1].createdTime).getTime();
+  const seconds = Math.round((end - begin) / 1000);
+  if (seconds > 3600) {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    return `${h}时${m}分${s}秒`;
+  }
+  if (seconds > 60) {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}分${s}秒`;
+  }
+  return `${seconds}秒`;
+}
+
+/** 判断是否包含执行事件 */
+function hasExecute(items: LogItem[]): boolean {
+  return items.some((item) => item.event === "execute" || item.event === "change");
+}
+
+/** 格式化日志消息 — 匹配 iot-wfm formatMessage */
+function formatMessage(item: LogItem): string {
+  if (item.message) return item.message;
+  switch (item.event) {
+    case "bootstrap":
+      return `设备${item.cause ? `(原因:${item.cause})` : ""}开机`;
+    case "execute":
+      return `执行流程${item.process?.name ? `: ${item.process.name}` : ""}`;
+    case "terminate":
+      return "终止流程";
+    case "finish":
+      return "完成流程";
+    case "offline":
+      return "设备离线";
+    default:
+      return item.event;
+  }
+}
+
 export function LogViewer({ logs }: { logs: any[] }) {
-  if (logs.length === 0) {
-    return <div style={{ color: "#999" }}>暂无日志</div>;
+  if (!logs || logs.length === 0) {
+    return (
+      <div style={{ color: "#999", textAlign: "center", padding: 32 }}>
+        暂无日志
+      </div>
+    );
   }
 
+  const groups = groupByStateId(logs);
+
   return (
-    <Timeline
-      items={logs.map((log) => ({
-        color: eventColors[log.event] || "gray",
-        children: (
-          <div>
-            <Tag color={eventColors[log.event]}>{log.event}</Tag>
-            <span style={{ color: "#999", fontSize: 12 }}>
-              {new Date(log.createdTime).toLocaleString("zh-CN")}
-            </span>
-            {log.state && (
-              <pre style={{ fontSize: 12, color: "#666", margin: "4px 0" }}>
-                {JSON.stringify(log.state, null, 2)}
-              </pre>
-            )}
-          </div>
-        ),
-      }))}
-    />
+    <div>
+      {groups.map((group, gi) => (
+        <div key={group.stateId}>
+          {gi > 0 && <Divider style={{ margin: "12px 0" }} />}
+          <Timeline
+            items={group.items.map((item, idx) => ({
+              color: eventColors[item.event] || "gray",
+              children: (
+                <div style={{ fontSize: 14 }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 6,
+                      marginBottom: 2,
+                    }}
+                  >
+                    <Tag color={eventColors[item.event]}>
+                      {eventLabels[item.event] || item.event}
+                    </Tag>
+                    <span style={{ color: "#999", fontSize: 12 }}>
+                      {new Date(item.createdTime).toLocaleString("zh-CN", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        second: "2-digit",
+                      })}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: 13, color: "#333" }}>
+                    {formatMessage(item)}
+                  </div>
+                </div>
+              ),
+            }))}
+          />
+          {hasExecute(group.items) && (
+            <div
+              style={{
+                color: "#999",
+                fontSize: 12,
+                marginTop: 4,
+                marginLeft: 24,
+              }}
+            >
+              用时 {formatDuration(group.items)}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
   );
 }
