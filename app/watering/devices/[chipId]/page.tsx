@@ -1,8 +1,8 @@
 "use client";
 
 import { use, useRef } from "react";
-import { Spin, Button, message } from "antd";
-import { ArrowLeftOutlined, SaveOutlined } from "@ant-design/icons";
+import { Spin, Button, Popconfirm, message } from "antd";
+import { ArrowLeftOutlined, SaveOutlined, DeleteOutlined } from "@ant-design/icons";
 import { useRouter } from "next/navigation";
 import { useDeviceConfig } from "../../hooks/use-device-config";
 import { DeviceEditor } from "../../components/device-editor";
@@ -59,6 +59,11 @@ export default function DeviceDetailPage({
           >
             保存
           </Button>
+          <Popconfirm title="确认删除设备？不可恢复。" onConfirm={handleRemove}>
+            <Button danger icon={<DeleteOutlined />}>
+              删除
+            </Button>
+          </Popconfirm>
           <Button icon={<ArrowLeftOutlined />} onClick={() => router.back()}>
             返回
           </Button>

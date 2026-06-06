@@ -400,25 +400,6 @@ export function DeviceEditor({
         </Button>
       </div>
 
-      {/* ---- 保存按钮（底部） ---- */}
-      <Button
-        type="primary"
-        icon={<SaveOutlined />}
-        onClick={handleSave}
-        loading={saving}
-        block
-        style={{ marginBottom: 12 }}
-      >
-        保存配置
-      </Button>
-
-      {/* ---- 删除设备按钮 ---- */}
-      <Popconfirm title="确认删除设备？不可恢复。" onConfirm={onRemove}>
-        <Button danger block style={{ marginBottom: 16 }}>
-          删除设备
-        </Button>
-      </Popconfirm>
-
       {/* ============================================
           嵌套 Drawer 层（匹配 IotEditor 的嵌套 el-drawer）
           ============================================ */}
