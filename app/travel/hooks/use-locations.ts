@@ -1,12 +1,9 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import type { Location, Summary } from "../types";
+import { fetchLocations, createLocation, editLocation, removeLocation } from "../actions";
 
-/**
- * 位置列表 hook（含筛选、排序）
- * 后续实现时连接 Server Actions / OSS 数据
- */
 export function useLocations() {
   const [locations, setLocations] = useState<Location[]>([]);
   const [loading, setLoading] = useState(false);
@@ -14,35 +11,52 @@ export function useLocations() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    // TODO: 调用 Server Action 获取位置列表
-    setLoading(false);
+    try {
+      const data = await fetchLocations();
+      setLocations(data);
+    } catch (err) {
+      console.error("加载位置失败:", err);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  const add = useCallback(async (data: Partial<Location>) => {
-    // TODO: 调用 Server Action 新增位置
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const add = useCallback(async (data: { name: string; address: string; longitude: number; latitude: number; comments?: string }) => {
+    const newLoc = await createLocation(data);
+    setLocations((prev) => [...prev, newLoc]);
+    return newLoc;
   }, []);
 
   const update = useCallback(async (id: string, data: Partial<Location>) => {
-    // TODO: 调用 Server Action 更新位置
+    const updated = await editLocation(id, data);
+    setLocations((prev) => prev.map((l) => (l.id === id ? updated : l)));
+    return updated;
   }, []);
 
   const remove = useCallback(async (id: string) => {
-    // TODO: 调用 Server Action 删除位置
+    await removeLocation(id);
+    setLocations((prev) => prev.map((l) => (l.id === id ? { ...l, deleted: true } : l)));
   }, []);
 
-  const filteredLocations = locations.filter((loc) => {
-    if (loc.deleted) return false;
-    if (filter === "checked") return loc.checked;
-    if (filter === "uncheck") return !loc.checked;
-    return true;
-  });
+  const filteredLocations = locations
+    .filter((loc) => !loc.deleted)
+    .filter((loc) => {
+      if (filter === "checked") return loc.checked;
+      if (filter === "uncheck") return !loc.checked;
+      return true;
+    });
 
+  const activeLocations = locations.filter((l) => !l.deleted);
   const summary: Summary = {
-    uncheckCount: locations.filter((l) => !l.deleted && !l.checked).length,
+    uncheckCount: activeLocations.filter((l) => !l.checked).length,
     uncheckPercentage: 0,
-    checkedCount: locations.filter((l) => !l.deleted && l.checked).length,
+    checkedCount: activeLocations.filter((l) => l.checked).length,
     checkedPercentage: 0,
-    count: locations.filter((l) => !l.deleted).length,
+    count: activeLocations.length,
   };
   if (summary.count > 0) {
     summary.uncheckPercentage = Math.floor((summary.uncheckCount / summary.count) * 100);
