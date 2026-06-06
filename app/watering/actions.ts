@@ -7,3 +7,5 @@ export async function getDevices() {
 }
 
 export { setDeviceSwitch } from "./actions/set-state";
+export { updateDeviceConfig } from "./actions/set-config";
+export { removeDevice } from "./actions/delete-device";
