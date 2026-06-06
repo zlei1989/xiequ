@@ -1,15 +1,19 @@
 "use client";
 
 import { Layout, Menu, Button } from "antd";
-import { HomeOutlined } from "@ant-design/icons";
+import { HomeOutlined, BugOutlined } from "@ant-design/icons";
 import { useRouter, usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 
 const { Sider, Content, Header } = Layout;
 
+const isDev = process.env.NODE_ENV === "development";
+
+// Ordered longest-first so /watering/debug matches before /watering
 const menuItems = [
-  { key: "/watering", label: "设备列表" },
+  ...(isDev ? [{ key: "/watering/debug", label: "调试面板", icon: <BugOutlined /> }] : []),
   { key: "/watering/logs", label: "运行日志", disabled: true },
+  { key: "/watering", label: "设备列表" },
 ];
 
 export default function WateringLayout({ children }: { children: ReactNode }) {
