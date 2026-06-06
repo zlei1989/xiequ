@@ -282,12 +282,12 @@ export async function getIconDownloadUrl(id: string): Promise<string> {
  * 当前端无法直接访问 COS 时使用此方式。
  */
 export function getCoverProxyUrl(id: string): string {
-  return `/api/trip-plan/download?type=cover&id=${id}`;
+  return `/travel/api/download?type=cover&id=${id}`;
 }
 
 /**
  * 获取图标下载地址（API 路由代理方式）
  */
 export function getIconProxyUrl(id: string): string {
-  return `/api/trip-plan/download?type=icon&id=${id}`;
+  return `/travel/api/download?type=icon&id=${id}`;
 }

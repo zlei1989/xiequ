@@ -4,8 +4,8 @@ import { getOssAdapter, isOssConfigured } from "@/lib/oss";
 /**
  * 图片下载代理 API
  *
- * GET /api/trip-plan/download?type=cover&id=xxx
- * GET /api/trip-plan/download?type=icon&id=xxx
+ * GET /travel/api/download?type=cover&id=xxx
+ * GET /travel/api/download?type=icon&id=xxx
  *
  * 流程参考 TencentOss.getSignedUrl()：
  * 1. 服务端通过 OssAdapter.getSignedUrl() 生成临时访问 URL
