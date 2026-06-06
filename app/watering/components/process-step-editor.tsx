@@ -1,100 +1,159 @@
 "use client";
 
-import { Input, InputNumber, Switch, Button, Space, Card } from "antd";
-import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
+import { Input, InputNumber, Switch, Button, Select, Table } from "antd";
+import { PlusOutlined, EditOutlined } from "@ant-design/icons";
 import type { Step, Interrupt } from "../types";
-import { ProcessInterruptEditor } from "./process-interrupt-editor";
+
+const LOAD_OPTIONS = [
+  { value: "load_0", label: "load_0" },
+  { value: "load_1", label: "load_1" },
+  { value: "load_2", label: "load_2" },
+  { value: "load_3", label: "load_3" },
+];
 
 export function ProcessStepEditor({
   step,
   onChange,
   onRemove,
+  onEditInterrupt,
+  onAddInterrupt,
 }: {
   step: Step;
   onChange: (updated: Step) => void;
   onRemove: () => void;
+  onEditInterrupt: (index: number) => void;
+  onAddInterrupt: () => void;
 }) {
-  function updateInterrupt(index: number, updated: Interrupt) {
-    const newInterrupts = [...(step.interrupts || [])];
-    newInterrupts[index] = updated;
-    onChange({ ...step, interrupts: newInterrupts });
-  }
-
-  function addInterrupt() {
-    const newInterrupts = [...(step.interrupts || []), { name: "", component: "", state: 0 }];
-    onChange({ ...step, interrupts: newInterrupts });
-  }
-
-  function removeInterrupt(index: number) {
-    const newInterrupts = (step.interrupts || []).filter((_, i) => i !== index);
-    onChange({ ...step, interrupts: newInterrupts });
-  }
+  const interruptColumns = [
+    { title: "#", dataIndex: "_idx", width: 40, render: (_: any, __: any, index: number) => index + 1 },
+    { title: "名称", dataIndex: "name", key: "name" },
+    { title: "组件", dataIndex: "component", key: "component" },
+    {
+      title: "",
+      key: "actions",
+      width: 60,
+      render: (_: any, record: Interrupt, index: number) => (
+        <Button
+          type="text"
+          size="small"
+          icon={<EditOutlined />}
+          onClick={() => onEditInterrupt(index)}
+        />
+      ),
+    },
+  ];
 
   return (
-    <Card size="small" title={step.name || "步骤"} style={{ marginBottom: 12 }}>
-      <Space direction="vertical" style={{ width: "100%" }}>
-        <Space>
-          <Input
-            placeholder="步骤名称"
-            value={step.name}
-            onChange={(e) => onChange({ ...step, name: e.target.value })}
-            style={{ width: 150 }}
-          />
-          <Input
-            placeholder="负载组件"
-            value={step.component}
-            onChange={(e) => onChange({ ...step, component: e.target.value })}
-            style={{ width: 150 }}
-          />
-          <InputNumber
-            placeholder="开始值"
-            value={step.value.begin as number}
-            onChange={(v) => onChange({ ...step, value: { ...step.value, begin: v } })}
-            style={{ width: 100 }}
-          />
-          <InputNumber
-            placeholder="结束值"
-            value={step.value.end as number}
-            onChange={(v) => onChange({ ...step, value: { ...step.value, end: v } })}
-            style={{ width: 100 }}
-          />
-        </Space>
-        <Space>
-          <InputNumber
-            placeholder="延迟(ms)"
-            value={step.delay}
-            onChange={(v) => onChange({ ...step, delay: v ?? undefined })}
-            style={{ width: 120 }}
-          />
-          <InputNumber
-            placeholder="超时(ms)"
-            value={step.timeout}
-            onChange={(v) => onChange({ ...step, timeout: v ?? undefined })}
-            style={{ width: 120 }}
-          />
-          <Switch
-            checkedChildren="启用"
-            unCheckedChildren="禁用"
-            checked={!step.disabled}
-            onChange={(checked) => onChange({ ...step, disabled: !checked })}
-          />
-          <Button icon={<DeleteOutlined />} danger onClick={onRemove} />
-        </Space>
-        <div>
-          <div style={{ marginBottom: 8, fontWeight: 500 }}>中断条件：</div>
-          {(step.interrupts || []).map((interrupt, i) => (
-            <ProcessInterruptEditor
-              key={i}
-              interrupt={interrupt}
-              onChange={(updated) => updateInterrupt(i, updated)}
-              onRemove={() => removeInterrupt(i)}
-            />
-          ))}
-          <Button type="dashed" icon={<PlusOutlined />} onClick={addInterrupt} size="small">
-            添加中断
-          </Button>
-        </div>
-      </Space>
-    </Card>
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div>
+        <label style={{ fontSize: 13, color: "#666", marginBottom: 4, display: "block" }}>
+          步骤名称
+        </label>
+        <Input
+          value={step.name}
+          onChange={(e) => onChange({ ...step, name: e.target.value })}
+          placeholder="输入步骤名称"
+        />
+      </div>
+
+      <div>
+        <label style={{ fontSize: 13, color: "#666", marginBottom: 4, display: "block" }}>
+          负载
+        </label>
+        <Select
+          value={step.component}
+          onChange={(v) => onChange({ ...step, component: v })}
+          options={LOAD_OPTIONS}
+          style={{ width: "100%" }}
+        />
+      </div>
+
+      <div>
+        <label style={{ fontSize: 13, color: "#666", marginBottom: 4, display: "block" }}>
+          启动参数
+        </label>
+        <InputNumber
+          value={step.value.begin as number}
+          onChange={(v) =>
+            onChange({ ...step, value: { ...step.value, begin: v ?? 0 } })
+          }
+          style={{ width: "100%" }}
+        />
+      </div>
+
+      <div>
+        <label style={{ fontSize: 13, color: "#666", marginBottom: 4, display: "block" }}>
+          停止参数
+        </label>
+        <InputNumber
+          value={step.value.end as number}
+          onChange={(v) =>
+            onChange({ ...step, value: { ...step.value, end: v ?? 0 } })
+          }
+          style={{ width: "100%" }}
+        />
+      </div>
+
+      <div>
+        <label style={{ fontSize: 13, color: "#666", marginBottom: 4, display: "block" }}>
+          延迟运行（毫秒）
+        </label>
+        <InputNumber
+          value={step.delay}
+          onChange={(v) => onChange({ ...step, delay: v ?? 0 })}
+          step={1000}
+          min={0}
+          style={{ width: "100%" }}
+        />
+      </div>
+
+      <div>
+        <label style={{ fontSize: 13, color: "#666", marginBottom: 4, display: "block" }}>
+          超时限制（毫秒）
+        </label>
+        <InputNumber
+          value={step.timeout}
+          onChange={(v) => onChange({ ...step, timeout: v ?? 600000 })}
+          step={1000}
+          min={0}
+          style={{ width: "100%" }}
+        />
+      </div>
+
+      <div>
+        <label style={{ fontSize: 13, color: "#666", marginBottom: 4, display: "block" }}>
+          禁用
+        </label>
+        <Switch
+          checked={!step.disabled}
+          onChange={(checked) => onChange({ ...step, disabled: !checked })}
+          checkedChildren="启用"
+          unCheckedChildren="禁用"
+        />
+      </div>
+
+      <div>
+        <label style={{ fontSize: 13, color: "#666", marginBottom: 4, display: "block" }}>
+          中断方式
+        </label>
+        <Table
+          dataSource={step.interrupts || []}
+          columns={interruptColumns}
+          rowKey={(_, index) => String(index)}
+          pagination={false}
+          size="small"
+          bordered
+        />
+        <Button
+          type="dashed"
+          icon={<PlusOutlined />}
+          onClick={onAddInterrupt}
+          block
+          style={{ marginTop: 8 }}
+        >
+          添加
+        </Button>
+      </div>
+    </div>
   );
 }

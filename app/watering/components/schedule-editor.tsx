@@ -1,7 +1,8 @@
 "use client";
 
-import { Select, InputNumber, Switch, Button, Card, Space } from "antd";
-import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
+import { Select, InputNumber, Switch, TimePicker } from "antd";
+import dayjs from "dayjs";
+import type { Dayjs } from "dayjs";
 import type { Schedule } from "../types";
 
 type Process = { name: string };
@@ -15,68 +16,93 @@ export function ScheduleEditor({
   processes: Process[];
   onChange: (updated: Schedule[]) => void;
 }) {
-  function updateSchedule(index: number, updated: Schedule) {
-    const newSchedules = [...schedules];
-    newSchedules[index] = updated;
-    onChange(newSchedules);
+  const schedule = schedules[0];
+  if (!schedule) return null;
+
+  function update(updated: Schedule) {
+    onChange([updated]);
   }
 
-  function addSchedule() {
-    onChange([...schedules, { type: "day", value: 0, interval: 1, process: 0 }]);
-  }
-
-  function removeSchedule(index: number) {
-    onChange(schedules.filter((_, i) => i !== index));
-  }
+  // 毫秒值 → dayjs 时刻（仅时间部分）
+  const timeValue = dayjs()
+    .startOf("day")
+    .add(schedule.value || 0, "millisecond");
 
   return (
-    <div>
-      {schedules.map((schedule, i) => (
-        <Card size="small" key={i} style={{ marginBottom: 8 }}>
-          <Space>
-            <Select
-              value={schedule.type}
-              onChange={(v) => updateSchedule(i, { ...schedule, type: v })}
-              style={{ width: 100 }}
-              options={[
-                { value: "minute", label: "每分钟" },
-                { value: "day", label: "每天" },
-                { value: "week", label: "每周" },
-                { value: "month", label: "每月" },
-              ]}
-            />
-            <InputNumber
-              placeholder="时间值"
-              value={schedule.value}
-              onChange={(v) => updateSchedule(i, { ...schedule, value: v ?? 0 })}
-              style={{ width: 120 }}
-            />
-            <InputNumber
-              placeholder="间隔"
-              value={schedule.interval}
-              onChange={(v) => updateSchedule(i, { ...schedule, interval: v ?? 1 })}
-              min={1}
-              style={{ width: 80 }}
-            />
-            <Select
-              value={schedule.process}
-              onChange={(v) => updateSchedule(i, { ...schedule, process: v })}
-              style={{ width: 150 }}
-              options={processes.map((p, idx) => ({ value: idx, label: p.name || `流程 ${idx}` }))}
-            />
-            <Switch
-              checkedChildren="启用"
-              unCheckedChildren="禁用"
-              checked={!schedule.disabled}
-              onChange={(checked) => updateSchedule(i, { ...schedule, disabled: !checked })}
-            />
-            <Button icon={<DeleteOutlined />} danger onClick={() => removeSchedule(i)} />
-          </Space>
-        </Card>
-      ))}
-      <Button type="dashed" icon={<PlusOutlined />} onClick={addSchedule}>
-        添加定时任务
-      </Button>
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div>
+        <label style={{ fontSize: 13, color: "#666", marginBottom: 4, display: "block" }}>
+          类型
+        </label>
+        <Select
+          value={schedule.type}
+          onChange={(v) => update({ ...schedule, type: v })}
+          options={[
+            { value: "day", label: "每天" },
+            { value: "minute", label: "每分钟" },
+            { value: "week", label: "每周" },
+            { value: "month", label: "每月" },
+          ]}
+          style={{ width: "100%" }}
+        />
+      </div>
+
+      <div>
+        <label style={{ fontSize: 13, color: "#666", marginBottom: 4, display: "block" }}>
+          间隔（天）
+        </label>
+        <InputNumber
+          value={schedule.interval}
+          onChange={(v) => update({ ...schedule, interval: v ?? 1 })}
+          step={1}
+          min={1}
+          style={{ width: "100%" }}
+        />
+      </div>
+
+      <div>
+        <label style={{ fontSize: 13, color: "#666", marginBottom: 4, display: "block" }}>
+          时间
+        </label>
+        <TimePicker
+          value={timeValue}
+          onChange={(d: Dayjs | null) => {
+            if (d) {
+              const ms = d.diff(dayjs().startOf("day"), "millisecond");
+              update({ ...schedule, value: ms });
+            }
+          }}
+          format="HH:mm"
+          style={{ width: "100%" }}
+        />
+      </div>
+
+      <div>
+        <label style={{ fontSize: 13, color: "#666", marginBottom: 4, display: "block" }}>
+          执行流程
+        </label>
+        <Select
+          value={schedule.process}
+          onChange={(v) => update({ ...schedule, process: v })}
+          options={processes.map((p, i) => ({
+            value: i,
+            label: p.name || `流程 ${i}`,
+          }))}
+          style={{ width: "100%" }}
+        />
+      </div>
+
+      <div>
+        <label style={{ fontSize: 13, color: "#666", marginBottom: 4, display: "block" }}>
+          禁用
+        </label>
+        <Switch
+          checked={!schedule.disabled}
+          onChange={(checked) => update({ ...schedule, disabled: !checked })}
+          checkedChildren="启用"
+          unCheckedChildren="禁用"
+        />
+      </div>
     </div>
   );
 }
