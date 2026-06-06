@@ -1,29 +1,35 @@
 "use client";
 
-import { Input, InputNumber, Switch, Button, Select, Table } from "antd";
+import { Input, InputNumber, Switch, Button, Select, Table, Empty } from "antd";
 import { PlusOutlined, EditOutlined } from "@ant-design/icons";
 import type { Step, Interrupt } from "../types";
+import type { GpioInfo } from "../hooks/use-device-config";
 
-const LOAD_OPTIONS = [
-  { value: "load_0", label: "load_0" },
-  { value: "load_1", label: "load_1" },
-  { value: "load_2", label: "load_2" },
-  { value: "load_3", label: "load_3" },
-];
+/** 从 GPIO 键名列表生成 Select options，带前缀 */
+function toOptions(keys: string[] | undefined, prefix: string) {
+  if (!keys || keys.length === 0) {
+    return [];
+  }
+  return keys.map((k) => ({ value: `${prefix}${k}`, label: k }));
+}
 
 export function ProcessStepEditor({
   step,
+  gpio,
   onChange,
   onRemove,
   onEditInterrupt,
   onAddInterrupt,
 }: {
   step: Step;
+  gpio: GpioInfo;
   onChange: (updated: Step) => void;
   onRemove: () => void;
   onEditInterrupt: (index: number) => void;
   onAddInterrupt: () => void;
 }) {
+  const loadOptions = toOptions(gpio.loads, "load_");
+  const buttonOptions = toOptions(gpio.buttons, "button_");
   const interruptColumns = [
     { title: "#", dataIndex: "_idx", width: 40, render: (_: any, __: any, index: number) => index + 1 },
     { title: "名称", dataIndex: "name", key: "name" },
@@ -60,12 +66,42 @@ export function ProcessStepEditor({
         <label style={{ fontSize: 13, color: "#666", marginBottom: 4, display: "block" }}>
           负载
         </label>
-        <Select
-          value={step.component}
-          onChange={(v) => onChange({ ...step, component: v })}
-          options={LOAD_OPTIONS}
-          style={{ width: "100%" }}
-        />
+        {loadOptions.length > 0 ? (
+          <Select
+            value={step.component}
+            onChange={(v) => onChange({ ...step, component: v })}
+            options={loadOptions}
+            style={{ width: "100%" }}
+          />
+        ) : (
+          <Empty
+            image={Empty.PRESENTED_IMAGE_SIMPLE}
+            description="设备无可用负载（loads），请等待设备上报 GPIO 状态"
+            style={{ margin: "8px 0" }}
+          />
+        )}
+      </div>
+
+      <div>
+        <label style={{ fontSize: 13, color: "#666", marginBottom: 4, display: "block" }}>
+          触发按钮
+        </label>
+        {buttonOptions.length > 0 ? (
+          <Select
+            value={step.trigger ?? undefined}
+            onChange={(v) => onChange({ ...step, trigger: v })}
+            options={buttonOptions}
+            allowClear
+            placeholder="选择触发按钮（可选）"
+            style={{ width: "100%" }}
+          />
+        ) : (
+          <Empty
+            image={Empty.PRESENTED_IMAGE_SIMPLE}
+            description="设备无可用按钮（buttons），请等待设备上报 GPIO 状态"
+            style={{ margin: "8px 0" }}
+          />
+        )}
       </div>
 
       <div>
@@ -139,7 +175,7 @@ export function ProcessStepEditor({
         <Table
           dataSource={step.interrupts || []}
           columns={interruptColumns}
-          rowKey={(_, index) => String(index)}
+          rowKey="key"
           pagination={false}
           size="small"
           bordered
