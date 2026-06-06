@@ -1,8 +1,8 @@
 "use client";
 
-import { use } from "react";
+import { use, useRef } from "react";
 import { Spin, Button, message } from "antd";
-import { ArrowLeftOutlined } from "@ant-design/icons";
+import { ArrowLeftOutlined, SaveOutlined } from "@ant-design/icons";
 import { useRouter } from "next/navigation";
 import { useDeviceConfig } from "../../hooks/use-device-config";
 import { DeviceEditor } from "../../components/device-editor";
@@ -14,7 +14,10 @@ export default function DeviceDetailPage({
 }) {
   const { chipId } = use(params);
   const router = useRouter();
-  const { config, loading, save, remove } = useDeviceConfig(chipId);
+  const { config, gpio, loading, save, remove } = useDeviceConfig(chipId);
+
+  // DeviceEditor 将 handleSave 注册到此 ref，Header 保存按钮通过它触发保存
+  const saveRef = useRef<() => Promise<void>>(async () => {});
 
   async function handleRemove() {
     try {
@@ -48,18 +51,29 @@ export default function DeviceDetailPage({
         }}
       >
         <h3 style={{ margin: 0, fontSize: 16 }}>{config.name || "设备配置"}</h3>
-        <Button icon={<ArrowLeftOutlined />} onClick={() => router.back()}>
-          返回
-        </Button>
+        <div style={{ display: "flex", gap: 8 }}>
+          <Button
+            type="primary"
+            icon={<SaveOutlined />}
+            onClick={() => saveRef.current()}
+          >
+            保存
+          </Button>
+          <Button icon={<ArrowLeftOutlined />} onClick={() => router.back()}>
+            返回
+          </Button>
+        </div>
       </div>
 
       <DeviceEditor
         config={config}
+        gpio={gpio}
         onSave={async (data) => {
           await save(data);
           message.success("已保存");
         }}
         onRemove={handleRemove}
+        saveRef={saveRef}
       />
     </div>
   );
