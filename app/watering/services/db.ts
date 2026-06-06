@@ -162,6 +162,66 @@ export function deleteDevice(chipId: string) {
 }
 
 /**
+ * 获取设备状态
+ */
+export function getDeviceState(chipId: string): DeviceState | null {
+  const db = getDb();
+  const row = db.prepare("SELECT * FROM watering_device_state WHERE chipId = ?").get(chipId) as any;
+  if (!row) return null;
+  return {
+    chipId: row.chipId,
+    stateId: row.stateId,
+    switch: row.switch,
+    buttons: row.buttons ? JSON.parse(row.buttons) : undefined,
+    sensors: row.sensors ? JSON.parse(row.sensors) : undefined,
+    loads: row.loads ? JSON.parse(row.loads) : undefined,
+    index: row.currentIndex ?? undefined,
+    process: row.currentProcess ? JSON.parse(row.currentProcess) : undefined,
+    message: row.message ?? undefined,
+    lastWriteTime: row.lastWriteTime,
+  };
+}
+
+/**
+ * 保存设备状态（upsert）
+ */
+export function saveDeviceState(state: DeviceState) {
+  const db = getDb();
+  db.prepare(`
+    INSERT INTO watering_device_state (chipId, stateId, switch, buttons, sensors, loads, currentIndex, currentProcess, message, lastTickTime, lastWriteTime)
+    VALUES (@chipId, @stateId, @switch, @buttons, @sensors, @loads, @currentIndex, @currentProcess, @message, @lastTickTime, @lastWriteTime)
+    ON CONFLICT(chipId) DO UPDATE SET
+      stateId=@stateId, switch=@switch, buttons=@buttons, sensors=@sensors, loads=@loads,
+      currentIndex=@currentIndex, currentProcess=@currentProcess, message=@message,
+      lastTickTime=@lastTickTime, lastWriteTime=@lastWriteTime
+  `).run({
+    chipId: state.chipId,
+    stateId: state.stateId,
+    switch: state.switch,
+    buttons: state.buttons ? JSON.stringify(state.buttons) : null,
+    sensors: state.sensors ? JSON.stringify(state.sensors) : null,
+    loads: state.loads ? JSON.stringify(state.loads) : null,
+    currentIndex: state.index ?? null,
+    currentProcess: state.process ? JSON.stringify(state.process) : null,
+    message: state.message ?? null,
+    lastTickTime: Date.now(),
+    lastWriteTime: state.lastWriteTime,
+  });
+}
+
+/**
+ * 更新心跳时间
+ */
+export function updateTick(chipId: string) {
+  const db = getDb();
+  const now = Date.now();
+  const existing = db.prepare("SELECT 1 FROM watering_device_state WHERE chipId = ?").get(chipId);
+  if (existing) {
+    db.prepare("UPDATE watering_device_state SET lastTickTime = ? WHERE chipId = ?").run(now, chipId);
+  }
+}
+
+/**
  * 获取设备日志
  */
 export function getDeviceLogs(chipId: string, limit = 100) {
