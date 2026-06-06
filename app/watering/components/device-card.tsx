@@ -21,9 +21,10 @@ export function DeviceCard({
 }) {
   const router = useRouter();
 
-  // 电压显示
+  // 电压显示（用可选链避免 in 运算符在序列化对象上报错）
   const voltage =
-    device.state?.sensors && "voltage_0" in device.state.sensors
+    device.state?.sensors?.voltage_0 !== undefined &&
+    typeof device.state.sensors.voltage_0 === "number"
       ? device.state.sensors.voltage_0
       : undefined;
 
