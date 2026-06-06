@@ -2,6 +2,7 @@
 export type Step = {
   name: string;
   component: string;
+  trigger?: string;
   value: { begin: unknown; end: unknown };
   delay?: number;
   timeout?: number;
