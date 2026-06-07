@@ -85,7 +85,6 @@ export async function initDb() {
  * 获取所有设备（含状态和在线信息）
  */
 export async function getAllDevices(): Promise<DeviceItem[]> {
-  await initDb();
   const db = await getDb();
   const rows = db.prepare(`
     SELECT d.chip_id, d.name, d.mac_address, d.processes, d.idle_sleep, d.idle_timeout,
@@ -143,7 +142,6 @@ export async function getAllDevices(): Promise<DeviceItem[]> {
  * 获取单个设备配置
  */
 export async function getDeviceConfig(chipId: string): Promise<DeviceConfig | null> {
-  await initDb();
   const db = await getDb();
   const row = db.prepare("SELECT * FROM watering_devices WHERE chip_id = ?").get(chipId) as any;
   if (!row) return null;
@@ -167,7 +165,6 @@ export async function getDeviceConfig(chipId: string): Promise<DeviceConfig | nu
  * 保存设备配置
  */
 export async function saveDeviceConfig(config: DeviceConfig) {
-  await initDb();
   const db = await getDb();
   db.prepare(`
     INSERT INTO watering_devices (chip_id, name, mac_address, processes, idle_sleep, idle_timeout, boot_exec, exec_delay, schedules, voltage, created_time, last_write_time)
@@ -196,7 +193,6 @@ export async function saveDeviceConfig(config: DeviceConfig) {
  * 删除设备
  */
 export async function deleteDevice(chipId: string) {
-  await initDb();
   const db = await getDb();
   db.prepare("DELETE FROM watering_device_state WHERE chip_id = ?").run(chipId);
   db.prepare("DELETE FROM watering_devices WHERE chip_id = ?").run(chipId);
@@ -206,7 +202,6 @@ export async function deleteDevice(chipId: string) {
  * 获取设备状态
  */
 export async function getDeviceState(chipId: string): Promise<DeviceState | null> {
-  await initDb();
   const db = await getDb();
   const row = db.prepare("SELECT * FROM watering_device_state WHERE chip_id = ?").get(chipId) as any;
   if (!row) return null;
@@ -228,7 +223,6 @@ export async function getDeviceState(chipId: string): Promise<DeviceState | null
  * 保存设备状态（upsert）
  */
 export async function saveDeviceState(state: DeviceState) {
-  await initDb();
   const db = await getDb();
   db.prepare(`
     INSERT INTO watering_device_state (chip_id, state_id, switch, buttons, sensors, loads, current_index, current_process, message, last_tick_time, last_write_time)
@@ -256,7 +250,6 @@ export async function saveDeviceState(state: DeviceState) {
  * 更新心跳时间
  */
 export async function updateTick(chipId: string) {
-  await initDb();
   const db = await getDb();
   const now = Date.now();
   const existing = db.prepare("SELECT 1 FROM watering_device_state WHERE chip_id = ?").get(chipId);
@@ -269,7 +262,6 @@ export async function updateTick(chipId: string) {
  * 获取设备日志
  */
 export async function getDeviceLogs(chipId: string, limit = 100) {
-  await initDb();
   const db = await getDb();
   const rows = db.prepare(
     "SELECT id, chip_id, event, state, created_time FROM watering_logs WHERE chip_id = ? ORDER BY created_time DESC LIMIT ?"
@@ -287,7 +279,6 @@ export async function getDeviceLogs(chipId: string, limit = 100) {
  * 写入设备日志
  */
 export async function writeDeviceLog(chipId: string, event: string, state?: Record<string, unknown>) {
-  await initDb();
   const db = await getDb();
   db.prepare("INSERT INTO watering_logs (chip_id, event, state, created_time) VALUES (?, ?, ?, ?)").run(
     chipId,
@@ -301,7 +292,6 @@ export async function writeDeviceLog(chipId: string, event: string, state?: Reco
  * 清空设备日志
  */
 export async function clearDeviceLogs(chipId: string) {
-  await initDb();
   const db = await getDb();
   db.prepare("DELETE FROM watering_logs WHERE chip_id = ?").run(chipId);
 }
