@@ -39,6 +39,13 @@ export type Schedule = {
   disabled?: boolean;
 };
 
+// 电压检测配置
+export type VoltageConfig = {
+  sensor: string;   // 传感器引脚名，如 "sensor_0"
+  r1: number;       // R1 电阻值（欧姆），默认 30000
+  r2: number;       // R2 电阻值（欧姆），默认 10000
+};
+
 // 设备配置
 export type DeviceConfig = {
   chipId: string;
@@ -50,6 +57,7 @@ export type DeviceConfig = {
   bootExec: number;
   execDelay: number;
   schedules: Schedule[];
+  voltageConfig?: VoltageConfig;
   createdTime: string;
   lastWriteTime: string;
 };
