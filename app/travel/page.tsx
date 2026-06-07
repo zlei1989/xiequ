@@ -1,9 +1,8 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
-import { Button, Space, Select } from "antd";
-import { PlusOutlined, AimOutlined } from "@ant-design/icons";
-import { useLocations } from "./hooks/use-locations";
+import { useCallback, useRef, useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useTravelContext } from "./hooks/use-locations";
 import { TripMap } from "./components/trip-map";
 import { LocationDrawer } from "./components/location-drawer";
 import { SearchDialog } from "./components/search-dialog";
@@ -11,66 +10,76 @@ import { getCurrentPosition } from "./services/amap";
 import type { Location } from "./types";
 
 export default function TravelPage() {
-  const { locations, loading, filter, setFilter, add, update, summary } = useLocations();
+  const router = useRouter();
+  const { sortedLocations, add, update, remove } = useTravelContext();
+
   const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [searchVisible, setSearchVisible] = useState(false);
-  const mapRef = useRef<any>(null);
+  const mapRef = useRef<{ setCenter: (pos: [number, number]) => void }>(null);
+
+  // 监听 layout 触发的 open-search 事件
+  useEffect(() => {
+    function onOpenSearch() {
+      setSearchVisible(true);
+    }
+    window.addEventListener("travel:open-search", onOpenSearch);
+    return () => window.removeEventListener("travel:open-search", onOpenSearch);
+  }, []);
+
+  // 监听 "我的位置" 跳转
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("center") === "my-location") {
+      getCurrentPosition()
+        .then(([lng, lat]) => {
+          if (mapRef.current) {
+            mapRef.current.setCenter([lng, lat]);
+          }
+        })
+        .catch(() => {});
+      // 清除 query 参数
+      router.replace("/travel");
+    }
+  }, [router]);
 
   const onMarkerClick = useCallback((location: Location) => {
     setSelectedLocation(location);
     setDrawerVisible(true);
   }, []);
 
-  async function onAdd(location: { name: string; address: string; longitude: number; latitude: number }) {
+  async function onAdd(location: {
+    name: string;
+    address: string;
+    longitude: number;
+    latitude: number;
+  }) {
     const newLoc = await add(location);
     setSearchVisible(false);
     setSelectedLocation(newLoc);
     setDrawerVisible(true);
   }
 
-  async function onMyLocation() {
-    try {
-      const [lng, lat] = await getCurrentPosition();
-      if (mapRef.current) {
-        mapRef.current.setCenter([lng, lat]);
-      }
-    } catch {
-      // 定位失败，静默处理
-    }
-  }
-
   return (
     <div style={{ position: "relative" }}>
-      <div style={{ position: "absolute", top: 8, left: 8, zIndex: 10, background: "#fff", padding: "4px 8px", borderRadius: 6 }}>
-        <Space>
-          <Select
-            value={filter}
-            onChange={setFilter}
-            style={{ width: 120 }}
-            size="small"
-            options={[
-              { value: "all", label: `全部 (${summary.count})` },
-              { value: "uncheck", label: `待去 (${summary.uncheckCount})` },
-              { value: "checked", label: `已去 (${summary.checkedCount})` },
-            ]}
-          />
-          <Button size="small" icon={<AimOutlined />} onClick={onMyLocation}>
-            我的位置
-          </Button>
-          <Button size="small" icon={<PlusOutlined />} onClick={() => setSearchVisible(true)}>
-            添加
-          </Button>
-        </Space>
-      </div>
-      <TripMap locations={locations} onMarkerClick={onMarkerClick} />
+      <TripMap
+        ref={mapRef}
+        locations={sortedLocations}
+        onMarkerClick={onMarkerClick}
+        style={{ height: "calc(100vh - 48px)" }}
+      />
       <LocationDrawer
         location={selectedLocation}
         open={drawerVisible}
         onClose={() => setDrawerVisible(false)}
         onUpdate={update}
+        onRemove={remove}
       />
-      <SearchDialog open={searchVisible} onClose={() => setSearchVisible(false)} onAdd={onAdd} />
+      <SearchDialog
+        open={searchVisible}
+        onClose={() => setSearchVisible(false)}
+        onAdd={onAdd}
+      />
     </div>
   );
 }
