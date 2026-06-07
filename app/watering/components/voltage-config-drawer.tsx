@@ -6,7 +6,7 @@ import type { VoltageConfig } from "../types";
 
 interface VoltageConfigDrawerProps {
   open: boolean;
-  voltageConfig: VoltageConfig | undefined;
+  voltage: VoltageConfig | undefined;
   sensors: string[];
   onChange: (config: VoltageConfig | undefined) => void;
   onClose: () => void;
@@ -17,19 +17,19 @@ const DEFAULT_R2 = 10000; // 10kΩ
 
 export function VoltageConfigDrawer({
   open,
-  voltageConfig,
+  voltage,
   sensors,
   onChange,
   onClose,
 }: VoltageConfigDrawerProps) {
-  const config = voltageConfig || { sensor: sensors[0] || "sensor_0", r1: DEFAULT_R1, r2: DEFAULT_R2 };
+  const config = voltage || { sensor: sensors[0] || "sensor_0", r1: DEFAULT_R1, r2: DEFAULT_R2 };
 
   function update(partial: Partial<VoltageConfig>) {
     onChange({ ...config, ...partial });
   }
 
   function handleClose() {
-    if (!voltageConfig && !sensors.length) {
+    if (!voltage && !sensors.length) {
       onChange(undefined);
     }
     onClose();

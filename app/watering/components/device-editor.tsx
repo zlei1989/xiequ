@@ -61,7 +61,7 @@ export function DeviceEditor({
   const [scheduleVisible, setScheduleVisible] = useState(false);
   const [scheduleIndex, setScheduleIndex] = useState(-1);
 
-  const [voltageConfigVisible, setVoltageConfigVisible] = useState(false);
+  const [voltageVisible, setVoltageConfigVisible] = useState(false);
 
   // ---- 保存 ----
   async function handleSave() {
@@ -75,7 +75,7 @@ export function DeviceEditor({
         execDelay: form.execDelay,
         processes: form.processes,
         schedules: form.schedules,
-        voltageConfig: form.voltageConfig,
+        voltage: form.voltage,
       });
       message.success("保存成功");
     } catch (err: any) {
@@ -375,9 +375,9 @@ export function DeviceEditor({
       >
         <div>
           <span style={{ fontSize: 13, fontWeight: 500 }}>电压检测配置</span>
-          {form.voltageConfig ? (
+          {form.voltage ? (
             <span style={{ fontSize: 12, color: "#999", marginLeft: 8 }}>
-              {form.voltageConfig.sensor} · R1={form.voltageConfig.r1}Ω · R2={form.voltageConfig.r2}Ω
+              {form.voltage.sensor} · R1={form.voltage.r1}Ω · R2={form.voltage.r2}Ω
             </span>
           ) : (
             <span style={{ fontSize: 12, color: "#ccc", marginLeft: 8 }}>
@@ -391,7 +391,7 @@ export function DeviceEditor({
           icon={<EditOutlined />}
           onClick={() => setVoltageConfigVisible(true)}
         >
-          {form.voltageConfig ? "修改" : "配置"}
+          {form.voltage ? "修改" : "配置"}
         </Button>
       </div>
 
@@ -604,10 +604,10 @@ export function DeviceEditor({
 
       {/* 电压检测配置 Drawer (60%) */}
       <VoltageConfigDrawer
-        open={voltageConfigVisible}
-        voltageConfig={form.voltageConfig}
+        open={voltageVisible}
+        voltage={form.voltage}
         sensors={gpio.sensors}
-        onChange={(vc) => setForm({ ...form, voltageConfig: vc })}
+        onChange={(vc) => setForm({ ...form, voltage: vc })}
         onClose={() => setVoltageConfigVisible(false)}
       />
     </div>

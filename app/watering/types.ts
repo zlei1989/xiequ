@@ -57,7 +57,7 @@ export type DeviceConfig = {
   bootExec: number;
   execDelay: number;
   schedules: Schedule[];
-  voltageConfig?: VoltageConfig;
+  voltage?: VoltageConfig;
   createdTime: string;
   lastWriteTime: string;
 };

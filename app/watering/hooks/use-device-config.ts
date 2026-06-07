@@ -21,7 +21,7 @@ function parseJsonArray(v: unknown): any[] {
 }
 
 /** 解析 voltage_config JSON，可能是字符串 */
-function parseJsonVoltageConfig(v: unknown): DeviceConfig["voltageConfig"] {
+function parseJsonVoltage(v: unknown): DeviceConfig["voltage"] {
   if (!v) return undefined;
   if (typeof v === "object" && v !== null && !Array.isArray(v)) {
     const obj = v as Record<string, unknown>;
@@ -65,7 +65,7 @@ export function useDeviceConfig(chipId: string) {
           ...(found as unknown as DeviceConfig),
           processes: parseJsonArray((found as any).processes),
           schedules: parseJsonArray((found as any).schedules),
-          voltageConfig: parseJsonVoltageConfig((found as any).voltageConfig),
+          voltage: parseJsonVoltage((found as any).voltage),
         };
         setConfig(safeConfig);
         // 从设备 state 中提取 GPIO 键名

@@ -24,15 +24,14 @@ export function DeviceCard({
   const router = useRouter();
 
   // 电压计算：使用分压公式 V_actual = V_sensor * (R1 + R2) / R2
-  const voltageConfig = device.voltageConfig;
-  const rawVoltage = voltageConfig?.sensor
-    ? (device.state?.sensors?.[voltageConfig.sensor] as number | undefined)
+  const rawVoltage = device.voltage?.sensor
+    ? (device.state?.sensors?.[device.voltage.sensor] as number | undefined)
     : (device.state?.sensors?.voltage_0 as number | undefined);
 
   const voltage =
     typeof rawVoltage === "number"
-      ? voltageConfig && voltageConfig.r1 > 0 && voltageConfig.r2 > 0
-        ? rawVoltage * ((voltageConfig.r1 + voltageConfig.r2) / voltageConfig.r2)
+      ? device.voltage && device.voltage.r1 > 0 && device.voltage.r2 > 0
+        ? rawVoltage * ((device.voltage.r1 + device.voltage.r2) / device.voltage.r2)
         : rawVoltage
       : undefined;
 
@@ -145,7 +144,7 @@ export function DeviceCard({
             <span style={{ fontSize: 13, fontWeight: 500 }}>
               {voltage.toFixed(2)}V
             </span>
-            {voltageConfig && (
+            {device.voltage && (
               <span style={{ fontSize: 10, color: "#bbb", marginLeft: 2 }}>
                 (计算)
               </span>
