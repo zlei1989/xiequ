@@ -6,6 +6,20 @@ import { getDevices } from "../actions";
 import { updateDeviceConfig } from "../actions/set-config";
 import { removeDevice } from "../actions/delete-device";
 
+/** 确保值是一个数组 — sql.js 可能将 JSON 列作为字符串返回 */
+function parseJsonArray(v: unknown): any[] {
+  if (Array.isArray(v)) return v;
+  if (typeof v === "string") {
+    try {
+      const parsed = JSON.parse(v);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
 /** 设备 GPIO 可用引脚信息（键名列表） */
 export interface GpioInfo {
   loads: string[];
@@ -24,8 +38,13 @@ export function useDeviceConfig(chipId: string) {
       const devices = await getDevices();
       const found = devices.find((d) => d.chipId === chipId);
       if (found) {
-        // DeviceItem 中 processes/schedules 已是对象，直接使用
-        setConfig(found as unknown as DeviceConfig);
+        // sql.js 会把 JSON 列作为字符串返回，需要确保 processes/schedules 是数组
+        const safeConfig: DeviceConfig = {
+          ...(found as unknown as DeviceConfig),
+          processes: parseJsonArray((found as any).processes),
+          schedules: parseJsonArray((found as any).schedules),
+        };
+        setConfig(safeConfig);
         // 从设备 state 中提取 GPIO 键名
         // 注意：固件将按钮以 sensor:button_x 发送，按钮实际存储在 sensors 列中
         const rawSensors = Object.keys(found.state?.sensors ?? {});
