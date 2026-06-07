@@ -22,7 +22,6 @@ import {
 } from "@ant-design/icons";
 import { UploadImage } from "./upload-image";
 import { useMoments } from "../hooks/use-moments";
-import { getCoverProxyUrl } from "../services/oss";
 import type { Location } from "../types";
 
 export function LocationDrawer({
@@ -67,7 +66,7 @@ export function LocationDrawer({
 
   if (!location) return null;
 
-  const coverUrl = getCoverProxyUrl(location.id);
+  const coverUrl = `/travel/api/download?type=cover&id=${location.id}`;
 
   // ─── 位置编辑 ───
 

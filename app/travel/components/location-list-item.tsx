@@ -1,7 +1,6 @@
 "use client";
 
 import { Tag } from "antd";
-import { getIconProxyUrl } from "../services/oss";
 import type { Location } from "../types";
 
 export function LocationListItem({
@@ -11,7 +10,7 @@ export function LocationListItem({
   location: Location;
   onClick: (location: Location) => void;
 }) {
-  const iconUrl = getIconProxyUrl(location.id);
+  const iconUrl = `/travel/api/download?type=icon&id=${location.id}`;
 
   return (
     <div
