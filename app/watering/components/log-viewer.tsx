@@ -120,7 +120,7 @@ export function LogViewer({ logs }: { logs: any[] }) {
           <Timeline
             items={group.items.map((item, idx) => ({
               color: eventColors[item.event] || "gray",
-              children: (
+              content: (
                 <div style={{ fontSize: 14 }}>
                   <div
                     style={{
