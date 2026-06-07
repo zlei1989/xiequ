@@ -1,6 +1,6 @@
 "use client";
 
-import { Modal, Input, List, message } from "antd";
+import { Modal, Input, Flex, message } from "antd";
 import { useState, useCallback } from "react";
 import { searchPlace } from "../services/amap";
 import type { AMapPoiItem } from "../services/amap";
@@ -32,25 +32,56 @@ export function SearchDialog({
   }, [keyword]);
 
   return (
-    <Modal title="搜索地点" open={open} onCancel={onClose} footer={null} width={600}>
+    <Modal title="查询位置" open={open} onCancel={onClose} footer={null} width="90%">
       <Input.Search
-        placeholder="输入地点名称"
+        placeholder="选择位置"
         value={keyword}
         onChange={(e) => setKeyword(e.target.value)}
         onSearch={onSearch}
         loading={searching}
         style={{ marginBottom: 16 }}
       />
-      <List
-        dataSource={results}
-        renderItem={(item) => (
-          <List.Item
-            actions={[<a key="add" onClick={() => onAdd({ name: item.name, address: item.address, longitude: item.longitude, latitude: item.latitude })}>添加</a>]}
+      <Flex vertical>
+        {results.map((item) => (
+          <Flex
+            key={item.id}
+            justify="space-between"
+            align="center"
+            style={{
+              padding: "12px 0",
+              borderBottom: "1px solid rgb(235, 238, 245)",
+            }}
           >
-            <List.Item.Meta title={item.name} description={item.address} />
-          </List.Item>
-        )}
-      />
+            <div style={{ flex: 1, overflow: "hidden" }}>
+              <div style={{ fontWeight: 500, fontSize: 14 }}>{item.name}</div>
+              <div
+                style={{
+                  color: "#666",
+                  fontSize: 13,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {item.address}
+              </div>
+            </div>
+            <a
+              onClick={() =>
+                onAdd({
+                  name: item.name,
+                  address: item.address,
+                  longitude: item.longitude,
+                  latitude: item.latitude,
+                })
+              }
+              style={{ marginLeft: 12, whiteSpace: "nowrap" }}
+            >
+              添加
+            </a>
+          </Flex>
+        ))}
+      </Flex>
     </Modal>
   );
 }
