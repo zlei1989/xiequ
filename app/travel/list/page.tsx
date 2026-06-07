@@ -1,62 +1,77 @@
 "use client";
 
-import { Button, Select, Space, Spin } from "antd";
-import { PlusOutlined, ReloadOutlined } from "@ant-design/icons";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { useLocations } from "../hooks/use-locations";
-import { LocationList } from "../components/location-list";
+import { useState, useEffect } from "react";
+import { Spin } from "antd";
+import { useTravelContext } from "../hooks/use-locations";
+import { LocationListItem } from "../components/location-list-item";
+import { LocationDrawer } from "../components/location-drawer";
 import { SearchDialog } from "../components/search-dialog";
 import type { Location } from "../types";
 
 export default function LocationListPage() {
-  const router = useRouter();
-  const { locations, loading, filter, setFilter, load, add, update, summary } = useLocations();
+  const { sortedLocations, loading, add, update, remove } = useTravelContext();
+
+  const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
+  const [drawerVisible, setDrawerVisible] = useState(false);
   const [searchVisible, setSearchVisible] = useState(false);
 
+  // 监听 layout 触发的 open-search 事件
+  useEffect(() => {
+    function onOpenSearch() {
+      setSearchVisible(true);
+    }
+    window.addEventListener("travel:open-search", onOpenSearch);
+    return () => window.removeEventListener("travel:open-search", onOpenSearch);
+  }, []);
+
   function onLocationClick(location: Location) {
-    router.push(`/travel/locations/${location.id}`);
+    setSelectedLocation(location);
+    setDrawerVisible(true);
   }
 
-  async function onAdd(location: { name: string; address: string; longitude: number; latitude: number }) {
-    await add(location);
+  async function onAdd(location: {
+    name: string;
+    address: string;
+    longitude: number;
+    latitude: number;
+  }) {
+    const newLoc = await add(location);
     setSearchVisible(false);
-  }
-
-  async function onToggleChecked(location: Location) {
-    await update(location.id, { checked: !location.checked });
+    setSelectedLocation(newLoc);
+    setDrawerVisible(true);
   }
 
   return (
     <div>
-      <div style={{ marginBottom: 16, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <Space>
-          <Select
-            value={filter}
-            onChange={setFilter}
-            style={{ width: 120 }}
-            options={[
-              { value: "all", label: `全部 (${summary.count})` },
-              { value: "uncheck", label: `待去 (${summary.uncheckCount})` },
-              { value: "checked", label: `已去 (${summary.checkedCount})` },
-            ]}
-          />
-        </Space>
-        <Space>
-          <Button icon={<ReloadOutlined />} onClick={load} loading={loading}>
-            刷新
-          </Button>
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => setSearchVisible(true)}>
-            添加位置
-          </Button>
-        </Space>
-      </div>
-      {loading ? (
-        <div style={{ textAlign: "center", padding: 48 }}><Spin /></div>
+      {loading && sortedLocations.length === 0 ? (
+        <div style={{ textAlign: "center", padding: 48 }}>
+          <Spin />
+        </div>
+      ) : sortedLocations.length === 0 ? (
+        <div style={{ color: "#999", textAlign: "center", padding: 48 }}>暂无位置</div>
       ) : (
-        <LocationList locations={locations} onLocationClick={onLocationClick} />
+        sortedLocations.map((location) => (
+          <LocationListItem
+            key={location.id}
+            location={location}
+            onClick={onLocationClick}
+          />
+        ))
       )}
-      <SearchDialog open={searchVisible} onClose={() => setSearchVisible(false)} onAdd={onAdd} />
+
+      <LocationDrawer
+        location={selectedLocation}
+        open={drawerVisible}
+        onClose={() => setDrawerVisible(false)}
+        onUpdate={update}
+        onRemove={remove}
+      />
+
+      <SearchDialog
+        open={searchVisible}
+        onClose={() => setSearchVisible(false)}
+        onAdd={onAdd}
+      />
     </div>
   );
 }
