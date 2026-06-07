@@ -203,11 +203,6 @@ export function DeviceCard({
         </div>
       )}
 
-      {!device.isOnline && (
-        <div style={{ textAlign: "center", padding: 4 }}>
-          <Tag color="error">离线</Tag>
-        </div>
-      )}
     </Card>
   );
 }
