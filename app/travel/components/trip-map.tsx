@@ -1,25 +1,34 @@
 "use client";
 
-import { useEffect, useRef, useCallback } from "react";
+import { forwardRef, useImperativeHandle, useEffect, useRef, useCallback, CSSProperties } from "react";
 import { loadAmap } from "../services/amap";
 import type { Location } from "../types";
 
-export function TripMap({
-  locations,
-  onMarkerClick,
-}: {
-  locations: Location[];
-  onMarkerClick: (location: Location) => void;
-}) {
+export const TripMap = forwardRef<
+  { setCenter: (pos: [number, number]) => void },
+  {
+    locations: Location[];
+    onMarkerClick: (location: Location) => void;
+    style?: CSSProperties;
+  }
+>(function TripMap({ locations, onMarkerClick, style }, ref) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
+
+  useImperativeHandle(ref, () => ({
+    setCenter(pos: [number, number]) {
+      if (mapRef.current) {
+        mapRef.current.setCenter(pos);
+        mapRef.current.setZoom(15);
+      }
+    },
+  }));
 
   const createMap = useCallback(async () => {
     if (!containerRef.current) return;
     const AMap = await loadAmap();
 
-    // 从 localStorage 恢复地图状态
     const centerStr = localStorage.getItem("TRAVEL_MAP_CENTER");
     const zoomStr = localStorage.getItem("TRAVEL_MAP_ZOOM");
     const center = centerStr ? JSON.parse(centerStr) : [116.397477, 39.908692];
@@ -42,7 +51,6 @@ export function TripMap({
     mapRef.current = map;
   }, []);
 
-  // 初始化地图
   useEffect(() => {
     createMap();
     return () => {
@@ -53,17 +61,14 @@ export function TripMap({
     };
   }, [createMap]);
 
-  // 更新标注点
   useEffect(() => {
     if (!mapRef.current) return;
     const AMap = (window as any).AMap;
     if (!AMap) return;
 
-    // 清除旧标注
     markersRef.current.forEach((m) => mapRef.current.remove(m));
     markersRef.current = [];
 
-    // 添加新标注
     for (const loc of locations) {
       const marker = new AMap.Marker({
         position: [loc.longitude, loc.latitude],
@@ -79,5 +84,10 @@ export function TripMap({
     }
   }, [locations, onMarkerClick]);
 
-  return <div ref={containerRef} style={{ width: "100%", height: "calc(100vh - 64px)" }} />;
-}
+  return (
+    <div
+      ref={containerRef}
+      style={{ width: "100%", height: "calc(100vh - 64px)", ...style }}
+    />
+  );
+});
