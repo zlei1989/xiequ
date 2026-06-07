@@ -20,6 +20,28 @@ function parseJsonArray(v: unknown): any[] {
   return [];
 }
 
+/** 解析 voltage_config JSON，可能是字符串 */
+function parseJsonVoltageConfig(v: unknown): DeviceConfig["voltageConfig"] {
+  if (!v) return undefined;
+  if (typeof v === "object" && v !== null && !Array.isArray(v)) {
+    const obj = v as Record<string, unknown>;
+    if (typeof obj.sensor === "string" && typeof obj.r1 === "number" && typeof obj.r2 === "number") {
+      return { sensor: obj.sensor, r1: obj.r1, r2: obj.r2 };
+    }
+  }
+  if (typeof v === "string") {
+    try {
+      const parsed = JSON.parse(v);
+      if (parsed && typeof parsed.sensor === "string" && typeof parsed.r1 === "number" && typeof parsed.r2 === "number") {
+        return { sensor: parsed.sensor, r1: parsed.r1, r2: parsed.r2 };
+      }
+    } catch {
+      return undefined;
+    }
+  }
+  return undefined;
+}
+
 /** 设备 GPIO 可用引脚信息（键名列表） */
 export interface GpioInfo {
   loads: string[];
@@ -43,6 +65,7 @@ export function useDeviceConfig(chipId: string) {
           ...(found as unknown as DeviceConfig),
           processes: parseJsonArray((found as any).processes),
           schedules: parseJsonArray((found as any).schedules),
+          voltageConfig: parseJsonVoltageConfig((found as any).voltageConfig),
         };
         setConfig(safeConfig);
         // 从设备 state 中提取 GPIO 键名
