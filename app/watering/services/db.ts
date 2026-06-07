@@ -40,6 +40,13 @@ export async function initDb() {
     )
   `);
 
+  // 为已有表添加 voltage_config 列（兼容旧数据库）
+  try {
+    db.exec(`ALTER TABLE watering_devices ADD COLUMN voltage_config JSON`);
+  } catch {
+    // 列已存在，忽略
+  }
+
   db.exec(`
     CREATE TABLE IF NOT EXISTS watering_device_state (
       chip_id TEXT PRIMARY KEY,
@@ -80,7 +87,7 @@ export async function getAllDevices(): Promise<DeviceItem[]> {
   const db = await getDb();
   const rows = db.prepare(`
     SELECT d.chip_id, d.name, d.mac_address, d.processes, d.idle_sleep, d.idle_timeout,
-           d.boot_exec, d.exec_delay, d.schedules, d.created_time, d.last_write_time,
+           d.boot_exec, d.exec_delay, d.schedules, d.voltage_config, d.created_time, d.last_write_time,
            s.state_id, s.switch, s.buttons, s.sensors, s.loads,
            s.current_index, s.current_process, s.message,
            s.last_tick_time as state_last_tick_time, s.last_write_time as state_last_write_time
@@ -101,6 +108,7 @@ export async function getAllDevices(): Promise<DeviceItem[]> {
       bootExec: row.boot_exec,
       execDelay: row.exec_delay,
       schedules: parseJSON(row.schedules, [] as DeviceConfig["schedules"]),
+      voltageConfig: parseJSON(row.voltage_config, undefined as DeviceConfig["voltageConfig"]),
       createdTime: row.created_time,
       lastWriteTime: row.last_write_time,
     };
@@ -146,6 +154,7 @@ export async function getDeviceConfig(chipId: string): Promise<DeviceConfig | nu
     bootExec: row.boot_exec,
     execDelay: row.exec_delay,
     schedules: parseJSON(row.schedules, [] as DeviceConfig["schedules"]),
+    voltageConfig: parseJSON(row.voltage_config, undefined as DeviceConfig["voltageConfig"]),
     createdTime: row.created_time,
     lastWriteTime: row.last_write_time,
   };
@@ -157,12 +166,12 @@ export async function getDeviceConfig(chipId: string): Promise<DeviceConfig | nu
 export async function saveDeviceConfig(config: DeviceConfig) {
   const db = await getDb();
   db.prepare(`
-    INSERT INTO watering_devices (chip_id, name, mac_address, processes, idle_sleep, idle_timeout, boot_exec, exec_delay, schedules, created_time, last_write_time)
-    VALUES (@chip_id, @name, @mac_address, @processes, @idle_sleep, @idle_timeout, @boot_exec, @exec_delay, @schedules, @created_time, @last_write_time)
+    INSERT INTO watering_devices (chip_id, name, mac_address, processes, idle_sleep, idle_timeout, boot_exec, exec_delay, schedules, voltage_config, created_time, last_write_time)
+    VALUES (@chip_id, @name, @mac_address, @processes, @idle_sleep, @idle_timeout, @boot_exec, @exec_delay, @schedules, @voltage_config, @created_time, @last_write_time)
     ON CONFLICT(chip_id) DO UPDATE SET
       name=@name, mac_address=@mac_address, processes=@processes, idle_sleep=@idle_sleep,
       idle_timeout=@idle_timeout, boot_exec=@boot_exec, exec_delay=@exec_delay,
-      schedules=@schedules, last_write_time=@last_write_time
+      schedules=@schedules, voltage_config=@voltage_config, last_write_time=@last_write_time
   `).run({
     "@chip_id": config.chipId,
     "@name": config.name,
@@ -173,6 +182,7 @@ export async function saveDeviceConfig(config: DeviceConfig) {
     "@boot_exec": config.bootExec,
     "@exec_delay": config.execDelay,
     "@schedules": JSON.stringify(config.schedules),
+    "@voltage_config": config.voltageConfig ? JSON.stringify(config.voltageConfig) : null,
     "@created_time": config.createdTime,
     "@last_write_time": config.lastWriteTime,
   });
