@@ -56,7 +56,7 @@ export function ProcessEditor({
         <Table
           dataSource={process.steps}
           columns={columns}
-          rowKey={(_, index) => String(index)}
+          rowKey="key"
           pagination={false}
           size="small"
           bordered

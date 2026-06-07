@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import type { DeviceConfig } from "../types";
 
 export async function updateDeviceConfig(chipId: string, updates: Partial<DeviceConfig>) {
-  const config = getDeviceConfig(chipId);
+  const config = await getDeviceConfig(chipId);
   if (!config) throw new Error("设备不存在");
 
   const updated: DeviceConfig = {
@@ -14,7 +14,7 @@ export async function updateDeviceConfig(chipId: string, updates: Partial<Device
     chipId: config.chipId, // 不允许修改 chipId
     lastWriteTime: new Date().toISOString(),
   };
-  saveDeviceConfig(updated);
+  await saveDeviceConfig(updated);
   revalidatePath("/watering");
   return { success: true };
 }

@@ -9,7 +9,7 @@ import { clearLogs as _clearLogs } from "./actions/clear-logs";
 import type { DeviceConfig } from "./types";
 
 export async function getDevices() {
-  return getAllDevices();
+  return await getAllDevices();
 }
 
 export async function setDeviceSwitch(

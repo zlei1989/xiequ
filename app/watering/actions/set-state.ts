@@ -8,10 +8,10 @@ export async function setDeviceSwitch(
   switchState: "on" | "off",
   processIndex?: number
 ) {
-  const config = getDeviceConfig(chipId);
+  const config = await getDeviceConfig(chipId);
   if (!config) throw new Error("设备不存在");
 
-  const state = getDeviceState(chipId);
+  const state = await getDeviceState(chipId);
   if (!state) throw new Error("设备状态不存在");
 
   if (switchState === "on") {
@@ -32,7 +32,7 @@ export async function setDeviceSwitch(
 
   state.stateId = newId();
   state.lastWriteTime = new Date().toISOString();
-  saveDeviceState(state);
+  await saveDeviceState(state);
 
   return { success: true };
 }

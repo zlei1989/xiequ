@@ -272,7 +272,7 @@ export async function writeDeviceLog(chipId: string, event: string, state?: Reco
   db.prepare("INSERT INTO watering_logs (chip_id, event, state, created_time) VALUES (?, ?, ?, ?)").run(
     chipId,
     event,
-    state ?? null,
+    state ? JSON.stringify(state) : null,
     new Date().toISOString()
   );
 }

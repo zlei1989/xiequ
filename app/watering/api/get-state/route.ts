@@ -12,10 +12,10 @@ export async function GET(request: NextRequest) {
   }
 
   // 刷新心跳
-  updateTick(chipId);
+  await updateTick(chipId);
 
   // 读取当前状态
-  const state = getDeviceState(chipId);
+  const state = await getDeviceState(chipId);
 
   // 比较是否有变化
   const changed = !state || clientStateId !== state.stateId;

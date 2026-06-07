@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
   }
 
   // 刷新心跳
-  updateTick(chipId);
+  await updateTick(chipId);
 
   // 解析 GPIO 状态
   const gpioState: Record<string, Record<string, number>> = { buttons: {}, sensors: {}, loads: {} };
@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
   switch (event) {
     case "bootstrap": {
       // 首次上线，创建默认配置（如不存在）
-      let config = getDeviceConfig(chipId);
+      let config = await getDeviceConfig(chipId);
       if (!config) {
         config = {
           chipId,
@@ -44,10 +44,10 @@ export async function GET(request: NextRequest) {
           createdTime: new Date().toISOString(),
           lastWriteTime: new Date().toISOString(),
         };
-        saveDeviceConfig(config);
+        await saveDeviceConfig(config);
       }
 
-      let state = getDeviceState(chipId);
+      let state = await getDeviceState(chipId);
       if (!state) {
         state = {
           chipId,
@@ -64,17 +64,17 @@ export async function GET(request: NextRequest) {
         stateId: newId(),
         lastWriteTime: new Date().toISOString(),
       });
-      saveDeviceState(state);
+      await saveDeviceState(state);
 
       // 记录日志
-      writeDeviceLog(chipId, "bootstrap", { macAddress, cause: searchParams.get("cause") || "" });
+      await writeDeviceLog(chipId, "bootstrap", { macAddress, cause: searchParams.get("cause") || "" });
       if (state.switch === "on" && state.process) {
-        writeDeviceLog(chipId, "execute", { stateId: state.stateId, index: state.index });
+        await writeDeviceLog(chipId, "execute", { stateId: state.stateId, index: state.index });
       }
       break;
     }
     case "finish": {
-      const state = getDeviceState(chipId);
+      const state = await getDeviceState(chipId);
       if (state && state.switch !== "off") {
         state.switch = "off";
         state.index = undefined;
@@ -82,14 +82,14 @@ export async function GET(request: NextRequest) {
         state.message = undefined;
         state.stateId = newId();
         state.lastWriteTime = new Date().toISOString();
-        saveDeviceState(state);
+        await saveDeviceState(state);
       }
-      writeDeviceLog(chipId, "finish", { macAddress });
+      await writeDeviceLog(chipId, "finish", { macAddress });
       break;
     }
     default: {
       // 普通状态上报
-      writeDeviceLog(chipId, event || "heartbeat", {
+      await writeDeviceLog(chipId, event || "heartbeat", {
         macAddress,
         buttons: gpioState.buttons,
         sensors: gpioState.sensors,

@@ -1,6 +1,6 @@
 "use client";
 
-import { Input, InputNumber, Card, Row, Col } from "antd";
+import { Input, InputNumber, Card, Row, Col, Space, Button } from "antd";
 import type { DeviceIdentity, GpioState } from "../hooks/use-iot-simulator";
 
 export function DeviceForm({
@@ -20,25 +20,31 @@ export function DeviceForm({
       <Card title="设备标识" size="small">
         <Row gutter={[12, 8]}>
           <Col span={8}>
-            <Input
-              addonBefore="chipId"
-              value={identity.chipId}
-              onChange={(e) => onIdentityChange({ ...identity, chipId: e.target.value })}
-            />
+            <Space.Compact block>
+              <Button disabled>chipId</Button>
+              <Input
+                value={identity.chipId}
+                onChange={(e) => onIdentityChange({ ...identity, chipId: e.target.value })}
+              />
+            </Space.Compact>
           </Col>
           <Col span={8}>
-            <Input
-              addonBefore="MAC"
-              value={identity.macAddress}
-              onChange={(e) => onIdentityChange({ ...identity, macAddress: e.target.value })}
-            />
+            <Space.Compact block>
+              <Button disabled>MAC</Button>
+              <Input
+                value={identity.macAddress}
+                onChange={(e) => onIdentityChange({ ...identity, macAddress: e.target.value })}
+              />
+            </Space.Compact>
           </Col>
           <Col span={8}>
-            <Input
-              addonBefore="stateId"
-              value={identity.stateId}
-              onChange={(e) => onIdentityChange({ ...identity, stateId: e.target.value })}
-            />
+            <Space.Compact block>
+              <Button disabled>stateId</Button>
+              <Input
+                value={identity.stateId}
+                onChange={(e) => onIdentityChange({ ...identity, stateId: e.target.value })}
+              />
+            </Space.Compact>
           </Col>
         </Row>
       </Card>
@@ -48,19 +54,21 @@ export function DeviceForm({
         <Row gutter={[12, 8]}>
           {Object.entries(gpio.buttons).map(([key, val]) => (
             <Col span={4} key={key}>
-              <InputNumber
-                addonBefore={key}
-                value={val}
-                min={0}
-                max={1}
-                onChange={(v) =>
-                  onGpioChange({
-                    ...gpio,
-                    buttons: { ...gpio.buttons, [key]: v ?? 0 },
-                  })
-                }
-                style={{ width: "100%" }}
-              />
+              <Space.Compact block>
+                <Button disabled>{key}</Button>
+                <InputNumber
+                  value={val}
+                  min={0}
+                  max={1}
+                  onChange={(v) =>
+                    onGpioChange({
+                      ...gpio,
+                      buttons: { ...gpio.buttons, [key]: v ?? 0 },
+                    })
+                  }
+                  style={{ flex: 1 }}
+                />
+              </Space.Compact>
             </Col>
           ))}
         </Row>
@@ -71,19 +79,21 @@ export function DeviceForm({
         <Row gutter={[12, 8]}>
           {Object.entries(gpio.sensors).map(([key, val]) => (
             <Col span={4} key={key}>
-              <InputNumber
-                addonBefore={key}
-                value={val}
-                min={0}
-                max={1023}
-                onChange={(v) =>
-                  onGpioChange({
-                    ...gpio,
-                    sensors: { ...gpio.sensors, [key]: v ?? 0 },
-                  })
-                }
-                style={{ width: "100%" }}
-              />
+              <Space.Compact block>
+                <Button disabled>{key}</Button>
+                <InputNumber
+                  value={val}
+                  min={0}
+                  max={1023}
+                  onChange={(v) =>
+                    onGpioChange({
+                      ...gpio,
+                      sensors: { ...gpio.sensors, [key]: v ?? 0 },
+                    })
+                  }
+                  style={{ flex: 1 }}
+                />
+              </Space.Compact>
             </Col>
           ))}
         </Row>
@@ -94,19 +104,21 @@ export function DeviceForm({
         <Row gutter={[12, 8]}>
           {Object.entries(gpio.loads).map(([key, val]) => (
             <Col span={6} key={key}>
-              <InputNumber
-                addonBefore={key}
-                value={val}
-                min={0}
-                max={1024}
-                onChange={(v) =>
-                  onGpioChange({
-                    ...gpio,
-                    loads: { ...gpio.loads, [key]: v ?? 0 },
-                  })
-                }
-                style={{ width: "100%" }}
-              />
+              <Space.Compact block>
+                <Button disabled>{key}</Button>
+                <InputNumber
+                  value={val}
+                  min={0}
+                  max={1024}
+                  onChange={(v) =>
+                    onGpioChange({
+                      ...gpio,
+                      loads: { ...gpio.loads, [key]: v ?? 0 },
+                    })
+                  }
+                  style={{ flex: 1 }}
+                />
+              </Space.Compact>
             </Col>
           ))}
         </Row>

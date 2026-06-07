@@ -37,7 +37,7 @@ export function EventButtons({
 
   return (
     <Card title="模拟事件" size="small">
-      <Space wrap direction="vertical" style={{ width: "100%" }}>
+      <Space wrap orientation="vertical" style={{ width: "100%" }}>
         <Space wrap>
           <Button
             type="primary"
