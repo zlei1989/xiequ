@@ -1,12 +1,14 @@
 "use client";
 
-import { Card, Tag, Button, Row, Col, message, Popconfirm } from "antd";
+import { Card, Tag, Button, Row, Col, message, Popconfirm, Dropdown } from "antd";
 import {
   EditOutlined,
   FileTextOutlined,
   ThunderboltOutlined,
   PauseCircleOutlined,
   DeleteOutlined,
+  PlayCircleOutlined,
+  SettingOutlined,
 } from "@ant-design/icons";
 import { useRouter } from "next/navigation";
 import { setDeviceSwitch, removeDevice } from "../actions";
@@ -21,11 +23,17 @@ export function DeviceCard({
 }) {
   const router = useRouter();
 
-  // 电压显示（用可选链避免 in 运算符在序列化对象上报错）
+  // 电压计算：使用分压公式 V_actual = V_sensor * (R1 + R2) / R2
+  const voltageConfig = device.voltageConfig;
+  const rawVoltage = voltageConfig?.sensor
+    ? (device.state?.sensors?.[voltageConfig.sensor] as number | undefined)
+    : (device.state?.sensors?.voltage_0 as number | undefined);
+
   const voltage =
-    device.state?.sensors?.voltage_0 !== undefined &&
-    typeof device.state.sensors.voltage_0 === "number"
-      ? device.state.sensors.voltage_0
+    typeof rawVoltage === "number"
+      ? voltageConfig && voltageConfig.r1 > 0 && voltageConfig.r2 > 0
+        ? rawVoltage * ((voltageConfig.r1 + voltageConfig.r2) / voltageConfig.r2)
+        : rawVoltage
       : undefined;
 
   // 计算流程按钮行列（每行 2 列，匹配 IotCard 的 2 列网格）
@@ -134,7 +142,14 @@ export function DeviceCard({
         {voltage !== undefined && (
           <Col span={12}>
             <span style={{ color: "#999", fontSize: 12 }}>电压: </span>
-            <span style={{ fontSize: 13 }}>{voltage}V</span>
+            <span style={{ fontSize: 13, fontWeight: 500 }}>
+              {voltage.toFixed(2)}V
+            </span>
+            {voltageConfig && (
+              <span style={{ fontSize: 10, color: "#bbb", marginLeft: 2 }}>
+                (计算)
+              </span>
+            )}
           </Col>
         )}
         <Col span={8}>
@@ -165,7 +180,7 @@ export function DeviceCard({
           </div>
         )}
 
-      {/* 流程快捷按钮 — 匹配 IotCard 的 2 列网格 */}
+      {/* 流程快捷按钮 — 匹配 IotCard 的 2 列网格，带多功能下拉菜单 */}
       {device.isOnline && processes.length > 0 && (
         <div style={{ marginTop: 8 }}>
           {Array.from({ length: rowCount }).map((_, row) => (
@@ -176,25 +191,49 @@ export function DeviceCard({
                 const exec = isExec(idx);
                 return (
                   <Col span={12} key={idx}>
-                    <Button
-                      type={exec ? "primary" : "default"}
-                      danger={exec}
-                      block
-                      size="small"
-                      icon={
-                        exec ? (
-                          <PauseCircleOutlined />
-                        ) : (
-                          <ThunderboltOutlined />
-                        )
-                      }
-                      disabled={!exec && device.idleSleep}
-                      onClick={() => onClickSwitch(idx)}
-                      style={{ marginBottom: 2 }}
+                    <Dropdown
+                      menu={{
+                        items: [
+                          {
+                            key: "exec",
+                            icon: exec ? <PauseCircleOutlined /> : <PlayCircleOutlined />,
+                            label: exec ? "终止" : "执行",
+                            danger: exec,
+                            disabled: !exec && device.idleSleep,
+                            onClick: () => onClickSwitch(idx),
+                          },
+                          {
+                            key: "edit",
+                            icon: <SettingOutlined />,
+                            label: "编辑流程",
+                            onClick: () =>
+                              router.push(
+                                `/watering/devices/${device.chipId}?macAddress=${encodeURIComponent(device.macAddress)}`
+                              ),
+                          },
+                        ],
+                      }}
+                      trigger={["contextMenu", "click"]}
                     >
-                      {exec ? "终止" : "执行"}
-                      {processes[idx].name}
-                    </Button>
+                      <Button
+                        type={exec ? "primary" : "default"}
+                        danger={exec}
+                        block
+                        size="small"
+                        icon={
+                          exec ? (
+                            <PauseCircleOutlined />
+                          ) : (
+                            <ThunderboltOutlined />
+                          )
+                        }
+                        disabled={!exec && device.idleSleep}
+                        style={{ marginBottom: 2 }}
+                      >
+                        {exec ? "运行中: " : ""}
+                        {processes[idx].name}
+                      </Button>
+                    </Dropdown>
                   </Col>
                 );
               })}
