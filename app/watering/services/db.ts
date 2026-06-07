@@ -35,12 +35,13 @@ export async function initDb() {
       boot_exec INTEGER NOT NULL DEFAULT -1,
       exec_delay INTEGER NOT NULL DEFAULT 0,
       schedules JSON NOT NULL DEFAULT '[]',
+      voltage JSON,
       created_time TEXT NOT NULL,
       last_write_time TEXT NOT NULL
     )
   `);
 
-  // 为已有表添加 voltage 列（兼容旧数据库）
+  // 为旧数据库添加 voltage 列（兼容无此列的旧表）
   try {
     db.exec(`ALTER TABLE watering_devices ADD COLUMN voltage JSON`);
   } catch {
