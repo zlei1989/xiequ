@@ -26,7 +26,7 @@ export function NavDrawer({
     <Drawer
       title="旅行计划"
       placement="left"
-      width="75%"
+      size="large"
       open={open}
       onClose={onClose}
       destroyOnClose

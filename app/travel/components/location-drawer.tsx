@@ -178,7 +178,7 @@ export function LocationDrawer({
     <Drawer
       title={location.name}
       placement="bottom"
-      height="75%"
+      size="large"
       open={open}
       onClose={handleBeforeClose}
       destroyOnClose
