@@ -75,7 +75,6 @@ export default function DeviceDetailPage({
         gpio={gpio}
         onSave={async (data) => {
           await save(data);
-          message.success("已保存");
         }}
         onRemove={handleRemove}
         saveRef={saveRef}
