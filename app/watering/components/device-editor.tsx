@@ -25,6 +25,7 @@ import { ProcessEditor } from "./process-editor";
 import { ProcessStepEditor } from "./process-step-editor";
 import { ProcessInterruptEditor } from "./process-interrupt-editor";
 import { ScheduleEditor } from "./schedule-editor";
+import { VoltageConfigDrawer } from "./voltage-config-drawer";
 
 export function DeviceEditor({
   config,
@@ -60,6 +61,8 @@ export function DeviceEditor({
   const [scheduleVisible, setScheduleVisible] = useState(false);
   const [scheduleIndex, setScheduleIndex] = useState(-1);
 
+  const [voltageConfigVisible, setVoltageConfigVisible] = useState(false);
+
   // ---- 保存 ----
   async function handleSave() {
     setSaving(true);
@@ -72,6 +75,7 @@ export function DeviceEditor({
         execDelay: form.execDelay,
         processes: form.processes,
         schedules: form.schedules,
+        voltageConfig: form.voltageConfig,
       });
       message.success("保存成功");
     } catch (err: any) {
@@ -356,6 +360,41 @@ export function DeviceEditor({
         </div>
       </div>
 
+      {/* ---- 电压检测配置 ---- */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 16,
+          padding: "8px 12px",
+          background: "#fafafa",
+          borderRadius: 6,
+          border: "1px solid #f0f0f0",
+        }}
+      >
+        <div>
+          <span style={{ fontSize: 13, fontWeight: 500 }}>电压检测配置</span>
+          {form.voltageConfig ? (
+            <span style={{ fontSize: 12, color: "#999", marginLeft: 8 }}>
+              {form.voltageConfig.sensor} · R1={form.voltageConfig.r1}Ω · R2={form.voltageConfig.r2}Ω
+            </span>
+          ) : (
+            <span style={{ fontSize: 12, color: "#ccc", marginLeft: 8 }}>
+              未配置
+            </span>
+          )}
+        </div>
+        <Button
+          type="link"
+          size="small"
+          icon={<EditOutlined />}
+          onClick={() => setVoltageConfigVisible(true)}
+        >
+          {form.voltageConfig ? "修改" : "配置"}
+        </Button>
+      </div>
+
       {/* ---- 流程表格（匹配 IeForm 的流程 el-table）---- */}
       <div style={{ marginBottom: 16 }}>
         <h4 style={{ margin: "0 0 8px", fontSize: 14 }}>功能</h4>
@@ -562,6 +601,15 @@ export function DeviceEditor({
           />
         )}
       </Drawer>
+
+      {/* 电压检测配置 Drawer (60%) */}
+      <VoltageConfigDrawer
+        open={voltageConfigVisible}
+        voltageConfig={form.voltageConfig}
+        sensors={gpio.sensors}
+        onChange={(vc) => setForm({ ...form, voltageConfig: vc })}
+        onClose={() => setVoltageConfigVisible(false)}
+      />
     </div>
   );
 }
