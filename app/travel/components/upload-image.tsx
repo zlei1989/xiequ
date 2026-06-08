@@ -97,6 +97,8 @@ export function UploadImage({
       <Button
         onClick={() => fileInputRef.current?.click()}
         loading={uploading}
+        shape="rounded"
+        fill="outline"
       >
         <CameraOutline />
       </Button>
