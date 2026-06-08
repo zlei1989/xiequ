@@ -89,7 +89,7 @@ export function LocationViewPopup({
       bodyStyle={{
         borderTopLeftRadius: 16,
         borderTopRightRadius: 16,
-        maxHeight: "80vh",
+        maxHeight: "90vh",
         overflow: "auto",
       }}
     >
