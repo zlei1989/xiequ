@@ -98,7 +98,7 @@ export function UploadImage({
         onClick={() => fileInputRef.current?.click()}
         loading={uploading}
       >
-        <CameraOutline /> 上传封面
+        <CameraOutline />
       </Button>
       {previewUrl && (
         <Image
