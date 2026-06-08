@@ -22,10 +22,10 @@ layout.tsx
 
 | UI 区域 | antd-mobile 组件 | 说明 |
 |---------|-----------------|------|
-| 顶部导航 | `<NavBar>` | `right` 插槽放 ⋯ 图标，点击打开 ActionSheet |
-| 底部导航 | `<TabBar>` + `<TabBar.Item>` | 两个 tab：地图(`/travel`)、收藏(`/travel/list`) |
+| 顶部导航 | `<NavBar>` | `right` 插槽放 `<MoreOutline />` 图标（来自 `antd-mobile-icons`），点击打开 ActionSheet |
+| 底部导航 | `<TabBar>` + `<TabBar.Item>` | 两个 tab：地图(`/travel`, `EnvironmentOutline` 图标)、收藏(`/travel/list`, `StarOutline` 图标) |
 | ⋯ 菜单 | `<ActionSheet>` | `actions` 数组：概览、显示全部、筛选已去、筛选待去、添加位置 |
-| 概览弹窗 | `Dialog.show()` | 命令式调用，content 中放置统计卡片 + `<ProgressBar>` |
+| 概览弹窗 | `Dialog.show()` | 命令式调用，content 中用 `<Grid columns={3}>` 布局统计卡片 + `<ProgressBar>` |
 | 进度条 | `<ProgressBar>` | `percent` 绑定 `summary.checkedPercentage` |
 
 ## 文件变更
@@ -64,11 +64,26 @@ Dialog.show({
   title: '概览',
   content: (
     <div>
-      <div style={{display:'flex', gap:12}}>
-        <div>已去: {summary.checkedCount}</div>
-        <div>待去: {summary.uncheckCount}</div>
-        <div>总计: {summary.count}</div>
-      </div>
+      <Grid columns={3} gap={8}>
+        <Grid.Item>
+          <div style={{textAlign:'center'}}>
+            <div style={{fontSize:24,fontWeight:700,color:'#52c41a'}}>{summary.checkedCount}</div>
+            <div style={{fontSize:12,color:'#999'}}>已去</div>
+          </div>
+        </Grid.Item>
+        <Grid.Item>
+          <div style={{textAlign:'center'}}>
+            <div style={{fontSize:24,fontWeight:700,color:'#fa8c16'}}>{summary.uncheckCount}</div>
+            <div style={{fontSize:12,color:'#999'}}>待去</div>
+          </div>
+        </Grid.Item>
+        <Grid.Item>
+          <div style={{textAlign:'center'}}>
+            <div style={{fontSize:24,fontWeight:700,color:'#1677ff'}}>{summary.count}</div>
+            <div style={{fontSize:12,color:'#999'}}>总计</div>
+          </div>
+        </Grid.Item>
+      </Grid>
       <ProgressBar percent={summary.checkedPercentage} />
     </div>
   ),

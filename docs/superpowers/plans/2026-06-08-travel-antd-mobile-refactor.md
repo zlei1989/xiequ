@@ -22,7 +22,7 @@
 
 import { useState, type ReactNode } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { NavBar, TabBar, ActionSheet, Dialog, ProgressBar } from "antd-mobile";
+import { NavBar, TabBar, ActionSheet, Dialog, ProgressBar, Grid } from "antd-mobile";
 import { EnvironmentOutline, StarOutline, MoreOutline } from "antd-mobile-icons";
 import { useTravelContext } from "../hooks/use-locations";
 
@@ -38,33 +38,32 @@ export function TravelShell({ children }: { children: ReactNode }) {
       title: "概览",
       content: (
         <div style={{ padding: "8px 0" }}>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-around",
-              marginBottom: 16,
-              textAlign: "center",
-            }}
-          >
-            <div>
-              <div style={{ fontSize: 24, fontWeight: 700, color: "#52c41a" }}>
-                {summary.checkedCount}
+          <Grid columns={3} gap={8} style={{ marginBottom: 16 }}>
+            <Grid.Item>
+              <div style={{ textAlign: "center" }}>
+                <div style={{ fontSize: 24, fontWeight: 700, color: "#52c41a" }}>
+                  {summary.checkedCount}
+                </div>
+                <div style={{ fontSize: 12, color: "#999", marginTop: 4 }}>已去</div>
               </div>
-              <div style={{ fontSize: 12, color: "#999", marginTop: 4 }}>已去</div>
-            </div>
-            <div>
-              <div style={{ fontSize: 24, fontWeight: 700, color: "#fa8c16" }}>
-                {summary.uncheckCount}
+            </Grid.Item>
+            <Grid.Item>
+              <div style={{ textAlign: "center" }}>
+                <div style={{ fontSize: 24, fontWeight: 700, color: "#fa8c16" }}>
+                  {summary.uncheckCount}
+                </div>
+                <div style={{ fontSize: 12, color: "#999", marginTop: 4 }}>待去</div>
               </div>
-              <div style={{ fontSize: 12, color: "#999", marginTop: 4 }}>待去</div>
-            </div>
-            <div>
-              <div style={{ fontSize: 24, fontWeight: 700, color: "#1677ff" }}>
-                {summary.count}
+            </Grid.Item>
+            <Grid.Item>
+              <div style={{ textAlign: "center" }}>
+                <div style={{ fontSize: 24, fontWeight: 700, color: "#1677ff" }}>
+                  {summary.count}
+                </div>
+                <div style={{ fontSize: 12, color: "#999", marginTop: 4 }}>总计</div>
               </div>
-              <div style={{ fontSize: 12, color: "#999", marginTop: 4 }}>总计</div>
-            </div>
-          </div>
+            </Grid.Item>
+          </Grid>
           <div style={{ fontSize: 12, color: "#999", marginBottom: 4 }}>完成进度</div>
           <ProgressBar percent={summary.checkedPercentage} />
           <div

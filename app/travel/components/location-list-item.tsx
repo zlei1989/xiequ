@@ -1,6 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { List, SwipeAction, Dialog, Toast } from "antd-mobile";
+import { PictureWrongOutline } from "antd-mobile-icons";
 import type { Location } from "../types";
 
 export function LocationListItem({
@@ -15,6 +17,7 @@ export function LocationListItem({
   onDelete: (location: Location) => Promise<void>;
 }) {
   const iconUrl = `/travel/api/download?type=icon&id=${location.id}`;
+  const [iconError, setIconError] = useState(false);
 
   async function handleToggle() {
     try {
@@ -58,20 +61,33 @@ export function LocationListItem({
     <SwipeAction rightActions={rightActions}>
       <List.Item
         prefix={
-          <img
-            src={iconUrl}
-            alt={location.name}
-            style={{
-              width: 44,
-              height: 44,
-              borderRadius: "50%",
-              objectFit: "cover",
-            }}
-            onError={(e) => {
-              (e.target as HTMLImageElement).src =
-                "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjQ4IiBoZWlnaHQ9IjQ4IiBmaWxsPSIjZjBmMGYwIi8+PC9zdmc+";
-            }}
-          />
+          iconError ? (
+            <div
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: "50%",
+                background: "#f5f5f5",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <PictureWrongOutline style={{ fontSize: 24, color: "#bbb" }} />
+            </div>
+          ) : (
+            <img
+              src={iconUrl}
+              alt={location.name}
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: "50%",
+                objectFit: "cover",
+              }}
+              onError={() => setIconError(true)}
+            />
+          )
         }
         description={
           <span

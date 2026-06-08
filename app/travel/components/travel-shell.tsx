@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { NavBar, TabBar, ActionSheet, Dialog, ProgressBar, Grid } from "antd-mobile";
+import { Space, NavBar, TabBar, ActionSheet, Dialog, ProgressBar, Grid } from "antd-mobile";
 import { EnvironmentOutline, StarOutline, MoreOutline } from "antd-mobile-icons";
 import { useTravelContext } from "../hooks/use-locations";
 
@@ -95,12 +95,12 @@ export function TravelShell({ children }: { children: ReactNode }) {
       <NavBar
         backIcon={false}
         right={
-          <div
-            onClick={() => setActionVisible(true)}
-            style={{ cursor: "pointer", padding: 4 }}
-          >
-            <MoreOutline style={{ fontSize: 24 }} />
-          </div>
+          <Space>
+            <MoreOutline
+              onClick={() => setActionVisible(true)}
+              style={{ fontSize: 24, cursor: "pointer", padding: 4 }}
+            />
+          </Space>
         }
       >
         旅行计划

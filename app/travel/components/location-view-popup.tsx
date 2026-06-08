@@ -1,6 +1,8 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { Popup, List, Button, Dialog, Toast } from "antd-mobile";
+import { PictureWrongOutline } from "antd-mobile-icons";
 import { UploadImage } from "./upload-image";
 import type { Location, Moment } from "../types";
 
@@ -27,6 +29,12 @@ export function LocationViewPopup({
   onEditMoment: (moment: Moment) => void;
   onDeleteMoment: (moment: Moment) => Promise<void>;
 }) {
+  const [coverError, setCoverError] = useState(false);
+
+  useEffect(() => {
+    setCoverError(false);
+  }, [location?.id]);
+
   if (!location) return null;
 
   const coverUrl = `/travel/api/download?type=cover&id=${location.id}`;
@@ -87,14 +95,27 @@ export function LocationViewPopup({
     >
       {/* 封面图 */}
       <div style={{ position: "relative" }}>
-        <img
-          src={coverUrl}
-          alt={location.name}
-          style={{ width: "100%", maxHeight: 240, objectFit: "cover" }}
-          onError={(e) => {
-            (e.target as HTMLImageElement).style.display = "none";
-          }}
-        />
+        {coverError ? (
+          <div
+            style={{
+              width: "100%",
+              height: 200,
+              background: "#f5f5f5",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <PictureWrongOutline style={{ fontSize: 48, color: "#bbb" }} />
+          </div>
+        ) : (
+          <img
+            src={coverUrl}
+            alt={location.name}
+            style={{ width: "100%", maxHeight: 240, objectFit: "cover" }}
+            onError={() => setCoverError(true)}
+          />
+        )}
         <div style={{ position: "absolute", right: 8, bottom: 8 }}>
           <UploadImage locationId={location.id} type="cover" />
         </div>
