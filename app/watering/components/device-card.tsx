@@ -168,7 +168,7 @@ export function DeviceCard({
       </Row>
 
       {/* 流程快捷按钮 — 1 行 2 列，奇数个首项占整行 */}
-      {device.isOnline && processes.length > 0 && (
+      {processes.length > 0 && (
         <div style={{ marginTop: 8 }}>
           {(() => {
             const items: { idx: number; span: number }[] = [];
@@ -199,13 +199,14 @@ export function DeviceCard({
               <Row gutter={8} key={rowIdx} style={{ marginBottom: 4 }}>
                 {row.map(({ idx, span }) => {
                   const exec = isExec(idx);
-                  const isIdle = !exec && !!device.idleSleep;
+                  // 离线 或 待机（非运行中 + idleSleep）→ 禁用
+                  const disabled = !device.isOnline || (!exec && !!device.idleSleep);
                   return (
                     <Col span={span} key={idx}>
                       <Button
                         type="primary"
                         danger={exec}
-                        disabled={isIdle}
+                        disabled={disabled}
                         block
                         size="small"
                         icon={
