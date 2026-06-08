@@ -67,6 +67,8 @@ export function MomentEditPopup({
         borderTopLeftRadius: 16,
         borderTopRightRadius: 16,
         minHeight: "40vh",
+        maxHeight: "90vh",
+        overflow: "auto",
       }}
     >
       <NavBar
