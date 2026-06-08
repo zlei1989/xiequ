@@ -110,7 +110,7 @@ export default function LocationListPage() {
         onEditMoment={(m) =>
           setEditMoment({ locationId: viewLocation!.id, moment: m })
         }
-        onDeleteMoment={removeMoment}
+        onDeleteMoment={async (m) => { await removeMoment(m.id); }}
       />
 
       {/* 编辑位置浮层 */}

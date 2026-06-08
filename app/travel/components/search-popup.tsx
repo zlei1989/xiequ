@@ -52,7 +52,7 @@ export function SearchPopup({
           placeholder="选择位置"
           onSearch={handleSearch}
           showCancelButton
-          style={{ "--border-radius": "8px" as React.CSSProperties }}
+          style={{ "--border-radius": "8px" } as React.CSSProperties}
         />
       </div>
       <List>
