@@ -93,11 +93,14 @@ export function TravelShell({ children }: { children: ReactNode }) {
       }}
     >
       <NavBar
+        backIcon={false}
         right={
-          <MoreOutline
-            style={{ fontSize: 24, cursor: "pointer" }}
+          <div
             onClick={() => setActionVisible(true)}
-          />
+            style={{ cursor: "pointer", padding: 4 }}
+          >
+            <MoreOutline style={{ fontSize: 24 }} />
+          </div>
         }
       >
         旅行计划

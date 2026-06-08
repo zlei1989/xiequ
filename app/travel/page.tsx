@@ -61,12 +61,12 @@ export default function TravelPage() {
   }
 
   return (
-    <div style={{ position: "relative" }}>
+    <div style={{ position: "relative", height: "100%", display: "flex", flexDirection: "column" }}>
       <TripMap
         ref={mapRef}
         locations={sortedLocations}
         onMarkerClick={onMarkerClick}
-        style={{ height: "100%" }}
+        style={{ flex: 1 }}
       />
       <LocationDrawer
         location={selectedLocation}
