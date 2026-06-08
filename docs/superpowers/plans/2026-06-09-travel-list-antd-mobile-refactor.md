@@ -930,3 +930,9 @@ Expected: 无输出。
 git add -A
 git commit -m "fix(travel): address issues found during verification"
 ```
+
+---
+
+## 实施偏差
+
+- **图片占位图标**：`location-list-item.tsx` 和 `location-view-popup.tsx` 中的图片加载失败占位从内联 SVG base64 / `display:none` 改为使用 `PictureWrongOutline` 图标（来自 `antd-mobile-icons`），通过 `useState` 追踪加载状态进行条件渲染，location 切换时自动重置。

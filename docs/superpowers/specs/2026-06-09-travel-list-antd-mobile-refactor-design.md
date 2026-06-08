@@ -24,7 +24,7 @@ app/travel/list/page.tsx          ← 列表页，管理所有 Popup 状态
 ### LocationListItem
 
 - `List.Item` + `SwipeAction`
-- `prefix`: 圆形头像图片
+- `prefix`: 圆形头像图片，加载失败时显示 `PictureWrongOutline` 图标占位
 - 标题 + 地址副标题
 - `extra`: 自定义状态胶囊（"已去"绿色 / "待去"蓝色）
 - 点击整行 → 打开查看 Popup
@@ -33,7 +33,7 @@ app/travel/list/page.tsx          ← 列表页，管理所有 Popup 状态
 ### LocationViewPopup
 
 - antd-mobile `Popup`, `position="bottom"`，圆角顶部
-- 封面大图
+- 封面大图，加载失败时显示 `PictureWrongOutline` 图标占位
 - 信息区用 `List` + `List.Item` 纵向排列（替换 antd `Descriptions`）
 - 精彩瞬间时间线（自定义样式）
 - 底部操作栏：删除 | 标记状态 | 编辑位置
