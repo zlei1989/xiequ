@@ -66,7 +66,7 @@ export default function TravelPage() {
         ref={mapRef}
         locations={sortedLocations}
         onMarkerClick={onMarkerClick}
-        style={{ height: "calc(100vh - 48px)" }}
+        style={{ height: "100%" }}
       />
       <LocationDrawer
         location={selectedLocation}
