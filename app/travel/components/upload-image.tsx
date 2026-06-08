@@ -1,8 +1,8 @@
 "use client";
 
-import { Upload, Button, message, Image } from "antd";
-import { CameraOutlined } from "@ant-design/icons";
-import { useState, useEffect } from "react";
+import { Button, Image, Toast } from "antd-mobile";
+import { CameraOutline } from "antd-mobile-icons";
+import { useState, useEffect, useRef } from "react";
 import { getUploadUrl, getImageUrl } from "../actions";
 
 /**
@@ -26,6 +26,7 @@ export function UploadImage({
 }) {
   const [uploading, setUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // 加载已有封面的签名 URL
   useEffect(() => {
@@ -40,6 +41,17 @@ export function UploadImage({
     }
     loadPreview();
   }, [locationId, type]);
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleUpload(file);
+    }
+    // 清空 input 以便重复选择同一文件
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  }
 
   async function handleUpload(file: File) {
     setUploading(true);
@@ -65,34 +77,47 @@ export function UploadImage({
       // Step 3: 刷新预览（重新获取签名 URL）
       const downloadUrl = await getImageUrl(locationId, type);
       setPreviewUrl(downloadUrl);
-      message.success("上传成功");
+      Toast.show({ icon: "success", content: "上传成功" });
     } catch (err: any) {
-      message.error("上传失败: " + err.message);
+      Toast.show({ icon: "fail", content: "上传失败: " + err.message });
     } finally {
       setUploading(false);
     }
-    return false; // 阻止 antd Upload 默认上传行为
   }
 
   return (
     <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-      <Upload
-        beforeUpload={handleUpload}
-        showUploadList={false}
+      <input
+        ref={fileInputRef}
+        type="file"
         accept="image/*"
+        style={{ display: "none" }}
+        onChange={handleFileChange}
+      />
+      <Button
+        onClick={() => fileInputRef.current?.click()}
+        loading={uploading}
       >
-        <Button icon={<CameraOutlined />} loading={uploading}>
-          上传封面
-        </Button>
-      </Upload>
+        <CameraOutline /> 上传封面
+      </Button>
       {previewUrl && (
         <Image
           src={previewUrl}
           alt="封面"
           width={40}
           height={40}
-          style={{ objectFit: "cover", borderRadius: 4 }}
-          fallback="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBmaWxsPSIjZjBmMGYwIi8+PC9zdmc+"
+          fit="cover"
+          style={{ borderRadius: 4 }}
+          fallback={
+            <div
+              style={{
+                width: 40,
+                height: 40,
+                background: "#f0f0f0",
+                borderRadius: 4,
+              }}
+            />
+          }
         />
       )}
     </div>
