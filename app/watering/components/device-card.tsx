@@ -1,14 +1,12 @@
 "use client";
 
-import { Card, Tag, Button, Row, Col, message, Popconfirm, Dropdown } from "antd";
+import { Card, Tag, Button, Row, Col, message, Popconfirm } from "antd";
 import {
   EditOutlined,
   FileTextOutlined,
   ThunderboltOutlined,
   PauseCircleOutlined,
   DeleteOutlined,
-  PlayCircleOutlined,
-  SettingOutlined,
 } from "@ant-design/icons";
 import { useRouter } from "next/navigation";
 import { setDeviceSwitch, removeDevice } from "../actions";
@@ -35,9 +33,7 @@ export function DeviceCard({
         : rawVoltage
       : undefined;
 
-  // 计算流程按钮行列（每行 2 列，匹配 IotCard 的 2 列网格）
   const processes = device.processes || [];
-  const rowCount = Math.ceil(processes.length / 2);
 
   /** 判断某流程是否正在执行 */
   function isExec(index: number): boolean {
@@ -171,53 +167,45 @@ export function DeviceCard({
         </Col>
       </Row>
 
-      {/* 当前执行状态 */}
-      {device.state?.switch === "on" &&
-        device.state.process &&
-        device.state.process.name && (
-          <div style={{ color: "#1677ff", fontSize: 13, marginBottom: 8 }}>
-            运行中: {device.state.process.name}
-          </div>
-        )}
-
-      {/* 流程快捷按钮 — 匹配 IotCard 的 2 列网格，带多功能下拉菜单 */}
+      {/* 流程快捷按钮 — 1 行 2 列，奇数个首项占整行 */}
       {device.isOnline && processes.length > 0 && (
         <div style={{ marginTop: 8 }}>
-          {Array.from({ length: rowCount }).map((_, row) => (
-            <Row gutter={8} key={row} style={{ marginBottom: 4 }}>
-              {Array.from({ length: 2 }).map((_, col) => {
-                const idx = row * 2 + col;
-                if (idx >= processes.length) return null;
-                const exec = isExec(idx);
-                return (
-                  <Col span={12} key={idx}>
-                    <Dropdown
-                      menu={{
-                        items: [
-                          {
-                            key: "exec",
-                            icon: exec ? <PauseCircleOutlined /> : <PlayCircleOutlined />,
-                            label: exec ? "终止" : "执行",
-                            danger: exec,
-                            disabled: !exec && device.idleSleep,
-                            onClick: () => onClickSwitch(idx),
-                          },
-                          {
-                            key: "edit",
-                            icon: <SettingOutlined />,
-                            label: "编辑流程",
-                            onClick: () =>
-                              router.push(
-                                `/watering/devices/${device.chipId}?macAddress=${encodeURIComponent(device.macAddress)}`
-                              ),
-                          },
-                        ],
-                      }}
-                      trigger={["contextMenu", "click"]}
-                    >
+          {(() => {
+            const items: { idx: number; span: number }[] = [];
+            if (processes.length % 2 === 1) {
+              // 奇数个：第 1 个占整行
+              items.push({ idx: 0, span: 24 });
+              for (let i = 1; i < processes.length; i++) {
+                items.push({ idx: i, span: 12 });
+              }
+            } else {
+              // 偶数个：每行 2 个
+              for (let i = 0; i < processes.length; i++) {
+                items.push({ idx: i, span: 12 });
+              }
+            }
+            const rows: { idx: number; span: number }[][] = [];
+            let i = 0;
+            while (i < items.length) {
+              if (items[i].span === 24) {
+                rows.push([items[i]]);
+                i++;
+              } else {
+                rows.push(items.slice(i, i + 2));
+                i += 2;
+              }
+            }
+            return rows.map((row, rowIdx) => (
+              <Row gutter={8} key={rowIdx} style={{ marginBottom: 4 }}>
+                {row.map(({ idx, span }) => {
+                  const exec = isExec(idx);
+                  const isIdle = !exec && !!device.idleSleep;
+                  return (
+                    <Col span={span} key={idx}>
                       <Button
-                        type={exec ? "primary" : "default"}
+                        type="primary"
                         danger={exec}
+                        disabled={isIdle}
                         block
                         size="small"
                         icon={
@@ -227,18 +215,16 @@ export function DeviceCard({
                             <ThunderboltOutlined />
                           )
                         }
-                        disabled={!exec && device.idleSleep}
-                        style={{ marginBottom: 2 }}
+                        onClick={() => onClickSwitch(idx)}
                       >
-                        {exec ? "运行中: " : ""}
-                        {processes[idx].name}
+                        {exec ? "停止" : processes[idx].name}
                       </Button>
-                    </Dropdown>
-                  </Col>
-                );
-              })}
-            </Row>
-          ))}
+                    </Col>
+                  );
+                })}
+              </Row>
+            ));
+          })()}
         </div>
       )}
 
