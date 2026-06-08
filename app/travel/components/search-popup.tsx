@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Popup, SearchBar, List, Button, Toast } from "antd-mobile";
+import { DotLoading, ErrorBlock, List, Popup, SearchBar, Toast } from "antd-mobile";
 import { searchPlace } from "../services/amap";
 import type { AMapPoiItem } from "../services/amap";
 
@@ -28,8 +28,9 @@ export function SearchPopup({
     try {
       const items = await searchPlace(keyword);
       setResults(items);
-    } catch (err: any) {
-      Toast.show({ icon: "fail", content: "搜索失败: " + err.message });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "搜索失败";
+      Toast.show({ icon: "fail", content: "搜索失败: " + message });
     } finally {
       setSearching(false);
     }
@@ -49,40 +50,34 @@ export function SearchPopup({
         overflow: "auto",
       }}
     >
-      <div style={{ padding: "8px 0" }}>
-        <SearchBar
-          placeholder="选择位置"
-          onSearch={handleSearch}
-          showCancelButton
-          style={{ "--border-radius": "8px" } as React.CSSProperties}
-        />
-      </div>
-      <List>
-        {results.map((item) => (
-          <List.Item
-            key={item.id}
-            description={item.address}
-            extra={
-              <Button
-                size="small"
-                color="primary"
-                onClick={() =>
-                  onAdd({
-                    name: item.name,
-                    address: item.address,
-                    longitude: item.longitude,
-                    latitude: item.latitude,
-                  })
-                }
-              >
-                添加
-              </Button>
-            }
-          >
-            {item.name}
-          </List.Item>
-        ))}
-      </List>
+      <SearchBar placeholder="选择位置" onSearch={handleSearch} showCancelButton />
+      {searching ? (
+        <List>
+          <List.Item prefix={<DotLoading />}>搜索中</List.Item>
+        </List>
+      ) : results.length === 0 ? (
+        <ErrorBlock status="empty" title="暂无搜索结果" />
+      ) : (
+        <List>
+          {results.map((item) => (
+            <List.Item
+              key={item.id}
+              description={item.address}
+              clickable
+              onClick={() =>
+                onAdd({
+                  name: item.name,
+                  address: item.address,
+                  longitude: item.longitude,
+                  latitude: item.latitude,
+                })
+              }
+            >
+              {item.name}
+            </List.Item>
+          ))}
+        </List>
+      )}
     </Popup>
   );
 }

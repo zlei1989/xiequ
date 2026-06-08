@@ -45,7 +45,6 @@ export default function LocationListPage() {
 
   async function handleToggle(location: Location) {
     await update(location.id, { checked: !location.checked });
-    // 同步更新 viewLocation 和 editLocation 中的引用
     const updated = { ...location, checked: !location.checked };
     if (viewLocation?.id === location.id) setViewLocation(updated);
     if (editLocation?.id === location.id) setEditLocation(updated);
@@ -72,11 +71,11 @@ export default function LocationListPage() {
   // ── 渲染 ──
 
   return (
-    <div>
+    <>
       {loading && sortedLocations.length === 0 ? (
-        <div style={{ textAlign: "center", padding: 48 }}>
-          <DotLoading />
-        </div>
+        <List>
+          <List.Item prefix={<DotLoading />}>加载中</List.Item>
+        </List>
       ) : sortedLocations.length === 0 ? (
         <ErrorBlock status="empty" title="暂无位置" />
       ) : (
@@ -95,7 +94,6 @@ export default function LocationListPage() {
         </PullToRefresh>
       )}
 
-      {/* 查看浮层 */}
       <LocationViewPopup
         location={viewLocation}
         visible={!!viewLocation}
@@ -110,10 +108,11 @@ export default function LocationListPage() {
         onEditMoment={(m) =>
           setEditMoment({ locationId: viewLocation!.id, moment: m })
         }
-        onDeleteMoment={async (m) => { await removeMoment(m.id); }}
+        onDeleteMoment={async (m) => {
+          await removeMoment(m.id);
+        }}
       />
 
-      {/* 编辑位置浮层 */}
       <LocationEditPopup
         location={editLocation}
         visible={!!editLocation}
@@ -121,7 +120,6 @@ export default function LocationListPage() {
         onSave={update}
       />
 
-      {/* 编辑瞬间浮层 */}
       <MomentEditPopup
         moment={editMoment?.moment || null}
         visible={!!editMoment}
@@ -130,12 +128,11 @@ export default function LocationListPage() {
         onAdd={addMoment}
       />
 
-      {/* 搜索浮层 */}
       <SearchPopup
         visible={searchVisible}
         onClose={() => setSearchVisible(false)}
         onAdd={handleAdd}
       />
-    </div>
+    </>
   );
 }
