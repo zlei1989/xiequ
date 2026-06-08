@@ -1,10 +1,8 @@
 // 流程步骤
 export type Step = {
   name: string;
-  component: string;
-  trigger?: string;
+  component?: string;
   value: { begin: unknown; end: unknown };
-  delay?: number;
   timeout?: number;
   interrupts?: Interrupt[];
   disabled?: boolean;
@@ -27,6 +25,7 @@ export type Interrupt = {
 // 流程
 export type Process = {
   name: string;
+  trigger?: string;
   steps: Step[];
 };
 
