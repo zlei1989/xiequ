@@ -13,6 +13,8 @@ export function useDevices(intervalMs = 15000) {
     try {
       const data = await getDevices();
       setDevices(data);
+    } catch (err) {
+      console.error("获取设备列表失败:", err);
     } finally {
       setLoading(false);
     }

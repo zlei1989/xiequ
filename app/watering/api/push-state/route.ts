@@ -41,6 +41,7 @@ export async function GET(request: NextRequest) {
           bootExec: -1,
           execDelay: 0,
           schedules: [],
+          voltage: undefined,
           createdTime: new Date().toISOString(),
           lastWriteTime: new Date().toISOString(),
         };
