@@ -1,75 +1,110 @@
 "use client";
 
-import { Tag } from "antd";
+import { List, SwipeAction, Dialog, Toast } from "antd-mobile";
 import type { Location } from "../types";
 
 export function LocationListItem({
   location,
   onClick,
+  onToggle,
+  onDelete,
 }: {
   location: Location;
   onClick: (location: Location) => void;
+  onToggle: (location: Location) => Promise<void>;
+  onDelete: (location: Location) => Promise<void>;
 }) {
   const iconUrl = `/travel/api/download?type=icon&id=${location.id}`;
 
+  async function handleToggle() {
+    try {
+      await onToggle(location);
+    } catch (err: any) {
+      Toast.show({ icon: "fail", content: err.message || "操作失败" });
+    }
+  }
+
+  function handleDelete() {
+    Dialog.confirm({
+      content: `确认删除「${location.name}」及备注等信息？不可恢复。`,
+      confirmText: "确定",
+      cancelText: "取消",
+      onConfirm: async () => {
+        try {
+          await onDelete(location);
+        } catch (err: any) {
+          Toast.show({ icon: "fail", content: err.message || "删除失败" });
+        }
+      },
+    });
+  }
+
+  const rightActions = [
+    {
+      key: "toggle",
+      text: location.checked ? "待去" : "已去",
+      color: location.checked ? "warning" : "primary",
+      onClick: handleToggle,
+    },
+    {
+      key: "delete",
+      text: "删除",
+      color: "danger",
+      onClick: handleDelete,
+    },
+  ];
+
   return (
-    <div
-      onClick={() => onClick(location)}
-      style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        cursor: "pointer",
-        padding: "16px 20px",
-        borderBottom: "1px solid rgb(235, 238, 245)",
-        whiteSpace: "nowrap",
-      }}
-    >
-      <img
-        src={iconUrl}
-        alt={location.name}
-        style={{
-          width: 48,
-          height: 48,
-          minWidth: 48,
-          minHeight: 48,
-          overflow: "hidden",
-          objectFit: "cover",
-          borderRadius: "50%",
-        }}
-        onError={(e) => {
-          (e.target as HTMLImageElement).src =
-            "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjQ4IiBoZWlnaHQ9IjQ4IiBmaWxsPSIjZjBmMGYwIi8+PC9zdmc+";
-        }}
-      />
-      <div
-        style={{
-          flex: 1,
-          margin: "0 20px",
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-          fontSize: 14,
-          lineHeight: 1.5,
-        }}
+    <SwipeAction rightActions={rightActions}>
+      <List.Item
+        prefix={
+          <img
+            src={iconUrl}
+            alt={location.name}
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: "50%",
+              objectFit: "cover",
+            }}
+            onError={(e) => {
+              (e.target as HTMLImageElement).src =
+                "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjQ4IiBoZWlnaHQ9IjQ4IiBmaWxsPSIjZjBmMGYwIi8+PC9zdmc+";
+            }}
+          />
+        }
+        description={
+          <span
+            style={{
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+              display: "block",
+              maxWidth: "60vw",
+            }}
+          >
+            {location.address}
+          </span>
+        }
+        extra={
+          <span
+            style={{
+              padding: "2px 8px",
+              borderRadius: 4,
+              fontSize: 12,
+              color: location.checked ? "#52c41a" : "#1677ff",
+              background: location.checked ? "#f6ffed" : "#e6f7ff",
+              border: `1px solid ${location.checked ? "#b7eb8f" : "#91d5ff"}`,
+              whiteSpace: "nowrap",
+            }}
+          >
+            {location.checked ? "已去" : "待去"}
+          </span>
+        }
+        onClick={() => onClick(location)}
       >
-        <div style={{ fontWeight: 500 }}>{location.name}</div>
-        <div
-          style={{
-            color: "#999",
-            fontSize: 13,
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            maxWidth: "18em",
-          }}
-        >
-          {location.address}
-        </div>
-      </div>
-      {location.checked ? (
-        <Tag color="green">已去</Tag>
-      ) : (
-        <Tag color="blue">待去</Tag>
-      )}
-    </div>
+        <span style={{ fontWeight: 500 }}>{location.name}</span>
+      </List.Item>
+    </SwipeAction>
   );
 }
