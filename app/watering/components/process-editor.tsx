@@ -1,17 +1,28 @@
 "use client";
 
-import { Input, Button, Table } from "antd";
+import { Input, Button, Table, Select, Empty } from "antd";
 import { PlusOutlined, EditOutlined } from "@ant-design/icons";
 import type { Process, Step } from "../types";
+import type { GpioInfo } from "../hooks/use-device-config";
+
+/** 从 GPIO 键名列表生成 Select options */
+function toOptions(keys: string[] | undefined) {
+  if (!keys || keys.length === 0) {
+    return [];
+  }
+  return keys.map((k) => ({ value: k, label: k }));
+}
 
 export function ProcessEditor({
   process,
+  gpio,
   onChange,
   onRemove,
   onEditStep,
   onAddStep,
 }: {
   process: Process;
+  gpio: GpioInfo;
   onChange: (updated: Process) => void;
   onRemove: () => void;
   onEditStep: (index: number) => void;
@@ -36,6 +47,8 @@ export function ProcessEditor({
     },
   ];
 
+  const buttonOptions = toOptions(gpio.buttons);
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       <div>
@@ -47,6 +60,28 @@ export function ProcessEditor({
           onChange={(e) => onChange({ ...process, name: e.target.value })}
           placeholder="输入流程名称"
         />
+      </div>
+
+      <div>
+        <label style={{ fontSize: 13, color: "#666", marginBottom: 4, display: "block" }}>
+          触发按钮
+        </label>
+        {buttonOptions.length > 0 ? (
+          <Select
+            value={process.trigger ?? undefined}
+            onChange={(v) => onChange({ ...process, trigger: v })}
+            options={buttonOptions}
+            allowClear
+            placeholder="选择触发按钮（可选）"
+            style={{ width: "100%" }}
+          />
+        ) : (
+          <Empty
+            image={Empty.PRESENTED_IMAGE_SIMPLE}
+            description="设备无可用按钮（buttons），请等待设备上报 GPIO 状态"
+            style={{ margin: "8px 0" }}
+          />
+        )}
       </div>
 
       <div>
