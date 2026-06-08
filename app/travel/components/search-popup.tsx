@@ -45,6 +45,8 @@ export function SearchPopup({
         borderTopLeftRadius: 16,
         borderTopRightRadius: 16,
         minHeight: "60vh",
+        maxHeight: "90vh",
+        overflow: "auto",
       }}
     >
       <div style={{ padding: "8px 0" }}>
