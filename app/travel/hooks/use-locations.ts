@@ -12,6 +12,7 @@ export type TravelData = {
   add: (data: { name: string; address: string; longitude: number; latitude: number; comments?: string }) => Promise<Location>;
   update: (id: string, data: Partial<Location>) => Promise<Location>;
   remove: (id: string) => Promise<void>;
+  load: () => Promise<void>;
 };
 
 export const TravelContext = createContext<TravelData | null>(null);
