@@ -96,7 +96,6 @@ export function DeviceEditor({
           name: "新步骤",
           component: gpio.loads[0] ?? "load_0",
           value: { begin: 255, end: 0 },
-          delay: 0,
           timeout: 600000,
           interrupts: [],
         },
@@ -130,7 +129,6 @@ export function DeviceEditor({
       name: "新步骤",
       component: gpio.loads[0] ?? "load_0",
       value: { begin: 0, end: 0 },
-      delay: 0,
       timeout: 600000,
       interrupts: [],
     };
@@ -474,6 +472,7 @@ export function DeviceEditor({
         {processIndex > -1 && (
           <ProcessEditor
             process={form.processes[processIndex]}
+            gpio={gpio}
             onChange={(updated) => updateProcess(processIndex, updated)}
             onRemove={deleteProcess}
             onEditStep={(stepIdx) => {
