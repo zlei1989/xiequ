@@ -1,6 +1,6 @@
 "use client";
 
-import { Input, InputNumber, Switch, Select, Empty } from "antd";
+import { Input, InputNumber, Switch, Select, Empty, Radio } from "antd";
 import type { Interrupt } from "../types";
 import type { GpioInfo } from "../hooks/use-device-config";
 
@@ -19,6 +19,11 @@ export function ProcessInterruptEditor({
     value: k,
     label: k,
   }));
+
+  const signalType = interrupt.signalType ?? "digital";
+  const logic = interrupt.logic ?? ">";
+  const threshold = interrupt.threshold ?? 0;
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       <div>
@@ -54,17 +59,84 @@ export function ProcessInterruptEditor({
 
       <div>
         <label style={{ fontSize: 13, color: "#666", marginBottom: 4, display: "block" }}>
-          触发状态
+          信号类型
         </label>
-        <Switch
-          checked={interrupt.state === 1 || interrupt.state === true}
-          onChange={(checked) =>
-            onChange({ ...interrupt, state: checked ? 1 : 0 })
+        <Radio.Group
+          value={signalType}
+          onChange={(e) =>
+            onChange({
+              ...interrupt,
+              signalType: e.target.value,
+            })
           }
-          checkedChildren="触发 (1)"
-          unCheckedChildren="未触发 (0)"
-        />
+          optionType="button"
+          buttonStyle="solid"
+        >
+          <Radio.Button value="digital">数字信号</Radio.Button>
+          <Radio.Button value="analog">模拟信号</Radio.Button>
+        </Radio.Group>
       </div>
+
+      {/* 数字信号：显示触发状态开关 */}
+      {signalType === "digital" && (
+        <div>
+          <label style={{ fontSize: 13, color: "#666", marginBottom: 4, display: "block" }}>
+            触发状态
+          </label>
+          <Switch
+            checked={interrupt.state === 1 || interrupt.state === true}
+            onChange={(checked) =>
+              onChange({ ...interrupt, state: checked ? 1 : 0 })
+            }
+            checkedChildren="触发 (1)"
+            unCheckedChildren="未触发 (0)"
+          />
+        </div>
+      )}
+
+      {/* 模拟信号：显示逻辑选择 + 触发阈值 */}
+      {signalType === "analog" && (
+        <>
+          <div>
+            <label style={{ fontSize: 13, color: "#666", marginBottom: 4, display: "block" }}>
+              逻辑
+            </label>
+            <Radio.Group
+              value={logic}
+              onChange={(e) =>
+                onChange({
+                  ...interrupt,
+                  logic: e.target.value,
+                })
+              }
+              optionType="button"
+              buttonStyle="solid"
+            >
+              <Radio.Button value=">">大于</Radio.Button>
+              <Radio.Button value="<">小于</Radio.Button>
+            </Radio.Group>
+          </div>
+
+          <div>
+            <label style={{ fontSize: 13, color: "#666", marginBottom: 4, display: "block" }}>
+              触发阈值
+            </label>
+            <InputNumber
+              value={threshold}
+              onChange={(v) =>
+                onChange({ ...interrupt, threshold: v ?? 0 })
+              }
+              min={0}
+              step={1}
+              style={{ width: "100%" }}
+              placeholder="输入模拟信号触发阈值"
+            />
+            <div style={{ fontSize: 11, color: "#999", marginTop: 4 }}>
+              当传感器值{logic === ">" ? "大于" : "小于"}阈值时触发中断
+            </div>
+          </div>
+        </>
+      )}
 
       <div>
         <label style={{ fontSize: 13, color: "#666", marginBottom: 4, display: "block" }}>
