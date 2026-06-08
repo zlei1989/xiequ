@@ -15,6 +15,9 @@ export type Interrupt = {
   name: string;
   component: string;
   state: number | boolean;
+  signalType?: "analog" | "digital";  // 信号类型：模拟 / 数字
+  logic?: ">" | "<";                   // 逻辑：大于 / 小于（仅模拟信号生效）
+  threshold?: number;                  // 触发阈值（仅模拟信号生效）
   intercept?: number;
   delay?: number;
   duration?: number;
