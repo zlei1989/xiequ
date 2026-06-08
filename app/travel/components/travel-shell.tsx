@@ -103,7 +103,7 @@ export function TravelShell({ children }: { children: ReactNode }) {
           </Space>
         }
       >
-        旅行计划
+        旅行足迹
       </NavBar>
 
       <div style={{ flex: 1, overflow: "auto" }}>{children}</div>
