@@ -29,7 +29,6 @@ export function ProcessStepEditor({
   onAddInterrupt: () => void;
 }) {
   const loadOptions = toOptions(gpio.loads);
-  const buttonOptions = toOptions(gpio.buttons);
   const interruptColumns = [
     { title: "#", dataIndex: "_idx", width: 40, render: (_: any, __: any, index: number) => index + 1 },
     { title: "名称", dataIndex: "name", key: "name" },
@@ -48,6 +47,8 @@ export function ProcessStepEditor({
       ),
     },
   ];
+
+  const hasLoad = !!step.component;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -68,37 +69,17 @@ export function ProcessStepEditor({
         </label>
         {loadOptions.length > 0 ? (
           <Select
-            value={step.component}
+            value={step.component ?? undefined}
             onChange={(v) => onChange({ ...step, component: v })}
             options={loadOptions}
+            allowClear
+            placeholder="选择负载（可选）"
             style={{ width: "100%" }}
           />
         ) : (
           <Empty
             image={Empty.PRESENTED_IMAGE_SIMPLE}
             description="设备无可用负载（loads），请等待设备上报 GPIO 状态"
-            style={{ margin: "8px 0" }}
-          />
-        )}
-      </div>
-
-      <div>
-        <label style={{ fontSize: 13, color: "#666", marginBottom: 4, display: "block" }}>
-          触发按钮
-        </label>
-        {buttonOptions.length > 0 ? (
-          <Select
-            value={step.trigger ?? undefined}
-            onChange={(v) => onChange({ ...step, trigger: v })}
-            options={buttonOptions}
-            allowClear
-            placeholder="选择触发按钮（可选）"
-            style={{ width: "100%" }}
-          />
-        ) : (
-          <Empty
-            image={Empty.PRESENTED_IMAGE_SIMPLE}
-            description="设备无可用按钮（buttons），请等待设备上报 GPIO 状态"
             style={{ margin: "8px 0" }}
           />
         )}
@@ -113,6 +94,7 @@ export function ProcessStepEditor({
           onChange={(v) =>
             onChange({ ...step, value: { ...step.value, begin: v ?? 0 } })
           }
+          disabled={!hasLoad}
           style={{ width: "100%" }}
         />
       </div>
@@ -126,19 +108,7 @@ export function ProcessStepEditor({
           onChange={(v) =>
             onChange({ ...step, value: { ...step.value, end: v ?? 0 } })
           }
-          style={{ width: "100%" }}
-        />
-      </div>
-
-      <div>
-        <label style={{ fontSize: 13, color: "#666", marginBottom: 4, display: "block" }}>
-          延迟运行（毫秒）
-        </label>
-        <InputNumber
-          value={step.delay}
-          onChange={(v) => onChange({ ...step, delay: v ?? 0 })}
-          step={1000}
-          min={0}
+          disabled={!hasLoad}
           style={{ width: "100%" }}
         />
       </div>
