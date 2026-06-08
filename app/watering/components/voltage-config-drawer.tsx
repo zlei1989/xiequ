@@ -90,15 +90,17 @@ export function VoltageConfigDrawer({
           >
             R1 电阻值（Ω）
           </label>
-          <InputNumber
-            value={config.r1}
-            onChange={(v) => update({ r1: v ?? DEFAULT_R1 })}
-            min={0}
-            step={1000}
-            style={{ width: "100%" }}
-            addonAfter="Ω"
-            placeholder="默认 30000Ω (30kΩ)"
-          />
+          <Space.Compact style={{ width: "100%" }}>
+            <InputNumber
+              value={config.r1}
+              onChange={(v) => update({ r1: v ?? DEFAULT_R1 })}
+              min={0}
+              step={1000}
+              style={{ flex: 1 }}
+              placeholder="默认 30000"
+            />
+            <Button disabled>Ω</Button>
+          </Space.Compact>
           <div style={{ fontSize: 11, color: "#999", marginTop: 4 }}>
             分压电阻 R1，上拉至被测电压。默认 30kΩ
           </div>
@@ -116,15 +118,17 @@ export function VoltageConfigDrawer({
           >
             R2 电阻值（Ω）
           </label>
-          <InputNumber
-            value={config.r2}
-            onChange={(v) => update({ r2: v ?? DEFAULT_R2 })}
-            min={0}
-            step={1000}
-            style={{ width: "100%" }}
-            addonAfter="Ω"
-            placeholder="默认 10000Ω (10kΩ)"
-          />
+          <Space.Compact style={{ width: "100%" }}>
+            <InputNumber
+              value={config.r2}
+              onChange={(v) => update({ r2: v ?? DEFAULT_R2 })}
+              min={0}
+              step={1000}
+              style={{ flex: 1 }}
+              placeholder="默认 10000"
+            />
+            <Button disabled>Ω</Button>
+          </Space.Compact>
           <div style={{ fontSize: 11, color: "#999", marginTop: 4 }}>
             分压电阻 R2，下拉至 GND。默认 10kΩ
           </div>
