@@ -38,11 +38,13 @@ export function LocationViewPopup({
 }) {
   if (!location) return null;
 
-  const coverUrl = `/travel/api/download?type=cover&id=${location.id}`;
+  // 在 null 检查后提取为 const，闭包中可安全使用 Location 类型
+  const loc = location;
+  const coverUrl = `/travel/api/download?type=cover&id=${loc.id}`;
 
   async function handleToggle() {
     try {
-      await onToggle(location);
+      await onToggle(loc);
       Toast.show({ icon: "success", content: "更新成功" });
     } catch (err: unknown) {
       Toast.show({ icon: "fail", content: getErrorMessage(err, "更新失败") });
@@ -51,12 +53,12 @@ export function LocationViewPopup({
 
   function handleDelete() {
     Dialog.confirm({
-      content: `确认删除「${location.name}」及备注等信息？不可恢复。`,
+      content: `确认删除「${loc.name}」及备注等信息？不可恢复。`,
       confirmText: "确定",
       cancelText: "取消",
       onConfirm: async () => {
         try {
-          await onDelete(location);
+          await onDelete(loc);
           onClose();
         } catch (err: unknown) {
           Toast.show({ icon: "fail", content: getErrorMessage(err, "删除失败") });
@@ -95,9 +97,9 @@ export function LocationViewPopup({
       }}
     >
       <div style={{ position: "relative" }}>
-        <CoverImage src={coverUrl} alt={location.name} height={240} />
+        <CoverImage src={coverUrl} alt={loc.name} height={240} />
         <div style={{ position: "absolute", right: 8, bottom: 8 }}>
-          <UploadImage locationId={location.id} type="cover" />
+          <UploadImage locationId={loc.id} type="cover" />
         </div>
       </div>
 
@@ -105,20 +107,20 @@ export function LocationViewPopup({
         <List.Item
           extra={
             <Space align="center">
-              <StatusTag checked={location.checked} />
-              <Button size="small" fill="none" color="primary" onClick={() => onEdit(location)}>
+              <StatusTag checked={loc.checked} />
+              <Button size="small" fill="none" color="primary" onClick={() => onEdit(loc)}>
                 编辑
               </Button>
             </Space>
           }
         >
-          {location.name}
+          {loc.name}
         </List.Item>
-        <List.Item title="地址">{location.address}</List.Item>
+        <List.Item title="地址">{loc.address}</List.Item>
         <List.Item title="坐标">
-          {location.longitude}, {location.latitude}
+          {loc.longitude}, {loc.latitude}
         </List.Item>
-        {location.comments && <List.Item title="备注">{location.comments}</List.Item>}
+        {loc.comments && <List.Item title="备注">{loc.comments}</List.Item>}
       </List>
 
       <Section
@@ -164,8 +166,8 @@ export function LocationViewPopup({
           { key: "delete", text: "删除", color: "danger", onClick: handleDelete },
           {
             key: "toggle",
-            text: location.checked ? "标记待去" : "标记已去",
-            color: location.checked ? "default" : "primary",
+            text: loc.checked ? "标记待去" : "标记已去",
+            color: loc.checked ? "default" : "primary",
             onClick: handleToggle,
           },
           { key: "close", text: "关闭", color: "primary", fill: "outline", onClick: onClose },
