@@ -163,6 +163,9 @@ export function DeviceEditor({
       name: "新中断",
       component: gpio.sensors[0] ?? "sensor_0",
       state: 0,
+      signalType: "digital",   // 默认数字信号
+      logic: ">",              // 默认大于
+      threshold: 0,            // 默认阈值 0
       intercept: 100,
       delay: 0,
       duration: 0,
