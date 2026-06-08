@@ -1,9 +1,9 @@
 "use client";
 
-import { Button, Image, Toast } from "antd-mobile";
+import { Button, Image, Space, Toast } from "antd-mobile";
 import { CameraOutline } from "antd-mobile-icons";
-import { useState, useEffect, useRef } from "react";
-import { getUploadUrl, getImageUrl } from "../actions";
+import { useEffect, useRef, useState } from "react";
+import { getImageUrl, getUploadUrl } from "../actions";
 
 /**
  * 图片上传组件
@@ -28,26 +28,23 @@ export function UploadImage({
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // 加载已有封面的签名 URL
   useEffect(() => {
     async function loadPreview() {
       try {
         const url = await getImageUrl(locationId, type);
         setPreviewUrl(url);
       } catch {
-        // 封面可能不存在，静默忽略
         setPreviewUrl(null);
       }
     }
     loadPreview();
   }, [locationId, type]);
 
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
+  function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
     if (file) {
       handleUpload(file);
     }
-    // 清空 input 以便重复选择同一文件
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -56,12 +53,7 @@ export function UploadImage({
   async function handleUpload(file: File) {
     setUploading(true);
     try {
-      // Step 1: 获取 COS 签名 PUT URL
-      // 参考 TencentOss.getSignedPutUrl() —— 服务端生成带签名的上传地址
       const signedUrl = await getUploadUrl(locationId, type);
-
-      // Step 2: 使用签名 URL 直传文件到 COS
-      // PUT 请求体为文件二进制数据，Content-Type 由请求头指定
       const response = await fetch(signedUrl, {
         method: "PUT",
         headers: {
@@ -74,19 +66,19 @@ export function UploadImage({
         throw new Error(`上传失败: ${response.status} ${response.statusText}`);
       }
 
-      // Step 3: 刷新预览（重新获取签名 URL）
       const downloadUrl = await getImageUrl(locationId, type);
       setPreviewUrl(downloadUrl);
       Toast.show({ icon: "success", content: "上传成功" });
-    } catch (err: any) {
-      Toast.show({ icon: "fail", content: "上传失败: " + err.message });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "上传失败";
+      Toast.show({ icon: "fail", content: "上传失败: " + message });
     } finally {
       setUploading(false);
     }
   }
 
   return (
-    <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+    <Space align="center">
       <input
         ref={fileInputRef}
         type="file"
@@ -103,25 +95,8 @@ export function UploadImage({
         <CameraOutline />
       </Button>
       {previewUrl && (
-        <Image
-          src={previewUrl}
-          alt="封面"
-          width={40}
-          height={40}
-          fit="cover"
-          style={{ borderRadius: 4 }}
-          fallback={
-            <div
-              style={{
-                width: 40,
-                height: 40,
-                background: "#f0f0f0",
-                borderRadius: 4,
-              }}
-            />
-          }
-        />
+        <Image src={previewUrl} alt="封面" width={40} height={40} fit="cover" />
       )}
-    </div>
+    </Space>
   );
 }
