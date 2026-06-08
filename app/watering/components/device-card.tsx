@@ -132,13 +132,13 @@ export function DeviceCard({
       }
       style={{ marginBottom: 12 }}
     >
-      {/* 设备信息 */}
-      <Row gutter={8} style={{ marginBottom: 8 }}>
-        <Col span={voltage !== undefined ? 12 : 16}>
+      {/* 设备信息 — 1 行 2 列 */}
+      <Row gutter={[8, 4]} style={{ marginBottom: 8 }}>
+        <Col span={12}>
           <span style={{ color: "#999", fontSize: 12 }}>芯片: </span>
           <span style={{ fontSize: 13 }}>{device.chipId}</span>
         </Col>
-        {voltage !== undefined && (
+        {voltage !== undefined ? (
           <Col span={12}>
             <span style={{ color: "#999", fontSize: 12 }}>电压: </span>
             <span style={{ fontSize: 13, fontWeight: 500 }}>
@@ -150,8 +150,14 @@ export function DeviceCard({
               </span>
             )}
           </Col>
+        ) : (
+          <Col span={12} />
         )}
-        <Col span={8}>
+        <Col span={12}>
+          <span style={{ color: "#999", fontSize: 12 }}>网卡: </span>
+          <span style={{ fontSize: 12 }}>{device.macAddress}</span>
+        </Col>
+        <Col span={12}>
           <span style={{ color: "#999", fontSize: 12 }}>状态: </span>
           {device.isOnline ? (
             <Tag color="green" style={{ margin: 0 }}>
@@ -164,11 +170,6 @@ export function DeviceCard({
           )}
         </Col>
       </Row>
-
-      {/* 网卡地址 */}
-      <div style={{ color: "#999", fontSize: 12, marginBottom: 8 }}>
-        网卡: {device.macAddress}
-      </div>
 
       {/* 当前执行状态 */}
       {device.state?.switch === "on" &&
