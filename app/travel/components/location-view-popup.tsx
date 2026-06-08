@@ -125,15 +125,15 @@ export function LocationViewPopup({
       <List style={{ "--font-size": "14px" } as React.CSSProperties}>
         <List.Item
           extra={
-            <a
+            <span
               onClick={(e) => {
                 e.stopPropagation();
                 onEdit(location);
               }}
-              style={{ fontSize: 13 }}
+              style={{ fontSize: 13, color: "#1677ff", cursor: "pointer" }}
             >
               编辑
-            </a>
+            </span>
           }
         >
           <div style={{ fontWeight: 600, fontSize: 16 }}>{location.name}</div>
@@ -178,15 +178,15 @@ export function LocationViewPopup({
           clickable
           onClick={() => onEditMoment(m)}
           extra={
-            <a
+            <span
               onClick={(e) => {
                 e.stopPropagation();
                 handleDeleteMoment(m);
               }}
-              style={{ color: "#ff4d4f", fontSize: 13 }}
+              style={{ color: "#ff4d4f", fontSize: 13, cursor: "pointer" }}
             >
               删除
-            </a>
+            </span>
           }
         >
           <div
