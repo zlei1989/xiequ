@@ -18,8 +18,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "个人工具箱",
-  description: "日常工具集合",
+  title: "谐趣",
+  description: "浇花帮手、旅行计划、台岛遍历",
 };
 
 export default function RootLayout({
