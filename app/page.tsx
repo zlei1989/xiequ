@@ -42,7 +42,7 @@ export default function Home() {
 
   return (
     <>
-      <NavBar>谐趣</NavBar>
+      <NavBar backIcon={false}>谐趣</NavBar>
       <List>
         {apps.map((app) => (
           <List.Item
