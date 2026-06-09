@@ -1,8 +1,20 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Popup, Form, Input, TextArea, Button, Toast, NavBar } from "antd-mobile";
+import { Popup, Form, Input, TextArea, Button, Toast, NavBar, DatePickerView } from "antd-mobile";
 import type { Moment } from "../types";
+import dayjs from "dayjs";
+
+// 将 "YYYY-MM-DD" 字符串转为 Date 对象
+function dateStrToDate(str: string): Date {
+  const d = dayjs(str);
+  return d.isValid() ? d.toDate() : new Date();
+}
+
+// 将 Date 对象转为 "YYYY-MM-DD" 字符串
+function dateToStr(d: Date): string {
+  return dayjs(d).format("YYYY-MM-DD");
+}
 
 export function MomentEditPopup({
   moment,
@@ -20,6 +32,7 @@ export function MomentEditPopup({
   const [date, setDate] = useState("");
   const [text, setText] = useState("");
   const [saving, setSaving] = useState(false);
+  const [datePickerVisible, setDatePickerVisible] = useState(false);
 
   const isEdit = !!moment;
 
@@ -37,7 +50,7 @@ export function MomentEditPopup({
 
   async function handleSave() {
     if (!date.trim()) {
-      Toast.show({ icon: "fail", content: "请填写日期" });
+      Toast.show({ icon: "fail", content: "请选择日期" });
       return;
     }
     setSaving(true);
@@ -58,42 +71,77 @@ export function MomentEditPopup({
   }
 
   return (
-    <Popup
-      visible={visible}
-      onMaskClick={onClose}
-      onClose={onClose}
-      position="bottom"
-      bodyStyle={{
-        borderTopLeftRadius: 16,
-        borderTopRightRadius: 16,
-        minHeight: "40vh",
-        maxHeight: "75vh",
-        overflow: "auto",
-      }}
-    >
-      <NavBar
-        onBack={onClose}
-        right={
-          <Button color="primary" size="small" loading={saving} onClick={handleSave}>
-            保存
-          </Button>
-        }
+    <>
+      <Popup
+        visible={visible}
+        onMaskClick={onClose}
+        onClose={onClose}
+        position="bottom"
+        bodyStyle={{
+          borderTopLeftRadius: 16,
+          borderTopRightRadius: 16,
+          minHeight: "40vh",
+          maxHeight: "75vh",
+          overflow: "auto",
+        }}
       >
-        {isEdit ? "编辑记录" : "添加记录"}
-      </NavBar>
-      <Form layout="vertical" style={{ padding: "0 16px" }}>
-        <Form.Item label="日期">
-          <Input value={date} onChange={setDate} placeholder="YYYY-MM-DD" />
-        </Form.Item>
-        <Form.Item label="内容">
-          <TextArea
-            value={text}
-            onChange={setText}
-            placeholder="记录这一刻..."
-            rows={3}
-          />
-        </Form.Item>
-      </Form>
-    </Popup>
+        <NavBar
+          onBack={onClose}
+          right={
+            <Button color="primary" size="small" loading={saving} onClick={handleSave}>
+              保存
+            </Button>
+          }
+        >
+          {isEdit ? "编辑记录" : "添加记录"}
+        </NavBar>
+        <Form layout="vertical" style={{ padding: "0 16px" }}>
+          <Form.Item label="日期">
+            <Input
+              value={date}
+              readOnly
+              onClick={() => setDatePickerVisible(true)}
+              placeholder="YYYY-MM-DD"
+            />
+          </Form.Item>
+          <Form.Item label="内容">
+            <TextArea
+              value={text}
+              onChange={setText}
+              placeholder="记录这一刻..."
+              rows={4}
+            />
+          </Form.Item>
+        </Form>
+      </Popup>
+
+      <Popup
+        visible={datePickerVisible}
+        onMaskClick={() => setDatePickerVisible(false)}
+        onClose={() => setDatePickerVisible(false)}
+        position="bottom"
+        bodyStyle={{
+          borderTopLeftRadius: 16,
+          borderTopRightRadius: 16,
+        }}
+      >
+        <DatePickerView
+          value={dateStrToDate(date)}
+          onChange={(val) => setDate(dateToStr(val))}
+          min={new Date(2000, 0, 1)}
+          max={new Date()}
+          style={{ "--height": "240px" }}
+        />
+        <div style={{ padding: "8px 16px 16px", display: "flex", justifyContent: "flex-end" }}>
+          <Button
+            color="primary"
+            size="small"
+            onClick={() => setDatePickerVisible(false)}
+          >
+            确定
+          </Button>
+        </div>
+      </Popup>
+    </>
   );
 }
