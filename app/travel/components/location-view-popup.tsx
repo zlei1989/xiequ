@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Button, Card, Dialog, ErrorBlock, List, Popup, Space, Switch, Toast } from "antd-mobile";
 import { EditSOutline, AddOutline, DeleteOutline } from "antd-mobile-icons";
 import { UploadImage } from "./upload-image";
@@ -39,7 +40,8 @@ export function LocationViewPopup({
 
   // 在 null 检查后提取为 const，闭包中可安全使用 Location 类型
   const loc = location;
-  const coverUrl = `/travel/api/download?type=cover&id=${loc.id}`;
+  const [coverKey, setCoverKey] = useState(Date.now());
+  const coverUrl = `/travel/api/download?type=cover&id=${loc.id}&_t=${coverKey}`;
 
   async function handleToggle() {
     try {
@@ -98,7 +100,11 @@ export function LocationViewPopup({
       <div style={{ position: "relative" }}>
         <CoverImage src={coverUrl} alt={loc.name} height={240} />
         <div style={{ position: "absolute", right: 8, bottom: 8 }}>
-          <UploadImage locationId={loc.id} type="cover" />
+          <UploadImage
+            locationId={loc.id}
+            type="cover"
+            onSuccess={() => setCoverKey(Date.now())}
+          />
         </div>
       </div>
 
