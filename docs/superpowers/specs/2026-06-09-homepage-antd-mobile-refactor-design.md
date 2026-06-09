@@ -17,8 +17,10 @@ page.tsx ("use client")
     │   └── h1 "个人工具箱"
     ├── Card (icon=🌱, title="浇花助手", onClick → /watering)
     │   └── "IoT 设备管理，远程控制浇花"
-    └── Card (icon=🗺️, title="旅行计划", onClick → /travel)
-        └── "地图标注，收藏想去的地方"
+    ├── Card (icon=🗺️, title="旅行计划", onClick → /travel)
+    │   └── "地图标注，收藏想去的地方"
+    └── Card (icon=🚲, title="台岛遍历", onClick → window.open)
+        └── "将二〇一六年的行迹，悉数检点，妥为收存"
 ```
 
 ## 组件映射
@@ -44,7 +46,7 @@ page.tsx ("use client")
 
 ### 数据结构
 
-保持现有 `apps` 数组不变（title / description / href / icon）。
+`apps` 数组（title / description / href / icon），新增第三项"台岛遍历"。前两项使用 Next.js 路由，第三项为静态页面使用 `window.open`。
 
 ### 核心代码
 
@@ -67,10 +69,24 @@ const apps = [
     href: "/travel",
     icon: "🗺️",
   },
+  {
+    title: "台岛遍历",
+    description: "将二〇一六年的行迹，悉数检点，妥为收存",
+    href: "/taiwan-1.8.4/index.html",
+    icon: "🚲",
+  },
 ];
 
 export default function Home() {
   const router = useRouter();
+
+  function handleClick(href: string) {
+    if (href.startsWith("/taiwan")) {
+      window.open(href, "_self");
+    } else {
+      router.push(href);
+    }
+  }
 
   return (
     <Space direction="vertical" block>
@@ -82,7 +98,7 @@ export default function Home() {
           key={app.href}
           icon={app.icon}
           title={app.title}
-          onClick={() => router.push(app.href)}
+          onClick={() => handleClick(app.href)}
         >
           {app.description}
         </Card>
@@ -98,7 +114,8 @@ export default function Home() {
 
 ## 交互
 
-- `Card.onClick` → `router.push(href)` 实现页面导航
+- Next.js 路由（浇花助手、旅行计划）：`Card.onClick` → `router.push(href)`
+- 静态页面（台岛遍历）：`Card.onClick` → `window.open(href, "_self")`
 - antd-mobile `Card` 自带触控按下背景色反馈
 - `Space block` 保证全宽布局
 
@@ -112,7 +129,8 @@ export default function Home() {
 
 ## 测试要点
 
-- 首页渲染两张卡片，标题、描述、图标正确显示
+- 首页渲染三张卡片，标题、描述、图标正确显示
 - 点击"浇花助手"卡片跳转到 `/watering`
 - 点击"旅行计划"卡片跳转到 `/travel`
+- 点击"台岛遍历"卡片通过 `window.open` 打开 `/taiwan-1.8.4/index.html`
 - 页面无 antd 组件引用残留
