@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Popup, Form, Input, TextArea, Button, Toast, NavBar, DatePickerView } from "antd-mobile";
+import { Popup, Form, TextArea, Button, Toast, NavBar, DatePickerView } from "antd-mobile";
 import type { Moment } from "../types";
 import dayjs from "dayjs";
 
@@ -97,12 +97,19 @@ export function MomentEditPopup({
         </NavBar>
         <Form layout="vertical" style={{ padding: "0 16px" }}>
           <Form.Item label="日期">
-            <Input
-              value={date}
-              readOnly
+            <div
               onClick={() => setDatePickerVisible(true)}
-              placeholder="YYYY-MM-DD"
-            />
+              style={{
+                padding: "8px 12px",
+                border: "1px solid #e5e5e5",
+                borderRadius: 8,
+                color: date ? "inherit" : "#999",
+                cursor: "pointer",
+                fontSize: 16,
+              }}
+            >
+              {date || "YYYY-MM-DD"}
+            </div>
           </Form.Item>
           <Form.Item label="内容">
             <TextArea
