@@ -6,13 +6,25 @@ import { newId, formatDateTime } from "@/lib/utils";
 /**
  * 旅行模块 OSS 存储路径约定
  * - 位置数据: apps/travel/locations.json
- * - 位置封面: apps/travel/covers/{id}
- * - 位置图标: apps/travel/icons/{id}
+ * - 图片统一: apps/travel/posters/{id}
  *
- * 路径规则与旧项目保持一致。
+ * 访问 URL 格式（COS CI 样式处理）：
+ * - https://{bucket}.cos.{region}.myqcloud.com/apps/travel/posters/{id}/{stylename}
+ * - stylename: cover | icon
  */
 
 const LOCATIONS_KEY = "apps/travel/locations.json";
+
+/**
+ * 构造 OSS 公共访问基础 URL
+ *
+ * 格式：https://{bucket}.cos.{region}.myqcloud.com
+ * 用于拼接带 COS CI 样式后缀的图片访问地址。
+ */
+function getOssBaseUrl(): string {
+  const adapter = getOssAdapter();
+  return `https://${adapter.getBucket()}.cos.${adapter.getEndpoint()}.myqcloud.com`;
+}
 
 // ─── OSS 通用操作（通过 OssAdapter 适配器） ────────────────────────────
 
@@ -173,7 +185,7 @@ export async function deleteLocation(id: string): Promise<void> {
 
   // 删除封面图（忽略不存在的情况）
   try {
-    await ossDelete(`apps/travel/covers/${id}`);
+    await ossDelete(`apps/travel/posters/${id}`);
   } catch {
     // 封面图可能不存在，忽略
   }
@@ -246,48 +258,27 @@ export async function deleteMoment(
   return location;
 }
 
-// ─── 图片签名 URL ──────────────────────────────────────────────────────
+// ─── 图片上传 / 访问 ────────────────────────────────────────────────────
 
 /**
- * 获取封面上传签名 URL
+ * 获取 poster 上传签名 URL
  *
  * 前端拿到签名 URL 后直接 PUT 上传图片到 COS。
- * 参考 TencentOss.getSignedPutUrl() 流程。
+ * 所有图片（封面/图标）统一上传到 apps/travel/posters/{id}。
  */
-export async function getCoverUploadUrl(id: string): Promise<string> {
-  return ossGetSignedPutUrl(`apps/travel/covers/${id}`);
+export async function getPosterUploadUrl(id: string): Promise<string> {
+  return ossGetSignedPutUrl(`apps/travel/posters/${id}`);
 }
 
 /**
- * 获取封面下载签名 URL
+ * 获取 poster 访问 URL（COS CI 样式处理）
  *
- * 服务端通过 OssAdapter.getSignedUrl() 获取临时访问地址。
- * 签名 URL 默认有效期由 SDK 控制，无需额外参数。
- */
-export async function getCoverDownloadUrl(id: string): Promise<string> {
-  return ossGetSignedUrl(`apps/travel/covers/${id}`);
-}
-
-/**
- * 获取图标下载签名 URL
- */
-export async function getIconDownloadUrl(id: string): Promise<string> {
-  return ossGetSignedUrl(`apps/travel/icons/${id}`);
-}
-
-/**
- * 获取封面下载地址（API 路由代理方式）
+ * 通过 URL 后缀指定 COS CI 处理样式，格式：
+ * https://{bucket}.cos.{region}.myqcloud.com/apps/travel/posters/{id}/{stylename}
  *
- * 返回 API 路由地址，由服务端代理下载。
- * 当前端无法直接访问 COS 时使用此方式。
+ * @param id - 图片标识
+ * @param stylename - 样式名：cover | icon
  */
-export function getCoverProxyUrl(id: string): string {
-  return `/travel/api/download?type=cover&id=${id}`;
-}
-
-/**
- * 获取图标下载地址（API 路由代理方式）
- */
-export function getIconProxyUrl(id: string): string {
-  return `/travel/api/download?type=icon&id=${id}`;
+export function getPosterStyledUrl(id: string, stylename: "cover" | "icon"): string {
+  return `${getOssBaseUrl()}/apps/travel/posters/${id}/${stylename}`;
 }
