@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Popup, Form, TextArea, Button, Toast, NavBar, DatePickerView } from "antd-mobile";
+import { Popup, Form, TextArea, Button, Toast, NavBar, DatePicker } from "antd-mobile";
 import type { Moment } from "../types";
 import dayjs from "dayjs";
 
@@ -32,7 +32,6 @@ export function MomentEditPopup({
   const [date, setDate] = useState("");
   const [text, setText] = useState("");
   const [saving, setSaving] = useState(false);
-  const [datePickerVisible, setDatePickerVisible] = useState(false);
 
   const isEdit = !!moment;
 
@@ -71,84 +70,60 @@ export function MomentEditPopup({
   }
 
   return (
-    <>
-      <Popup
-        visible={visible}
-        onMaskClick={onClose}
-        onClose={onClose}
-        position="bottom"
-        bodyStyle={{
-          borderTopLeftRadius: 16,
-          borderTopRightRadius: 16,
-          minHeight: "40vh",
-          maxHeight: "75vh",
-          overflow: "auto",
-        }}
-      >
-        <NavBar
-          onBack={onClose}
-          right={
-            <Button color="primary" size="small" loading={saving} onClick={handleSave}>
-              保存
-            </Button>
-          }
-        >
-          {isEdit ? "编辑记录" : "添加记录"}
-        </NavBar>
-        <Form layout="vertical" style={{ padding: "0 16px" }}>
-          <Form.Item label="日期">
-            <div
-              onClick={() => setDatePickerVisible(true)}
-              style={{
-                padding: "8px 12px",
-                border: "1px solid #e5e5e5",
-                borderRadius: 8,
-                color: date ? "inherit" : "#999",
-                cursor: "pointer",
-                fontSize: 16,
-              }}
-            >
-              {date || "YYYY-MM-DD"}
-            </div>
-          </Form.Item>
-          <Form.Item label="内容">
-            <TextArea
-              value={text}
-              onChange={setText}
-              placeholder="记录这一刻..."
-              rows={4}
-            />
-          </Form.Item>
-        </Form>
-      </Popup>
-
-      <Popup
-        visible={datePickerVisible}
-        onMaskClick={() => setDatePickerVisible(false)}
-        onClose={() => setDatePickerVisible(false)}
-        position="bottom"
-        bodyStyle={{
-          borderTopLeftRadius: 16,
-          borderTopRightRadius: 16,
-        }}
-      >
-        <DatePickerView
-          value={dateStrToDate(date)}
-          onChange={(val) => setDate(dateToStr(val))}
-          min={new Date(2000, 0, 1)}
-          max={new Date()}
-          style={{ "--height": "240px" }}
-        />
-        <div style={{ padding: "8px 16px 16px", display: "flex", justifyContent: "flex-end" }}>
-          <Button
-            color="primary"
-            size="small"
-            onClick={() => setDatePickerVisible(false)}
-          >
-            确定
+    <Popup
+      visible={visible}
+      onMaskClick={onClose}
+      onClose={onClose}
+      position="bottom"
+      bodyStyle={{
+        borderTopLeftRadius: 16,
+        borderTopRightRadius: 16,
+        minHeight: "40vh",
+        maxHeight: "75vh",
+        overflow: "auto",
+      }}
+    >
+      <NavBar
+        onBack={onClose}
+        right={
+          <Button color="primary" size="small" loading={saving} onClick={handleSave}>
+            保存
           </Button>
-        </div>
-      </Popup>
-    </>
+        }
+      >
+        {isEdit ? "编辑瞬间" : "添加瞬间"}
+      </NavBar>
+      <Form layout="vertical" style={{ padding: "0 16px" }}>
+        <Form.Item label="日期">
+          <DatePicker
+            value={dateStrToDate(date)}
+            onConfirm={(val) => {
+              if (val) setDate(dateToStr(val));
+            }}
+            min={new Date(2000, 0, 1)}
+            max={new Date()}
+          >
+            {(value) => (
+              <div
+                style={{
+                  color: value ? "inherit" : "#999",
+                  fontSize: 16,
+                }}
+              >
+                {value ? dateToStr(value) : "请选择日期"}
+              </div>
+            )}
+          </DatePicker>
+        </Form.Item>
+        <Form.Item label="内容">
+          <TextArea
+            value={text}
+            onChange={setText}
+            placeholder="记录这一刻..."
+            rows={4}
+          />
+        </Form.Item>
+      </Form>
+    </Popup>
   );
 }
