@@ -128,7 +128,7 @@ export default function LocationListPage() {
 
       <LocationViewPopup
         location={viewLocation}
-        visible={!!viewLocation}
+        visible={!!viewLocation && !editMoment && !editLocation}
         onClose={() => setViewLocation(null)}
         moments={moments}
         onEdit={(loc) => setEditLocation(loc)}
