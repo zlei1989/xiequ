@@ -8,8 +8,8 @@ import {
   addMoment,
   updateMoment,
   deleteMoment,
-  getCoverUploadUrl,
-  getCoverDownloadUrl,
+  getPosterUploadUrl,
+  getPosterStyledUrl,
 } from "./services/oss";
 import { isOssConfigured } from "@/lib/oss";
 
@@ -53,21 +53,18 @@ export async function removeMoment(locationId: string, momentId: string) {
 /**
  * 获取图片上传签名 URL
  *
- * 前端拿到签名 URL 后直接 PUT 上传到 COS。
- * 参考 TencentOss.getSignedPutUrl() 流程：
- * 1. Server Action 返回签名 URL
- * 2. 前端使用 fetch(url, { method: 'PUT', body: file }) 直传
+ * 前端拿到签名 URL 后直接 PUT 上传到 COS 的 apps/travel/posters/{id}。
  */
 export async function getUploadUrl(id: string, type: "cover" | "icon" = "cover") {
-  return getCoverUploadUrl(id);
+  return getPosterUploadUrl(id);
 }
 
 /**
- * 获取图片下载签名 URL
+ * 获取图片访问 URL（COS CI 样式处理）
  *
- * 服务端生成临时访问地址返回给前端。
- * 签名 URL 由 OssAdapter.getSignedUrl() 生成。
+ * 返回带样式后缀的公共访问地址：
+ * https://{bucket}.cos.{region}.myqcloud.com/apps/travel/posters/{id}/{type}
  */
 export async function getImageUrl(id: string, type: "cover" | "icon" = "cover") {
-  return getCoverDownloadUrl(id);
+  return getPosterStyledUrl(id, type);
 }
