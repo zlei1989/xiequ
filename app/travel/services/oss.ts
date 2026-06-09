@@ -5,14 +5,14 @@ import { newId, formatDateTime } from "@/lib/utils";
 
 /**
  * 旅行模块 OSS 存储路径约定
- * - 位置数据: trip-plan/locations.json
- * - 位置封面: trip-plan/covers/{id}
- * - 位置图标: trip-plan/icons/{id}
+ * - 位置数据: apps/travel/locations.json
+ * - 位置封面: apps/travel/covers/{id}
+ * - 位置图标: apps/travel/icons/{id}
  *
  * 路径规则与旧项目保持一致。
  */
 
-const LOCATIONS_KEY = "trip-plan/locations.json";
+const LOCATIONS_KEY = "apps/travel/locations.json";
 
 // ─── OSS 通用操作（通过 OssAdapter 适配器） ────────────────────────────
 
@@ -83,7 +83,7 @@ async function ossExists(key: string): Promise<boolean> {
 /**
  * 获取所有位置
  *
- * 从 OSS 的 trip-plan/locations.json 读取。
+ * 从 OSS 的 apps/travel/locations.json 读取。
  * 文件不存在时返回空数组。
  */
 export async function getLocations(): Promise<Location[]> {
@@ -101,7 +101,7 @@ export async function getLocations(): Promise<Location[]> {
 /**
  * 保存所有位置
  *
- * 将位置数据写入 OSS 的 trip-plan/locations.json。
+ * 将位置数据写入 OSS 的 apps/travel/locations.json。
  */
 async function saveLocations(locations: Location[]): Promise<void> {
   await ossPutString(LOCATIONS_KEY, JSON.stringify(locations), {
@@ -173,7 +173,7 @@ export async function deleteLocation(id: string): Promise<void> {
 
   // 删除封面图（忽略不存在的情况）
   try {
-    await ossDelete(`trip-plan/covers/${id}`);
+    await ossDelete(`apps/travel/covers/${id}`);
   } catch {
     // 封面图可能不存在，忽略
   }
@@ -255,7 +255,7 @@ export async function deleteMoment(
  * 参考 TencentOss.getSignedPutUrl() 流程。
  */
 export async function getCoverUploadUrl(id: string): Promise<string> {
-  return ossGetSignedPutUrl(`trip-plan/covers/${id}`);
+  return ossGetSignedPutUrl(`apps/travel/covers/${id}`);
 }
 
 /**
@@ -265,14 +265,14 @@ export async function getCoverUploadUrl(id: string): Promise<string> {
  * 签名 URL 默认有效期由 SDK 控制，无需额外参数。
  */
 export async function getCoverDownloadUrl(id: string): Promise<string> {
-  return ossGetSignedUrl(`trip-plan/covers/${id}`);
+  return ossGetSignedUrl(`apps/travel/covers/${id}`);
 }
 
 /**
  * 获取图标下载签名 URL
  */
 export async function getIconDownloadUrl(id: string): Promise<string> {
-  return ossGetSignedUrl(`trip-plan/icons/${id}`);
+  return ossGetSignedUrl(`apps/travel/icons/${id}`);
 }
 
 /**
