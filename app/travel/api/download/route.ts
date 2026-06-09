@@ -32,8 +32,8 @@ export async function GET(request: NextRequest) {
 
     // 根据类型确定 OSS Key
     const ossKey = type === "icon"
-      ? `trip-plan/icons/${id}`
-      : `trip-plan/covers/${id}`;
+      ? `apps/travel/icons/${id}`
+      : `apps/travel/covers/${id}`;
 
     // 检查文件是否存在（参考 TencentOss.exists()）
     const fileExists = await adapter.exists(ossKey);
