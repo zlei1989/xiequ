@@ -32,6 +32,7 @@ export function MomentEditPopup({
   const [date, setDate] = useState("");
   const [text, setText] = useState("");
   const [saving, setSaving] = useState(false);
+  const [datePickerVisible, setDatePickerVisible] = useState(false);
 
   const isEdit = !!moment;
 
@@ -94,8 +95,13 @@ export function MomentEditPopup({
         {isEdit ? "编辑瞬间" : "添加瞬间"}
       </NavBar>
       <Form layout="vertical" style={{ padding: "0 16px" }}>
-        <Form.Item label="日期">
+        <Form.Item
+          label="日期"
+          onClick={() => setDatePickerVisible(true)}
+        >
           <DatePicker
+            visible={datePickerVisible}
+            onClose={() => setDatePickerVisible(false)}
             value={dateStrToDate(date)}
             onConfirm={(val) => {
               if (val) setDate(dateToStr(val));
