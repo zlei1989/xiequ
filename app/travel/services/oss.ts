@@ -13,7 +13,9 @@ import { newId, formatDateTime } from "@/lib/utils";
  * - stylename: cover | icon
  */
 
-const LOCATIONS_KEY = "apps/travel/locations.json";
+const LOCATIONS_KEY = process.env.OSS_TRAVEL_LOCATIONS_KEY || "apps/travel/locations.json";
+const POSTERS_PREFIX = process.env.OSS_TRAVEL_POSTERS_PREFIX || "apps/travel/posters";
+
 
 /**
  * 构造 OSS 公共访问基础 URL
@@ -185,7 +187,7 @@ export async function deleteLocation(id: string): Promise<void> {
 
   // 删除封面图（忽略不存在的情况）
   try {
-    await ossDelete(`apps/travel/posters/${id}.jpg`);
+    await ossDelete(`${POSTERS_PREFIX}/${id}.jpg`);
   } catch {
     // 封面图可能不存在，忽略
   }
@@ -267,7 +269,7 @@ export async function deleteMoment(
  * 所有图片（封面/图标）统一上传到 apps/travel/posters/{id}.jpg。
  */
 export async function getPosterUploadUrl(id: string): Promise<string> {
-  return ossGetSignedPutUrl(`apps/travel/posters/${id}.jpg`);
+  return ossGetSignedPutUrl(`${POSTERS_PREFIX}/${id}.jpg`);
 }
 
 /**
@@ -280,5 +282,5 @@ export async function getPosterUploadUrl(id: string): Promise<string> {
  * @param stylename - 样式名：cover | icon
  */
 export function getPosterStyledUrl(id: string, stylename: "cover" | "icon"): string {
-  return `${getOssBaseUrl()}/apps/travel/posters/${id}.jpg/${stylename}`;
+  return `${getOssBaseUrl()}/${POSTERS_PREFIX}/${id}.jpg/${stylename}`;
 }
