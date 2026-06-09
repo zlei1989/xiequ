@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 
 const apps = [
   {
-    title: "浇花助手",
+    title: "浇花帮手",
     description: "IoT 设备管理，远程控制浇花",
     href: "/watering",
     icon: "🌱",
@@ -38,7 +38,7 @@ export default function Home() {
   return (
     <Space direction="vertical" block>
       <AutoCenter>
-        <h1>个人工具箱</h1>
+        <h1>谐趣</h1>
       </AutoCenter>
       {apps.map((app) => (
         <Card
