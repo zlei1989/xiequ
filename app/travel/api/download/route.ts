@@ -7,8 +7,8 @@ import { getOssAdapter, isOssConfigured } from "@/lib/oss";
  * GET /travel/api/download?type=cover&id=xxx
  * GET /travel/api/download?type=icon&id=xxx
  *
- * 返回带 COS CI 样式后缀的公共访问 URL：
- * https://{bucket}.cos.{region}.myqcloud.com/apps/travel/posters/{id}/{type}
+ * 重定向到带 COS CI 样式后缀的公共访问 URL：
+ * https://{bucket}.cos.{region}.myqcloud.com/apps/travel/posters/{id}.jpg/{type}
  */
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
@@ -33,11 +33,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "文件不存在" }, { status: 404 });
     }
 
-    // 返回带 COS CI 样式后缀的公共访问 URL
+    // 重定向到带 COS CI 样式后缀的公共访问 URL
     const bucket = adapter.getBucket();
     const region = adapter.getEndpoint();
     const styledUrl = `https://${bucket}.cos.${region}.myqcloud.com/apps/travel/posters/${id}.jpg/${type}`;
-    return NextResponse.json({ url: styledUrl });
+    return NextResponse.redirect(styledUrl);
   } catch (err: any) {
     console.error("图片访问失败:", err);
     return NextResponse.json(
