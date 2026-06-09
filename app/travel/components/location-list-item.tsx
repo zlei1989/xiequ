@@ -12,11 +12,13 @@ function getErrorMessage(err: unknown, fallback: string): string {
 
 export function LocationListItem({
   location,
+  hasMoments,
   onClick,
   onToggle,
   onDelete,
 }: {
   location: Location;
+  hasMoments: boolean;
   onClick: (location: Location) => void;
   onToggle: (location: Location) => Promise<void>;
   onDelete: (location: Location) => Promise<void>;
@@ -49,16 +51,17 @@ export function LocationListItem({
   return (
     <SwipeAction
       rightActions={[
-        {
+        // 有精彩瞬间时隐藏切换按钮（状态锁定为已去）
+        ...(hasMoments ? [] : [{
           key: "toggle",
-          text: location.checked ? "待去" : "已去",
-          color: location.checked ? "warning" : "primary",
+          text: location.checked ? "标记待去" : "标记已去",
+          color: "light" as const,
           onClick: handleToggle,
-        },
+        }]),
         {
           key: "delete",
           text: "删除",
-          color: "danger",
+          color: "light" as const,
           onClick: handleDelete,
         },
       ]}
