@@ -1,6 +1,6 @@
 "use client";
 
-import { AutoCenter, Card, Space } from "antd-mobile";
+import { List } from "antd-mobile";
 import { EnvironmentOutline } from "antd-mobile-icons";
 import { TravelOutline } from "antd-mobile-icons";
 import { CompassOutline } from "antd-mobile-icons";
@@ -39,20 +39,19 @@ export default function Home() {
   }
 
   return (
-    <Space direction="vertical" block>
-      <AutoCenter>
-        <h1>谐趣</h1>
-      </AutoCenter>
+    <List header="谐趣">
       {apps.map((app) => (
-        <Card
+        <List.Item
           key={app.href}
-          icon={app.icon}
-          title={app.title}
+          prefix={app.icon}
+          description={app.description}
+          clickable
+          arrowIcon
           onClick={() => handleClick(app.href)}
         >
-          {app.description}
-        </Card>
+          {app.title}
+        </List.Item>
       ))}
-    </Space>
+    </List>
   );
 }
