@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { PullToRefresh, List, DotLoading, ErrorBlock, Toast } from "antd-mobile";
+import { useState, useEffect, useMemo } from "react";
+import { PullToRefresh, List, DotLoading, ErrorBlock, Toast, SearchBar } from "antd-mobile";
 import { useTravelContext } from "../hooks/use-locations";
 import { useMoments } from "../hooks/use-moments";
 import { LocationListItem } from "../components/location-list-item";
@@ -10,11 +10,21 @@ import { LocationEditPopup } from "../components/location-edit-popup";
 import { MomentEditPopup } from "../components/moment-edit-popup";
 import { SearchPopup } from "../components/search-popup";
 import { createMoment } from "../actions";
+import { filterLocations } from "../lib/filter-locations";
 import type { Location, Moment } from "../types";
 
 export default function LocationListPage() {
   const { sortedLocations, loading, add, update, remove, load } =
     useTravelContext();
+
+  // 搜索状态
+  const [searchText, setSearchText] = useState("");
+
+  // 对已筛选列表做二次搜索过滤
+  const filteredLocations = useMemo(
+    () => filterLocations(sortedLocations, searchText),
+    [sortedLocations, searchText]
+  );
 
   // Popup 状态
   const [viewLocation, setViewLocation] = useState<Location | null>(null);
@@ -103,16 +113,26 @@ export default function LocationListPage() {
 
   return (
     <>
+      {/* 搜索框 — 始终渲染在顶部 */}
+      <SearchBar
+        placeholder="搜索名称、地址、备注"
+        value={searchText}
+        onChange={setSearchText}
+        onClear={() => setSearchText("")}
+      />
+
       {loading && sortedLocations.length === 0 ? (
         <List>
           <List.Item prefix={<DotLoading />}>加载中</List.Item>
         </List>
       ) : sortedLocations.length === 0 ? (
         <ErrorBlock status="empty" title="暂无位置" />
+      ) : searchText.trim() && filteredLocations.length === 0 ? (
+        <ErrorBlock status="empty" title="暂无搜索结果" />
       ) : (
         <PullToRefresh onRefresh={load}>
           <List>
-            {sortedLocations.map((location) => (
+            {filteredLocations.map((location) => (
               <LocationListItem
                 key={location.id}
                 location={location}
