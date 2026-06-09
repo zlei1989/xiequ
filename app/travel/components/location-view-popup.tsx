@@ -1,11 +1,10 @@
 "use client";
 
-import { Button, Card, Dialog, ErrorBlock, List, Popup, Space, Toast } from "antd-mobile";
+import { Button, Card, Dialog, ErrorBlock, List, Popup, Space, Switch, Toast } from "antd-mobile";
+import { EditSOutline, AddOutline, DeleteOutline } from "antd-mobile-icons";
 import { UploadImage } from "./upload-image";
-import { ActionBar } from "./action-bar";
 import { CoverImage } from "./cover-image";
 import { Section } from "./section";
-import { StatusTag } from "./status-tag";
 import type { Location, Moment } from "../types";
 
 function getErrorMessage(err: unknown, fallback: string): string {
@@ -92,7 +91,7 @@ export function LocationViewPopup({
       bodyStyle={{
         borderTopLeftRadius: 16,
         borderTopRightRadius: 16,
-        maxHeight: "90vh",
+        maxHeight: "75vh",
         overflow: "auto",
       }}
     >
@@ -106,12 +105,9 @@ export function LocationViewPopup({
       <List>
         <List.Item
           extra={
-            <Space align="center">
-              <StatusTag checked={loc.checked} />
-              <Button size="small" fill="none" color="primary" onClick={() => onEdit(loc)}>
-                编辑
-              </Button>
-            </Space>
+            <Button size="small" fill="none" color="primary" onClick={() => onEdit(loc)}>
+              <EditSOutline />
+            </Button>
           }
         >
           {loc.name}
@@ -127,7 +123,7 @@ export function LocationViewPopup({
         title="精彩瞬间"
         extra={
           <Button size="small" fill="none" color="primary" onClick={onAddMoment}>
-            添加
+            <AddOutline />
           </Button>
         }
       >
@@ -149,7 +145,7 @@ export function LocationViewPopup({
                       handleDeleteMoment(moment);
                     }}
                   >
-                    删除
+                    <DeleteOutline />
                   </Button>
                 }
                 onClick={() => onEditMoment(moment)}
@@ -161,18 +157,21 @@ export function LocationViewPopup({
         )}
       </Section>
 
-      <ActionBar
-        actions={[
-          { key: "delete", text: "删除", color: "danger", onClick: handleDelete },
-          {
-            key: "toggle",
-            text: loc.checked ? "标记待去" : "标记已去",
-            color: loc.checked ? "default" : "primary",
-            onClick: handleToggle,
-          },
-          { key: "close", text: "关闭", color: "primary", fill: "outline", onClick: onClose },
-        ]}
-      />
+      <List>
+        <List.Item
+          extra={
+            <Switch
+              checked={loc.checked}
+              uncheckedText="待去"
+              checkedText="已去"
+              onChange={handleToggle}
+              disabled={moments.length > 0}
+            />
+          }
+        >
+          状态
+        </List.Item>
+      </List>
     </Popup>
   );
 }
