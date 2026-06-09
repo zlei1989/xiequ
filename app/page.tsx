@@ -1,5 +1,7 @@
-import { Row, Col } from "antd";
-import { AppCard } from "@/components/ui/app-card";
+"use client";
+
+import { AutoCenter, Card, Space } from "antd-mobile";
+import { useRouter } from "next/navigation";
 
 const apps = [
   {
@@ -14,33 +16,40 @@ const apps = [
     href: "/travel",
     icon: "🗺️",
   },
+  {
+    title: "台岛遍历",
+    description: "将二〇一六年的行迹，悉数检点，妥为收存",
+    href: "/taiwan-1.8.4/index.html",
+    icon: "🚲",
+  },
 ];
 
 export default function Home() {
+  const router = useRouter();
+
+  function handleClick(href: string) {
+    if (href.startsWith("/taiwan")) {
+      window.open(href, "_self");
+    } else {
+      router.push(href);
+    }
+  }
+
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        minHeight: "80vh",
-        padding: "0 24px",
-      }}
-    >
-      <h1 style={{ fontSize: 28, marginBottom: 32 }}>个人工具箱</h1>
-      <Row gutter={[24, 24]} style={{ maxWidth: 800, width: "100%" }}>
-        {apps.map((app) => (
-          <Col key={app.href} xs={24} sm={12}>
-            <AppCard
-              title={app.title}
-              description={app.description}
-              href={app.href}
-              icon={app.icon}
-            />
-          </Col>
-        ))}
-      </Row>
-    </div>
+    <Space direction="vertical" block>
+      <AutoCenter>
+        <h1>个人工具箱</h1>
+      </AutoCenter>
+      {apps.map((app) => (
+        <Card
+          key={app.href}
+          icon={app.icon}
+          title={app.title}
+          onClick={() => handleClick(app.href)}
+        >
+          {app.description}
+        </Card>
+      ))}
+    </Space>
   );
 }
