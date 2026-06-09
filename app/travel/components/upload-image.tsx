@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Image, Space, Toast } from "antd-mobile";
+import { Button, Space, Toast } from "antd-mobile";
 import { CameraOutline } from "antd-mobile-icons";
 import { useEffect, useRef, useState } from "react";
 import { getImageUrl, getUploadUrl } from "../actions";
@@ -20,9 +20,11 @@ import { getImageUrl, getUploadUrl } from "../actions";
 export function UploadImage({
   locationId,
   type = "cover",
+  onSuccess,
 }: {
   locationId: string;
   type?: "cover" | "icon";
+  onSuccess?: () => void;
 }) {
   const [uploading, setUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -74,6 +76,7 @@ export function UploadImage({
 
       const downloadUrl = await getImageUrl(locationId, type);
       setPreviewUrl(downloadUrl);
+      onSuccess?.();
       Toast.show({ icon: "success", content: "上传成功" });
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "上传失败";
@@ -85,9 +88,6 @@ export function UploadImage({
 
   return (
     <Space align="center">
-      {previewUrl && (
-        <Image src={previewUrl} alt="封面" width={40} height={40} fit="cover" lazy />
-      )}
       <input
         ref={fileInputRef}
         type="file"
