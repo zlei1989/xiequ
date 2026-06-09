@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { PullToRefresh, List, DotLoading, ErrorBlock } from "antd-mobile";
+import { PullToRefresh, List, DotLoading, ErrorBlock, Toast } from "antd-mobile";
 import { useTravelContext } from "../hooks/use-locations";
 import { useMoments } from "../hooks/use-moments";
 import { LocationListItem } from "../components/location-list-item";
@@ -9,6 +9,7 @@ import { LocationViewPopup } from "../components/location-view-popup";
 import { LocationEditPopup } from "../components/location-edit-popup";
 import { MomentEditPopup } from "../components/moment-edit-popup";
 import { SearchPopup } from "../components/search-popup";
+import { createMoment } from "../actions";
 import type { Location, Moment } from "../types";
 
 export default function LocationListPage() {
@@ -43,11 +44,41 @@ export default function LocationListPage() {
 
   // ── 列表操作 ──
 
+  // 判断位置是否有精彩瞬间记录
+  function hasMoments(location: Location): boolean {
+    const moments = (location as any).moments as Record<string, unknown> | undefined;
+    return !!moments && Object.keys(moments).length > 0;
+  }
+
+  function getErrorMessage(err: unknown, fallback: string): string {
+    if (err instanceof Error) return err.message || fallback;
+    return fallback;
+  }
+
   async function handleToggle(location: Location) {
+    // 有精彩瞬间时状态锁定，不可切换（防御性，UI 已禁用不会触发）
+    if (hasMoments(location)) return;
+
+    // 从待去切到已去时，自动创建一条当天日期的空文本精彩瞬间
+    if (!location.checked) {
+      try {
+        await createMoment(location.id, {
+          date: new Date().toISOString().slice(0, 10),
+          text: "",
+        });
+      } catch (err: unknown) {
+        Toast.show({ icon: "fail", content: getErrorMessage(err, "创建记录失败") });
+        return; // 创建失败则不切换状态
+      }
+    }
+
     await update(location.id, { checked: !location.checked });
     const updated = { ...location, checked: !location.checked };
     if (viewLocation?.id === location.id) setViewLocation(updated);
     if (editLocation?.id === location.id) setEditLocation(updated);
+
+    // 刷新列表数据（moments 变更后需要更新 hasMoments 判断）
+    await load();
   }
 
   async function handleDelete(location: Location) {
@@ -85,6 +116,7 @@ export default function LocationListPage() {
               <LocationListItem
                 key={location.id}
                 location={location}
+                hasMoments={hasMoments(location)}
                 onClick={setViewLocation}
                 onToggle={handleToggle}
                 onDelete={handleDelete}
