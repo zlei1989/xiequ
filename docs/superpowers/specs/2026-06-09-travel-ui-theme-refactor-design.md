@@ -108,29 +108,27 @@ antd-mobile Switch 原生支持 `disabled`，禁用后呈灰色不可交互。
 
 ---
 
-## 四、moment-edit-popup.tsx — 日期改为 DatePickerView
+## 四、moment-edit-popup.tsx — 日期改为 DatePicker
 
 ### 组件结构
 
 ```
-MomentEditPopup
+MomentEditPopup (Popup)
 ├── NavBar（标题 + 保存按钮）
 ├── Form
-│   ├── Form.Item "日期"
-│   │   └── Input (readOnly, onClick → 打开 DatePickerPopup)
+│   ├── Form.Item "日期" (onClick → 打开 DatePicker)
+│   │   └── DatePicker (visible/onClose 受控, children 返回日期文本)
 │   └── Form.Item "内容"
 │       └── TextArea (rows=4)
-└── DatePickerPopup
-    └── Popup + DatePickerView + 确认/取消
 ```
 
 ### 日期交互
 
-- 日期 Input 设为 `readOnly`，不可键盘输入
-- 点击 Input 打开新的 Popup，内含 `DatePickerView`
-- DatePickerView 约束 `min` 和 `max`（如 2000-01-01 到当天）
-- 确认：更新 date 状态，关闭 Popup
-- 取消：保持原值，关闭 Popup
+- `Form.Item` 加 `onClick`，点击触发 `setDatePickerVisible(true)`
+- `DatePicker` 通过 `visible` / `onClose` 受控，自带 Popup 和 DatePickerView
+- DatePicker 的 `children` 返回纯文本：`value ? dateToStr(value) : "请选择日期"`
+- `onConfirm` 回调更新 date 状态
+- `min` / `max` 约束为 2000-01-01 到当天
 
 ### TextArea
 
@@ -138,7 +136,7 @@ MomentEditPopup
 
 ### 状态管理
 
-新增 `datePickerVisible: boolean` 控制日期选择 Popup 开关。
+新增 `datePickerVisible: boolean` 控制 DatePicker 开关。
 
 ---
 
@@ -161,8 +159,7 @@ page.tsx
 │   └── Switch disabled={moments.length > 0}
 │
 └── MomentEditPopup
-    ├── Input readOnly + onClick → DatePickerPopup
-    ├── DatePickerPopup: Popup + DatePickerView
+    ├── Form.Item onClick → DatePicker (visible/onClose)
     └── TextArea rows={4}
 ```
 
@@ -177,5 +174,5 @@ page.tsx
 - **功能回归**：列表展示、搜索添加、查看、编辑位置、编辑瞬间、删除
 - **规则验证**：有瞬间的位置开关禁用（Popup + SwipeAction 均不可切换）
 - **自动创建**：无瞬间的位置勾选"已去"后，确认精彩瞬间列表中多了一条当天日期空文本记录
-- **日期选择**：点击日期 Input 弹出 DatePickerView，选择后正确更新
+- **日期选择**：点击 Form.Item 日期行弹出 DatePicker，确认后正确更新
 - **视觉效果**：SwipeAction 颜色为 light，禁用态灰色
