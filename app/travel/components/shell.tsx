@@ -3,7 +3,7 @@
 import { useState, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { ActionSheet, Button, Dialog, NavBar, SafeArea, TabBar } from "antd-mobile";
-import { EnvironmentOutline, MoreOutline, StarOutline } from "antd-mobile-icons";
+import { EnvironmentOutline, MoreOutline, StarOutline, AppOutline } from "antd-mobile-icons";
 import { useTravelContext } from "../hooks/use-locations";
 import { Stats } from "./stats";
 
@@ -47,7 +47,8 @@ export function Shell({ children }: { children: ReactNode }) {
     <div style={{ display: "flex", flexDirection: "column", height: "100vh" }}>
       <SafeArea position="top" />
       <NavBar
-        backIcon={false}
+        backIcon={<AppOutline />}
+        onBack={() => router.push("/")}
         right={
           <Button fill="none" onClick={() => setActionVisible(true)}>
             <MoreOutline />

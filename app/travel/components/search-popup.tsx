@@ -46,7 +46,7 @@ export function SearchPopup({
         borderTopLeftRadius: 16,
         borderTopRightRadius: 16,
         minHeight: "60vh",
-        maxHeight: "90vh",
+        maxHeight: "75vh",
         overflow: "auto",
       }}
     >

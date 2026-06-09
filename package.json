@@ -19,6 +19,7 @@
     "cos-nodejs-sdk-v5": "^2.15.4",
     "dayjs": "^1.11.21",
     "next": "16.2.7",
+    "normalize.css": "^8.0.1",
     "react": "19.2.7",
     "react-dom": "19.2.7",
     "sql.js": "^1.14.1"

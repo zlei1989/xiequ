@@ -52,7 +52,7 @@ export function LocationEditPopup({
         borderTopLeftRadius: 16,
         borderTopRightRadius: 16,
         minHeight: "50vh",
-        maxHeight: "90vh",
+        maxHeight: "75vh",
         overflow: "auto",
       }}
     >

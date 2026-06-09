@@ -35,7 +35,7 @@ app/travel/list/page.tsx          ← 列表页，管理所有 Popup 状态
 - antd-mobile `Popup`, `position="bottom"`，圆角顶部
 - 封面大图，加载失败时显示 `PictureWrongOutline` 图标占位
 - 信息区用 `List` + `List.Item` 纵向排列（替换 antd `Descriptions`）
-- 精彩瞬间时间线（自定义样式）
+- 精彩瞬间卡片列表（antd-mobile `Card` 组件），每张卡片包含日期标题、文本内容、删除操作，圆角阴影样式
 - 底部操作栏：删除 | 标记状态 | 编辑位置
 
 ### LocationEditPopup

@@ -1,26 +1,28 @@
 "use client";
 
-import { Card, Grid, ProgressBar, Space } from "antd-mobile";
+import { Card, Grid, ProgressBar } from "antd-mobile";
 import type { Summary } from "../types";
 
 export function Stats({ summary }: { summary: Summary }) {
   return (
-    <Space direction="vertical" style={{ width: "100%" }}>
+    <>
       <Grid columns={3} gap={8}>
         <Grid.Item>
-          <Card title="已去">{summary.checkedCount}</Card>
+          <Card title="已去" headerStyle={{ justifyContent: "center" }} bodyStyle={{ textAlign: "center" }}>{String(summary.checkedCount)}</Card>
         </Grid.Item>
         <Grid.Item>
-          <Card title="待去">{summary.uncheckCount}</Card>
+          <Card title="待去" headerStyle={{ justifyContent: "center" }} bodyStyle={{ textAlign: "center" }}>{String(summary.uncheckCount)}</Card>
         </Grid.Item>
         <Grid.Item>
-          <Card title="总计">{summary.count}</Card>
+          <Card title="总计" headerStyle={{ justifyContent: "center" }} bodyStyle={{ textAlign: "center" }}>{String(summary.count)}</Card>
         </Grid.Item>
       </Grid>
-      <Card title="完成进度">
+      <Card
+        title="完成进度"
+        extra={`${summary.checkedPercentage}%`}
+      >
         <ProgressBar percent={summary.checkedPercentage} />
-        {summary.checkedPercentage}%
       </Card>
-    </Space>
+    </>
   );
 }

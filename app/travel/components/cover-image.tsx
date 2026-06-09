@@ -2,7 +2,6 @@
 
 import type { CSSProperties, ReactNode } from "react";
 import { Image } from "antd-mobile";
-import { PictureWrongOutline } from "antd-mobile-icons";
 
 export function CoverImage({
   src,
@@ -33,7 +32,7 @@ export function CoverImage({
       height={height}
       fit={fit}
       style={style}
-      fallback={fallback ?? <PictureWrongOutline />}
+      fallback={fallback}
     />
   );
 }

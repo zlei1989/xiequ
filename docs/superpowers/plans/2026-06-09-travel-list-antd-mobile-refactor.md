@@ -936,3 +936,4 @@ git commit -m "fix(travel): address issues found during verification"
 ## 实施偏差
 
 - **图片占位图标**：`location-list-item.tsx` 和 `location-view-popup.tsx` 中的图片加载失败占位从内联 SVG base64 / `display:none` 改为使用 `PictureWrongOutline` 图标（来自 `antd-mobile-icons`），通过 `useState` 追踪加载状态进行条件渲染，location 切换时自动重置。
+- **精彩瞬间卡片样式**：`location-view-popup.tsx` 中精彩瞬间列表从 `List.Item` 改为 antd-mobile `Card` 组件，每张卡片展示日期标题（蓝色）、文本内容、删除操作按钮，卡片采用 12px 圆角 + 浅阴影样式，卡片间距 10px。

@@ -79,6 +79,9 @@ export function UploadImage({
 
   return (
     <Space align="center">
+      {previewUrl && (
+        <Image src={previewUrl} alt="封面" width={40} height={40} fit="cover" />
+      )}
       <input
         ref={fileInputRef}
         type="file"
@@ -94,9 +97,6 @@ export function UploadImage({
       >
         <CameraOutline />
       </Button>
-      {previewUrl && (
-        <Image src={previewUrl} alt="封面" width={40} height={40} fit="cover" />
-      )}
     </Space>
   );
 }
