@@ -1,209 +1,181 @@
-# Travel UI 主题化重构设计
+# 精彩瞬间与已去状态联动 + UI 微调
 
 ## 目标
 
-对 `app/travel` 目录下页面与组件做彻底的 antd-mobile 主题化重构。目标不是简单替换标签，而是建立一层简洁明确的 Travel UI 规范，让页面尽量由 antd-mobile 组件承载结构、状态和视觉表达。
+实现"精彩瞬间"记录与"已去"状态的联动规则，日期选择从文本输入改为 DatePickerView，以及 SwipeAction 视觉微调。
 
-本次允许顺手调整交互布局，使体验更贴近移动端 antd-mobile 范式；但不改变服务端 actions、hooks、数据结构和核心业务流。
+## 背景
 
-## 范围
+基于 `2026-06-09-travel-list-antd-mobile-refactor-design.md` 已完成的 antd-mobile 重构，在此之上增强交互规则。
 
-覆盖 `app/travel` 下的页面和组件：
+## 核心规则
 
-- 地图页 `app/travel/page.tsx`
-- 列表页 `app/travel/list/page.tsx`
-- 壳组件 `app/travel/components/travel-shell.tsx`
-- 查看、编辑、搜索、列表项、图片上传、瞬间表单等 travel 组件
+1. **有精彩瞬间 → "已去"状态锁定**：位置一旦有精彩瞬间记录，toggle 禁用，不可改为"待去"
+2. **无精彩瞬间 → 勾选"已去"自动创建**：从"待去"切到"已去"时，自动创建一条当天日期、空文本的精彩瞬间
 
-不覆盖：
+## 改动范围
 
-- `app/travel/actions.ts`
-- `app/travel/services/*`
-- `app/travel/hooks/*` 的业务逻辑
-- 地图服务能力本身
+| 文件 | 改动 | 行数估算 |
+|------|------|---------|
+| `list/page.tsx` | handleToggle 规则逻辑 + hasMoments 判断 | +20 |
+| `components/location-list-item.tsx` | SwipeAction 颜色/文案/hasMoments 隐藏 | ~5 |
+| `components/location-view-popup.tsx` | Switch disabled | +1 |
+| `components/moment-edit-popup.tsx` | 日期只读 Input + Popup + DatePickerView | +30 |
 
-## 设计原则
+总计约 4 个文件，不超过 60 行净增。
 
-1. 最少使用普通 `div`，优先使用 antd-mobile 的 `List`、`Card`、`Grid`、`Space`、`Tag`、`Image`、`Footer`、`Form`、`ErrorBlock`、`SafeArea` 等组件。
-2. 不新增自定义颜色、背景、字号、阴影、边框色。
-3. 允许必要布局样式：`height`、`flex`、`overflow`、`padding`、`position`、`maxHeight`。
-4. 状态、按钮、标签使用 antd-mobile 自带的 `color`、`fill`、`size` 等方案。
-5. 命名简洁明确，避免过长组件名。
-6. 页面继续作为业务状态中心，公共 UI 单元只负责展示和组合。
+---
 
-## 公共 UI 单元
+## 一、list/page.tsx — 核心规则逻辑
 
-在 `app/travel/components` 中收敛或新增以下简洁命名的公共单元：
+### hasMoments 判断
 
-| 名称 | 职责 |
-|------|------|
-| `Shell` | 承载顶部导航、底部 Tab、内容区、全局 ActionSheet 和概览入口 |
-| `Stats` | 概览统计内容，供 `Dialog.show()` 使用 |
-| `StatusTag` | 统一展示“已去 / 待去”状态，使用 antd-mobile `Tag` |
-| `CoverImage` | 统一封面图、头像图和图片占位，优先使用 antd-mobile `Image` |
-| `Section` | 标题 + 内容区域，基于 `Card`、`List` 或 `Divider` 组织 |
-| `ActionBar` | Popup 底部操作按钮区，基于 `Footer`、`Space`、`Button` 组合 |
+moments 数据嵌入在 `fetchLocations()` 返回的 location 对象中（`(location as any).moments`），类型为 `Record<string, { date: string; text: string }>`。通过读取 key 数量判断：
 
-这些单元只封装 UI 结构，不直接调用 `useTravelContext`、`useMoments` 或服务端 actions。
+```typescript
+function hasMoments(location: Location): boolean {
+  const moments = (location as any).moments as Record<string, unknown> | undefined;
+  return !!moments && Object.keys(moments).length > 0;
+}
+```
 
-## 页面层设计
+### handleToggle 改造
 
-`app/travel/page.tsx` 和 `app/travel/list/page.tsx` 继续作为状态中心，负责：
+```
+handleToggle(location):
+  1. 如果 hasMoments(location) → return（防御性，UI 已禁用不会触发）
+  2. 如果 !location.checked（待去→已去）→ 先 addMoment({ date: today, text: "" })
+  3. update(location.id, { checked: !location.checked })
+```
 
-- 监听 `travel:open-search`
-- 管理查看、编辑、瞬间编辑、搜索 Popup 的开关
-- 调用 `add`、`update`、`remove`
-- 调用 `useMoments(viewLocation?.id || "")`
-- 渲染地图或列表，以及相关 Popup
+### hasMoments 传递给子组件
 
-页面层减少普通 `div`，但可保留必要布局容器。例如地图页仍需要一个容器保证地图高度和弹层定位。
+- `LocationListItem`：新增 `hasMoments` prop，值来自 `hasMoments(location)`
+- `LocationViewPopup`：已有 `moments` 数组，用 `moments.length > 0` 即可
 
-## Shell 设计
+---
 
-现有 `travel-shell.tsx` 收敛为 `Shell`，负责全局框架：
+## 二、location-list-item.tsx — SwipeAction 微调
 
-- 顶部 `NavBar`
-- 底部 `TabBar`
-- 中间内容滚动区
-- `ActionSheet`：概览、筛选、添加位置
-- `Dialog.show()`：打开 `Stats`
-- `SafeArea`：适配移动端安全区域
+### 颜色
 
-`Shell` 不再内联写统计卡片样式，概览内容拆到 `Stats`。
+两个 action 的 `color` 统一改为 `"light"`。
 
-## Stats 设计
+### 文案
 
-`Stats` 通过 props 接收 summary 数据：
+```typescript
+text: location.checked ? "标记待去" : "标记已去"
+```
 
-- 已去数量
-- 待去数量
-- 总数
-- 完成进度
+### 有精彩瞬间时隐藏 toggle
 
-结构使用 `Grid` 与 antd-mobile 展示组件组合，进度使用 `ProgressBar`。不写硬编码颜色和字号；如果需要强调，优先使用组件自带状态能力。
+当 `hasMoments` 为 true 时，不渲染 toggle action，只保留删除。意味着有瞬间的位置在列表中无法通过左滑切换状态。
 
-## 列表项设计
+```typescript
+rightActions={[
+  ...(hasMoments ? [] : [{
+    key: "toggle",
+    text: location.checked ? "标记待去" : "标记已去",
+    color: "light" as const,
+    onClick: handleToggle,
+  }]),
+  {
+    key: "delete",
+    text: "删除",
+    color: "light" as const,
+    onClick: handleDelete,
+  },
+]}
+```
 
-`location-list-item.tsx` 保留 `SwipeAction + List.Item`：
+---
 
-- `prefix` 使用 `CoverImage`
-- 标题使用 `List.Item` 主内容
-- 地址使用 `description`
-- `extra` 使用 `StatusTag`
-- 左滑操作继续提供“标记状态”和“删除”
+## 三、location-view-popup.tsx — Switch 禁用
 
-删除原有自定义状态胶囊、硬编码背景、边框和字号。
+Popup 中已有 `moments` 数组，直接用 `moments.length > 0` 控制 `disabled` 属性：
 
-## 查看 Popup 设计
+```tsx
+<Switch
+  checked={loc.checked}
+  uncheckedText="待去"
+  checkedText="已去"
+  onChange={handleToggle}
+  disabled={moments.length > 0}
+/>
+```
 
-`location-view-popup.tsx` 是重点改造对象：
+antd-mobile Switch 原生支持 `disabled`，禁用后呈灰色不可交互。
 
-- 顶部封面使用 `CoverImage`
-- 基础信息使用 `List` / `List.Item`
-- 状态使用 `StatusTag`
-- 内容分组使用 `Section`
-- 精彩瞬间使用 `Card` 或 `List` 组织
-- 底部操作使用 `ActionBar`
-- 空状态使用 `ErrorBlock status="empty"`
-- 删除确认继续使用 `Dialog.confirm`
+---
 
-Popup 保留 `maxHeight: 90vh` 与必要 `overflow`，确保内容可滚动。
+## 四、moment-edit-popup.tsx — 日期改为 DatePickerView
 
-## 编辑与搜索 Popup 设计
+### 组件结构
 
-`location-edit-popup.tsx`、`moment-edit-popup.tsx`、`search-popup.tsx` 保留现有方向：
+```
+MomentEditPopup
+├── NavBar（标题 + 保存按钮）
+├── Form
+│   ├── Form.Item "日期"
+│   │   └── Input (readOnly, onClick → 打开 DatePickerPopup)
+│   └── Form.Item "内容"
+│       └── TextArea (rows=4)
+└── DatePickerPopup
+    └── Popup + DatePickerView + 确认/取消
+```
 
-- `Popup + Form + Input + TextArea`
-- `Popup + SearchBar + List`
-- 顶部保存动作使用 antd-mobile `Button`
-- 错误提示使用 `Toast.show`
-- 空态使用 `ErrorBlock`
+### 日期交互
 
-只保留必要布局 padding 和滚动高度，不写视觉样式。
+- 日期 Input 设为 `readOnly`，不可键盘输入
+- 点击 Input 打开新的 Popup，内含 `DatePickerView`
+- DatePickerView 约束 `min` 和 `max`（如 2000-01-01 到当天）
+- 确认：更新 date 状态，关闭 Popup
+- 取消：保持原值，关闭 Popup
 
-## 图片上传与瞬间表单设计
+### TextArea
 
-`upload-image.tsx` 优先使用 antd-mobile `Image`、`Button`、`Space` 表达上传入口、预览和删除动作。隐藏原生 file input 可以保留必要样式。
+`rows` 从 3 改为 4。
 
-`moment-form.tsx` 如仍被使用，应把输入区和按钮改为 antd-mobile `Form`、`Input`、`TextArea`、`Button` 的组合，去掉自定义边框、字号和布局之外的视觉样式。
+### 状态管理
+
+新增 `datePickerVisible: boolean` 控制日期选择 Popup 开关。
+
+---
 
 ## 数据流
 
-数据流保持不变：
-
-```text
-layout / Shell
-  -> useLocations(filter)
-  -> TravelContext.Provider
-  -> page.tsx / list/page.tsx
-  -> Popup components
 ```
-
-查看某个位置时：
-
-```text
-viewLocation
-  -> useMoments(viewLocation?.id || "")
-  -> LocationViewPopup
-  -> addMoment / updateMoment / removeMoment
+page.tsx
+├── hasMoments(loc)  ← 读取 (loc as any).moments
+│
+├── handleToggle
+│   ├── hasMoments → return（防御）
+│   ├── !checked → addMoment({ date: today, text: "" })
+│   └── update({ checked: !checked })
+│
+├── LocationListItem
+│   ├── hasMoments prop → 隐藏 toggle SwipeAction
+│   └── color: "light"
+│
+├── LocationViewPopup
+│   └── Switch disabled={moments.length > 0}
+│
+└── MomentEditPopup
+    ├── Input readOnly + onClick → DatePickerPopup
+    ├── DatePickerPopup: Popup + DatePickerView
+    └── TextArea rows={4}
 ```
-
-添加位置时：
-
-```text
-Shell ActionSheet
-  -> window.dispatchEvent(new CustomEvent("travel:open-search"))
-  -> page.tsx 或 list/page.tsx 打开 SearchPopup
-  -> add(data)
-  -> 关闭 SearchPopup 并打开查看 Popup
-```
-
-## 交互设计
-
-- 筛选继续通过 URL 参数生效，地图页和列表页共享筛选结果。
-- 概览继续通过顶部菜单打开，但内容由 `Stats` 承载。
-- 列表页保留 `PullToRefresh` 和 `SwipeAction`。
-- 查看 Popup 内保留编辑位置、添加瞬间、编辑瞬间、删除瞬间、删除位置、切换状态等入口。
-- 如已有图片预览能力则保留；如需要新增预览，优先使用 antd-mobile `ImageViewer`。
 
 ## 错误处理
 
-- 保存失败：`Toast.show({ icon: "fail", content })`
-- 搜索失败：`Toast.show({ icon: "fail", content })`
-- 删除确认：`Dialog.confirm`
-- 空列表或空瞬间：`ErrorBlock status="empty"`
-- 加载中：`DotLoading` 或组件自带加载态
+- toggle 被禁用后理论上不会触发，`handleToggle` 中的 `hasMoments` return 作为防御
+- 自动创建瞬间失败 → Toast 提示，不执行 toggle（保持原状态）
+- DatePickerView 选择取消 → 日期保持原值
 
-Popup 中保存失败后保持打开，方便用户修改后重试。
+## 测试要点
 
-## 验收标准
-
-1. `app/travel` 目录里的页面和组件整体由 antd-mobile 组件承载 UI。
-2. 普通 `div` 明显减少，只用于必要布局或地图容器等无法替代的位置。
-3. 不新增硬编码颜色、背景、字号、阴影、边框色。
-4. 必要布局样式仅限高度、flex、overflow、padding、position、maxHeight 等。
-5. 组件命名简洁明确：`Shell`、`Stats`、`StatusTag`、`CoverImage`、`Section`、`ActionBar`。
-6. 地图页、列表页、Popup、筛选、搜索添加、编辑、删除、瞬间管理功能不回退。
-
-## 验证计划
-
-### 静态检查
-
-在实现后检查 `app/travel`：
-
-- `<div` 残留是否仅为必要布局或地图容器
-- 是否还存在硬编码色值，例如 `#52c41a`、`#1677ff`、`#999`、`#f5f5f5`
-- 是否还存在展示层 `fontSize`
-- 是否还存在自定义 `background`、`boxShadow`、视觉边框色
-
-### 功能回归
-
-- 地图页 marker 点击打开查看 Popup
-- 当前位置跳转仍能定位地图
-- 列表页展示、空态、加载态、下拉刷新正常
-- 列表项点击、左滑标记、左滑删除正常
-- 搜索添加后关闭搜索并打开查看 Popup
-- 查看 Popup 内编辑位置、删除位置、切换状态正常
-- 添加、编辑、删除精彩瞬间正常
-- 顶部菜单概览、筛选、添加位置正常
-- 底部 Tab 切换保持筛选状态
+- **功能回归**：列表展示、搜索添加、查看、编辑位置、编辑瞬间、删除
+- **规则验证**：有瞬间的位置开关禁用（Popup + SwipeAction 均不可切换）
+- **自动创建**：无瞬间的位置勾选"已去"后，确认精彩瞬间列表中多了一条当天日期空文本记录
+- **日期选择**：点击日期 Input 弹出 DatePickerView，选择后正确更新
+- **视觉效果**：SwipeAction 颜色为 light，禁用态灰色
