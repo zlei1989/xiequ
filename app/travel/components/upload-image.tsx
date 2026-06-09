@@ -51,6 +51,12 @@ export function UploadImage({
   }
 
   async function handleUpload(file: File) {
+    // 仅允许 JPG 格式
+    if (!file.type.startsWith("image/jpeg")) {
+      Toast.show({ icon: "fail", content: "仅支持 JPG 格式图片" });
+      return;
+    }
+
     setUploading(true);
     try {
       const signedUrl = await getUploadUrl(locationId, type);
@@ -80,12 +86,12 @@ export function UploadImage({
   return (
     <Space align="center">
       {previewUrl && (
-        <Image src={previewUrl} alt="封面" width={40} height={40} fit="cover" />
+        <Image src={previewUrl} alt="封面" width={40} height={40} fit="cover" lazy />
       )}
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/*"
+        accept=".jpg,.jpeg"
         style={{ display: "none" }}
         onChange={handleFileChange}
       />

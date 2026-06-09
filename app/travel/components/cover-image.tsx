@@ -33,6 +33,7 @@ export function CoverImage({
       fit={fit}
       style={style}
       fallback={fallback}
+      lazy
     />
   );
 }
