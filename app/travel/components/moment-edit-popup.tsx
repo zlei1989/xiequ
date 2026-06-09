@@ -103,7 +103,11 @@ export function MomentEditPopup({
             min={new Date(2000, 0, 1)}
             max={new Date()}
           >
-            {(value) => (value ? dateToStr(value) : "请选择日期")}
+            {(value, { open }) => (
+              <Button fill="none" onClick={open}>
+                {value ? dateToStr(value) : "请选择日期"}
+              </Button>
+            )}
           </DatePicker>
         </Form.Item>
         <Form.Item label="内容">
