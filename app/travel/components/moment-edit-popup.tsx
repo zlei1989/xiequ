@@ -103,16 +103,7 @@ export function MomentEditPopup({
             min={new Date(2000, 0, 1)}
             max={new Date()}
           >
-            {(value) => (
-              <div
-                style={{
-                  color: value ? "inherit" : "#999",
-                  fontSize: 16,
-                }}
-              >
-                {value ? dateToStr(value) : "请选择日期"}
-              </div>
-            )}
+            {(value) => (value ? dateToStr(value) : "请选择日期")}
           </DatePicker>
         </Form.Item>
         <Form.Item label="内容">
