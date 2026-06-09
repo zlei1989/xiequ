@@ -6,10 +6,10 @@ import { newId, formatDateTime } from "@/lib/utils";
 /**
  * 旅行模块 OSS 存储路径约定
  * - 位置数据: apps/travel/locations.json
- * - 图片统一: apps/travel/posters/{id}
+ * - 图片统一: apps/travel/posters/{id}.jpg
  *
  * 访问 URL 格式（COS CI 样式处理）：
- * - https://{bucket}.cos.{region}.myqcloud.com/apps/travel/posters/{id}/{stylename}
+ * - https://{bucket}.cos.{region}.myqcloud.com/apps/travel/posters/{id}.jpg/{stylename}
  * - stylename: cover | icon
  */
 
@@ -185,7 +185,7 @@ export async function deleteLocation(id: string): Promise<void> {
 
   // 删除封面图（忽略不存在的情况）
   try {
-    await ossDelete(`apps/travel/posters/${id}`);
+    await ossDelete(`apps/travel/posters/${id}.jpg`);
   } catch {
     // 封面图可能不存在，忽略
   }
@@ -264,21 +264,21 @@ export async function deleteMoment(
  * 获取 poster 上传签名 URL
  *
  * 前端拿到签名 URL 后直接 PUT 上传图片到 COS。
- * 所有图片（封面/图标）统一上传到 apps/travel/posters/{id}。
+ * 所有图片（封面/图标）统一上传到 apps/travel/posters/{id}.jpg。
  */
 export async function getPosterUploadUrl(id: string): Promise<string> {
-  return ossGetSignedPutUrl(`apps/travel/posters/${id}`);
+  return ossGetSignedPutUrl(`apps/travel/posters/${id}.jpg`);
 }
 
 /**
  * 获取 poster 访问 URL（COS CI 样式处理）
  *
  * 通过 URL 后缀指定 COS CI 处理样式，格式：
- * https://{bucket}.cos.{region}.myqcloud.com/apps/travel/posters/{id}/{stylename}
+ * https://{bucket}.cos.{region}.myqcloud.com/apps/travel/posters/{id}.jpg/{stylename}
  *
  * @param id - 图片标识
  * @param stylename - 样式名：cover | icon
  */
 export function getPosterStyledUrl(id: string, stylename: "cover" | "icon"): string {
-  return `${getOssBaseUrl()}/apps/travel/posters/${id}/${stylename}`;
+  return `${getOssBaseUrl()}/apps/travel/posters/${id}.jpg/${stylename}`;
 }

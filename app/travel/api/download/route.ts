@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
     const adapter = getOssAdapter();
 
     // 检查 poster 文件是否存在
-    const ossKey = `apps/travel/posters/${id}`;
+    const ossKey = `apps/travel/posters/${id}.jpg`;
     const fileExists = await adapter.exists(ossKey);
     if (!fileExists) {
       return NextResponse.json({ error: "文件不存在" }, { status: 404 });
@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
     // 返回带 COS CI 样式后缀的公共访问 URL
     const bucket = adapter.getBucket();
     const region = adapter.getEndpoint();
-    const styledUrl = `https://${bucket}.cos.${region}.myqcloud.com/apps/travel/posters/${id}/${type}`;
+    const styledUrl = `https://${bucket}.cos.${region}.myqcloud.com/apps/travel/posters/${id}.jpg/${type}`;
     return NextResponse.json({ url: styledUrl });
   } catch (err: any) {
     console.error("图片访问失败:", err);
