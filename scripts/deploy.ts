@@ -87,3 +87,65 @@ function loadConfig(): DeployConfig {
     scfFunction: process.env.DEPLOY_SCF_FUNCTION!,
   };
 }
+
+// ─── 构建 ────────────────────────────────────────────────
+
+const ROOT = resolve(__dirname, "..");
+
+/** 执行 next build */
+function buildProject(): void {
+  console.log("🔨 正在构建 Next.js 项目...");
+  try {
+    execSync("npx next build", { cwd: ROOT, stdio: "inherit" });
+    console.log("✅ 构建完成");
+  } catch {
+    console.error("❌ 构建失败，请检查上方错误信息");
+    process.exit(1);
+  }
+}
+
+// ─── 打包 ────────────────────────────────────────────────
+
+const TMP_DIR = join(ROOT, ".deploy-tmp");
+
+/** 将 .next/ + scf_bootstrap + package.json 打包为 zip */
+function createZip(config: DeployConfig): Promise<string> {
+  const packageName = `server_scf_${dayjs().format("YYYYMMDDHHmmss")}.zip`;
+  const zipPath = join(TMP_DIR, packageName);
+
+  if (!existsSync(TMP_DIR)) {
+    mkdirSync(TMP_DIR, { recursive: true });
+  }
+
+  console.log(`📦 正在打包 → ${packageName}`);
+
+  return new Promise<string>((resolvePromise, reject) => {
+    const output = createWriteStream(zipPath);
+    const archive = archiver("zip", { zlib: { level: 9 } });
+
+    output.on("close", () => {
+      const sizeMB = (statSync(zipPath).size / (1024 * 1024)).toFixed(2);
+      console.log(`✅ 打包完成 (${sizeMB} MB)`);
+      if (statSync(zipPath).size > 50 * 1024 * 1024) {
+        console.warn(`⚠️  包体积超过 50MB，部署可能较慢`);
+      }
+      resolvePromise(zipPath);
+    });
+
+    archive.on("error", (err: Error) => {
+      console.error("❌ 打包失败:", err.message);
+      reject(err);
+    });
+
+    archive.pipe(output);
+
+    // 添加 .next 目录
+    archive.directory(join(ROOT, ".next"), ".next");
+    // 添加 scf_bootstrap（必须放在根目录，SCF 入口）
+    archive.file(join(ROOT, "scf_bootstrap"), { name: "scf_bootstrap" });
+    // 添加 package.json（SCF 需要它来安装依赖）
+    archive.file(join(ROOT, "package.json"), { name: "package.json" });
+
+    archive.finalize();
+  });
+}
