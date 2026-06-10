@@ -96,7 +96,7 @@ const ROOT = resolve(__dirname, "..");
 function buildProject(): void {
   console.log("🔨 正在构建 Next.js 项目...");
   try {
-    execSync("npx next build", { cwd: ROOT, stdio: "inherit" });
+    execSync("npx --yes next build", { cwd: ROOT, stdio: "inherit" });
     console.log("✅ 构建完成");
   } catch {
     console.error("❌ 构建失败，请检查上方错误信息");
@@ -124,12 +124,18 @@ function createZip(config: DeployConfig): Promise<string> {
     const archive = archiver("zip", { zlib: { level: 9 } });
 
     output.on("close", () => {
-      const sizeMB = (statSync(zipPath).size / (1024 * 1024)).toFixed(2);
+      const size = statSync(zipPath).size;
+      const sizeMB = (size / (1024 * 1024)).toFixed(2);
       console.log(`✅ 打包完成 (${sizeMB} MB)`);
-      if (statSync(zipPath).size > 50 * 1024 * 1024) {
+      if (size > 50 * 1024 * 1024) {
         console.warn(`⚠️  包体积超过 50MB，部署可能较慢`);
       }
       resolvePromise(zipPath);
+    });
+
+    output.on("error", (err: Error) => {
+      console.error("❌ 写入文件失败:", err.message);
+      reject(err);
     });
 
     archive.on("error", (err: Error) => {
