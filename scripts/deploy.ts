@@ -4,10 +4,12 @@ import {
   mkdirSync,
   statSync,
   readFileSync,
+  readdirSync,
   createReadStream,
   createWriteStream,
   unlinkSync,
   rmSync,
+  lstatSync,
 } from "fs";
 import { resolve, join } from "path";
 import archiver from "archiver";
@@ -121,7 +123,7 @@ function createZip(config: DeployConfig): Promise<string> {
 
   return new Promise<string>((resolvePromise, reject) => {
     const output = createWriteStream(zipPath);
-    const archive = archiver("zip", { zlib: { level: 9 } });
+    const archive = archiver("zip", { zlib: { level: 1 } });
 
     output.on("close", () => {
       const size = statSync(zipPath).size;
@@ -143,14 +145,34 @@ function createZip(config: DeployConfig): Promise<string> {
       reject(err);
     });
 
+    archive.on("progress", (progress: any) => {
+      const pct = progress.entries.processed;
+      const total = progress.entries.total;
+      if (total > 0 && pct % 100 === 0) {
+        console.log(`   打包进度: ${pct}/${total} 文件`);
+      }
+    });
+
     archive.pipe(output);
 
-    // 添加 .next 目录
-    archive.directory(join(ROOT, ".next"), ".next");
     // 添加 scf_bootstrap（必须放在根目录，SCF 入口）
     archive.file(join(ROOT, "scf_bootstrap"), { name: "scf_bootstrap" });
     // 添加 package.json（SCF 需要它来安装依赖）
     archive.file(join(ROOT, "package.json"), { name: "package.json" });
+
+    // 添加 .next 生产文件（排除 dev/cache/diagnostics/trace/types）
+    const nextDir = join(ROOT, ".next");
+    const excludeDirs = new Set(["dev", "cache", "diagnostics", "trace", "types"]);
+    for (const entry of readdirSync(nextDir)) {
+      const src = join(nextDir, entry);
+      const dest = `.next/${entry}`;
+      if (excludeDirs.has(entry)) continue;
+      if (lstatSync(src).isDirectory()) {
+        archive.directory(src, dest);
+      } else {
+        archive.file(src, { name: dest });
+      }
+    }
 
     archive.finalize();
   });
@@ -160,7 +182,7 @@ function createZip(config: DeployConfig): Promise<string> {
 
 /** 上传 zip 到腾讯云 COS，返回对象 Key */
 function uploadToCos(config: DeployConfig, zipPath: string): Promise<string> {
-  const filename = zipPath.split("/").pop() || zipPath.split("\\").pop()!;
+  const filename = zipPath.replace(/^.*[\\/]/, "");
   const objectKey = `deploy/${filename}`;
 
   console.log(`☁️  正在上传到 COS → ${config.cosBucket}/${objectKey}`);
