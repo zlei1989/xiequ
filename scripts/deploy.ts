@@ -155,3 +155,39 @@ function createZip(config: DeployConfig): Promise<string> {
     archive.finalize();
   });
 }
+
+// ─── 上传 COS ────────────────────────────────────────────
+
+/** 上传 zip 到腾讯云 COS，返回对象 Key */
+function uploadToCos(config: DeployConfig, zipPath: string): Promise<string> {
+  const filename = zipPath.split("/").pop() || zipPath.split("\\").pop()!;
+  const objectKey = `deploy/${filename}`;
+
+  console.log(`☁️  正在上传到 COS → ${config.cosBucket}/${objectKey}`);
+
+  const cos = new COS({
+    SecretId: config.cosSecretId,
+    SecretKey: config.cosSecretKey,
+  });
+
+  return new Promise<string>((resolvePromise, reject) => {
+    cos.putObject(
+      {
+        Bucket: config.cosBucket,
+        Region: config.cosRegion,
+        Key: objectKey,
+        Body: createReadStream(zipPath),
+        ContentLength: statSync(zipPath).size,
+      },
+      (err, data) => {
+        if (err) {
+          console.error("❌ COS 上传失败:", err.message || err);
+          reject(err);
+          return;
+        }
+        console.log(`✅ COS 上传完成 (${data.statusCode})`);
+        resolvePromise(objectKey);
+      }
+    );
+  });
+}
