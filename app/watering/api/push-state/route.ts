@@ -16,11 +16,11 @@ export async function GET(request: NextRequest) {
   await updateTick(chipId);
 
   // 解析 GPIO 状态
-  const gpioState: Record<string, Record<string, number>> = { buttons: {}, sensors: {}, loads: {} };
+  const gpioState: Record<string, Record<string, number>> = { sensors: {}, loads: {} };
   searchParams.forEach((value, key) => {
-    const match = key.match(/^(button|sensor|load):(.+)$/);
+    const match = key.match(/^(sensor|load):(.+)$/);
     if (match) {
-      const category = match[1] === "button" ? "buttons" : match[1] === "sensor" ? "sensors" : "loads";
+      const category = match[1] === "sensor" ? "sensors" : "loads";
       gpioState[category][match[2]] = parseInt(value) || 0;
     }
   });
@@ -59,7 +59,6 @@ export async function GET(request: NextRequest) {
       }
       // 合并 GPIO 状态
       Object.assign(state, {
-        buttons: gpioState.buttons,
         sensors: gpioState.sensors,
         loads: gpioState.loads,
         stateId: newId(),
@@ -92,7 +91,6 @@ export async function GET(request: NextRequest) {
       // 普通状态上报
       await writeDeviceLog(chipId, event || "heartbeat", {
         macAddress,
-        buttons: gpioState.buttons,
         sensors: gpioState.sensors,
         loads: gpioState.loads,
       });
@@ -100,5 +98,5 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  return NextResponse.json({ data: undefined });
+  return NextResponse.json({ success: true });
 }
