@@ -98,7 +98,7 @@ const ROOT = resolve(__dirname, "..");
 function buildProject(): void {
   console.log("🔨 正在构建 Next.js 项目...");
   try {
-    execSync("npx --yes next build", { cwd: ROOT, stdio: "inherit" });
+    execSync("npm run build", { cwd: ROOT, stdio: "inherit" });
     console.log("✅ 构建完成");
   } catch {
     console.error("❌ 构建失败，请检查上方错误信息");
