@@ -459,7 +459,13 @@ async function main() {
   // 2. 构建
   buildProject();
 
-  // 2.5. standalone 模式：复制 public 和 static 到 standalone 目录
+  // 2.5. 替换 better-sqlite3 为 Linux 预编译二进制
+  await swapBetterSqlite3Binary();
+
+  // 2.6. 清理 standalone 非运行时文件
+  cleanStandalone();
+
+  // 2.7. standalone 模式：复制 public 和 static 到 standalone 目录
   console.log("📋 复制 static/public 到 standalone...");
   const standaloneDir = join(ROOT, ".next", "standalone");
   copyDir(join(ROOT, "public"), join(standaloneDir, "public"));
