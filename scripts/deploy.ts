@@ -94,15 +94,44 @@ function loadConfig(): DeployConfig {
 
 const ROOT = resolve(__dirname, "..");
 
-/** 执行 next build */
+/** 执行 next build（Windows 下 .next/standalone 可能被锁定，自动重试） */
 function buildProject(): void {
   console.log("🔨 正在构建 Next.js 项目...");
-  try {
-    execSync("npm run build", { cwd: ROOT, stdio: "inherit" });
-    console.log("✅ 构建完成");
-  } catch {
-    console.error("❌ 构建失败，请检查上方错误信息");
-    process.exit(1);
+  const maxRetries = 3;
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      // Windows 下用 cmd rd 清理旧构建产物（bash rm -rf 可能失败）
+      if (existsSync(join(ROOT, ".next"))) {
+        if (process.platform === "win32") {
+          execSync("cmd /c rd /s /q .next 2>nul", { cwd: ROOT, stdio: "ignore" });
+        } else {
+          execSync("rm -rf .next", { cwd: ROOT, stdio: "ignore" });
+        }
+      }
+      // 用 pipe 模式捕获错误输出，检测 EBUSY 以触发重试
+      // Windows 下指定 bash 避免 cmd 的中文路径 EBUSY 问题
+      const shell = process.platform === "win32" ? process.env.SHELL || "bash.exe" : true;
+      const result = execSync("npx next build", { cwd: ROOT, stdio: "pipe", encoding: "utf-8", shell });
+      process.stdout.write(result);
+      console.log("✅ 构建完成");
+      return;
+    } catch (err: any) {
+      // 打印输出（pipe 模式下不会自动显示）
+      if (err.stdout) process.stdout.write(err.stdout);
+      if (err.stderr) process.stderr.write(err.stderr);
+      const msg = (err.stderr || err.message || "").toString();
+      if (msg.includes("EBUSY") && attempt < maxRetries) {
+        console.log(`⚠️  构建目录被锁定，2 秒后重试 (${attempt}/${maxRetries})...`);
+        execSync("cmd /c rd /s /q .next 2>nul", { cwd: ROOT, stdio: "ignore" });
+        // 等待 2 秒让文件锁释放
+        // 等待 2 秒让文件锁释放（spin-wait 兼容所有平台）
+        const end = Date.now() + 2000;
+        while (Date.now() < end) { /* wait */ }
+      } else {
+        console.error("❌ 构建失败，请检查上方错误信息");
+        process.exit(1);
+      }
+    }
   }
 }
 
