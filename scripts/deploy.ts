@@ -191,3 +191,81 @@ function uploadToCos(config: DeployConfig, zipPath: string): Promise<string> {
     );
   });
 }
+
+// ─── 部署 SCF ────────────────────────────────────────────
+
+/** 调用 SCF API 更新函数代码 */
+async function deployToScf(config: DeployConfig, objectKey: string): Promise<void> {
+  console.log(`🚀 正在部署到 SCF → ${config.scfFunction}`);
+
+  const ScfClient = scf.v20180416.Client;
+  const client = new ScfClient({
+    credential: {
+      secretId: config.scfSecretId,
+      secretKey: config.scfSecretKey,
+    },
+    region: config.scfRegion,
+  });
+
+  try {
+    const result = await client.UpdateFunctionCode({
+      FunctionName: config.scfFunction,
+      CosBucketName: config.cosBucket,
+      CosBucketRegion: config.cosRegion,
+      CosObjectName: objectKey,
+      InstallDependency: "TRUE",
+    });
+    console.log("✅ 部署成功");
+    console.log(`   RequestId: ${result.RequestId}`);
+  } catch (err: any) {
+    console.error("❌ SCF 部署失败:", err.message || err);
+    if (err.requestId) {
+      console.error(`   RequestId: ${err.requestId}`);
+    }
+    process.exit(1);
+  }
+}
+
+// ─── 主流程 ──────────────────────────────────────────────
+
+async function main() {
+  console.log("═══════════════════════════════════════");
+  console.log("   Next.js SCF 自动化部署");
+  console.log("═══════════════════════════════════════");
+
+  // 1. 加载配置
+  loadEnv();
+  const config = loadConfig();
+  console.log(`📍 COS: ${config.cosBucket} (${config.cosRegion})`);
+  console.log(`📍 SCF: ${config.scfFunction} (${config.scfRegion})`);
+
+  // 2. 构建
+  buildProject();
+
+  // 3. 打包
+  const zipPath = await createZip(config);
+
+  // 4. 上传 COS
+  const objectKey = await uploadToCos(config, zipPath);
+
+  // 5. 部署 SCF
+  await deployToScf(config, objectKey);
+
+  // 清理临时文件
+  try {
+    unlinkSync(zipPath);
+    rmdirSync(TMP_DIR);
+    console.log("🧹 已清理临时文件");
+  } catch {
+    // 清理失败不影响整体结果
+  }
+
+  console.log("═══════════════════════════════════════");
+  console.log("   🎉 部署完成！");
+  console.log("═══════════════════════════════════════");
+}
+
+main().catch((err) => {
+  console.error("❌ 部署异常:", err.message || err);
+  process.exit(1);
+});
