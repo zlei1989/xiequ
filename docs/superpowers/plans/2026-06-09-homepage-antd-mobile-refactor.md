@@ -2,9 +2,9 @@
 
 > **For agentic workers:** 使用 `superpowers:subagent-driven-development`（推荐）或 `superpowers:executing-plans` 逐步实施此计划。
 
-**目标：** 将首页从 antd Row/Col + AppCard 重构为 antd-mobile NavBar + List，新增台岛遍历卡片，删除 AppCard 组件。
+**目标：** 将首页从 antd Row/Col + AppCard 重构为 antd-mobile List，新增台岛遍历卡片，删除 AppCard 组件。
 
-**架构：** `"use client"` 单页面，`NavBar` 标题 + `List` 布局，`List.Item` 三张应用卡片（大图标 prefix + description + arrowIcon），前两张 `router.push`，第三张 `window.open`。
+**架构：** `"use client"` 单页面，`List` 布局，`List.Item` 三张应用卡片（大图标 prefix + description + arrowIcon），前两张 `router.push`，第三张 `window.open`。首页无标题栏。
 
 **技术栈：** Next.js 16, React 19, antd-mobile 5, antd-mobile-icons, TypeScript
 
@@ -14,7 +14,7 @@
 
 | 文件 | 职责 | 操作 |
 |------|------|------|
-| `app/page.tsx` | 首页组件，NavBar + List 布局 | ✏️ 重写 |
+| `app/page.tsx` | 首页组件，List 布局（无标题栏） | ✏️ 重写 |
 | `components/ui/app-card.tsx` | 旧 AppCard（antd Card 包装） | 🗑 删除 |
 
 ---
@@ -30,7 +30,7 @@
 ```tsx
 "use client";
 
-import { List, NavBar } from "antd-mobile";
+import { List } from "antd-mobile";
 import { EnvironmentOutline, TravelOutline, CompassOutline } from "antd-mobile-icons";
 import { useRouter } from "next/navigation";
 
@@ -70,7 +70,6 @@ export default function Home() {
 
   return (
     <>
-      <NavBar backIcon={false}>谐趣</NavBar>
       <List>
         {apps.map((app) => (
           <List.Item

@@ -1,6 +1,6 @@
 "use client";
 
-import { List, NavBar } from "antd-mobile";
+import { List } from "antd-mobile";
 import { EnvironmentOutline } from "antd-mobile-icons";
 import { TravelOutline } from "antd-mobile-icons";
 import { CompassOutline } from "antd-mobile-icons";
@@ -10,14 +10,14 @@ const iconStyle = { fontSize: 32 };
 
 const apps = [
   {
-    title: "浇花帮手",
-    description: "IoT 设备管理，远程控制浇花",
+    title: "栽松偶书",
+    description: "每片松鳞张开的角度，都精确得像一本写给风的密信",
     href: "/watering",
     icon: <EnvironmentOutline style={iconStyle} />,
   },
   {
-    title: "旅行计划",
-    description: "地图标注，收藏想去的地方",
+    title: "逆旅烟云",
+    description: " 曾踏破千山明月，方知酒浊胜仙浆",
     href: "/travel",
     icon: <TravelOutline style={iconStyle} />,
   },
@@ -42,7 +42,6 @@ export default function Home() {
 
   return (
     <>
-      <NavBar backIcon={false}>谐趣</NavBar>
       <List>
         {apps.map((app) => (
           <List.Item

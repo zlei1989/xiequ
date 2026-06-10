@@ -2,7 +2,7 @@
 
 ## 目标
 
-将首页 (`app/page.tsx`) 从 antd 组件迁移到 antd-mobile，删除 AppCard 抽象层，使用 `List` + `NavBar` 布局，antd-mobile-icons 图标。
+将首页 (`app/page.tsx`) 从 antd 组件迁移到 antd-mobile，删除 AppCard 抽象层，使用 `List` 布局，antd-mobile-icons 图标。首页无标题栏，页面内容即为列表。
 
 ## 背景
 
@@ -12,7 +12,6 @@
 
 ```
 page.tsx ("use client")
-├── NavBar (backIcon={false}) "谐趣"
 └── List
     ├── List.Item prefix=EnvironmentOutline "浇花帮手"
     │   description="IoT 设备管理，远程控制浇花"
@@ -29,7 +28,6 @@ page.tsx ("use client")
 
 | UI 区域 | 原实现 | 新实现 |
 |---------|--------|--------|
-| 标题 | `<h1>` 居中 | antd-mobile `NavBar` |
 | 列表布局 | antd `Row` + `Col` + `Card` | antd-mobile `List` + `List.Item` |
 | 图标 | emoji 字符串 | antd-mobile-icons (`fontSize: 32`) |
 | 导航 | `Link` 组件 | `onClick` + `router.push` / `window.open` |
@@ -56,7 +54,7 @@ page.tsx ("use client")
 ```tsx
 "use client";
 
-import { List, NavBar } from "antd-mobile";
+import { List } from "antd-mobile";
 import { EnvironmentOutline, TravelOutline, CompassOutline } from "antd-mobile-icons";
 import { useRouter } from "next/navigation";
 
@@ -96,7 +94,6 @@ export default function Home() {
 
   return (
     <>
-      <NavBar backIcon={false}>谐趣</NavBar>
       <List>
         {apps.map((app) => (
           <List.Item
@@ -119,7 +116,6 @@ export default function Home() {
 ### 样式
 
 - 图标：`fontSize: 32`
-- NavBar：`backIcon={false}` 隐藏返回按钮
 - List.Item：`clickable` + `arrowIcon` 带点击反馈和右箭头
 
 ## 交互
@@ -143,5 +139,5 @@ export default function Home() {
 - 点击"浇花帮手"跳转到 `/watering`
 - 点击"旅行计划"跳转到 `/travel`
 - 点击"台岛遍历"通过 `window.open` 打开 `/taiwan-1.8.4/index.html`
-- NavBar 无返回按钮
+- 页面无 NavBar 标题栏
 - 页面无 antd 组件引用残留

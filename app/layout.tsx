@@ -30,10 +30,10 @@ export default function RootLayout({
   return (
     <html
       lang="zh-CN"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable}`}
       suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col">
+      <body>
         <script
           dangerouslySetInnerHTML={{
             __html: `!function(){var d=document.documentElement,m=window.matchMedia("(prefers-color-scheme:dark)");function u(e){d.setAttribute("data-prefers-color-scheme",e.matches?"dark":"light")}u(m);m.addEventListener("change",u)}();`,
