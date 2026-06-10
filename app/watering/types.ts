@@ -1,5 +1,6 @@
 // 流程步骤
 export type Step = {
+  key?: string;
   name: string;
   component?: string;
   value: { begin: unknown; end: unknown };
@@ -10,6 +11,7 @@ export type Step = {
 
 // 中断
 export type Interrupt = {
+  key?: string;
   name: string;
   component: string;
   state: number | boolean;
@@ -24,6 +26,7 @@ export type Interrupt = {
 
 // 流程
 export type Process = {
+  key?: string;
   name: string;
   trigger?: string;
   steps: Step[];
@@ -31,6 +34,7 @@ export type Process = {
 
 // 定时任务
 export type Schedule = {
+  key?: string;
   type: "minute" | "day" | "week" | "month";
   day?: number;
   week?: number;
