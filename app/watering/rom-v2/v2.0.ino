@@ -189,22 +189,27 @@ void setup()
   button0.setPin(GPIO_BUTTON0);
   button0.setContext(&process);
   button0.setChangeHandler(buttonChangeHandler);
+  button0.setKey("button_0");
 
   button1.setPin(GPIO_BUTTON1);
   button1.setContext(&process);
   button1.setChangeHandler(buttonChangeHandler);
+  button1.setKey("button_1");
 
   button2.setPin(GPIO_BUTTON2);
   button2.setContext(&process);
   button2.setChangeHandler(buttonChangeHandler);
+  button2.setKey("button_2");
 
   button3.setPin(GPIO_BUTTON3);
   button3.setContext(&process);
   button3.setChangeHandler(buttonChangeHandler);
+  button3.setKey("button_3");
 
   button4.setPin(GPIO_BUTTON4);
   button4.setContext(&process);
   button4.setChangeHandler(buttonChangeHandler);
+  button4.setKey("button_4");
 
   // ---- 初始化传感器 ----
   sensor0.setPin(GPIO_SENSOR0); // 温度传感器电压采集
