@@ -4,12 +4,10 @@ import {
   mkdirSync,
   statSync,
   readFileSync,
-  readdirSync,
   createReadStream,
   createWriteStream,
   unlinkSync,
   rmSync,
-  lstatSync,
 } from "fs";
 import { resolve, join, basename } from "path";
 import archiver from "archiver";
@@ -114,6 +112,13 @@ function buildProject(): void {
       const result = execSync("npx next build", { cwd: ROOT, stdio: "pipe", encoding: "utf-8", shell });
       process.stdout.write(result);
       console.log("✅ 构建完成");
+
+      // standalone 模式：复制 public 和 static 到 standalone 目录
+      console.log("📋 复制 static/public 到 standalone...");
+      const standaloneDir = join(ROOT, ".next", "standalone");
+      execSync(`cp -r public "${standaloneDir}/"`, { cwd: ROOT, stdio: "ignore" });
+      execSync(`mkdir -p "${standaloneDir}/.next" && cp -r .next/static "${standaloneDir}/.next/"`, { cwd: ROOT, stdio: "ignore" });
+      console.log("✅ 复制完成");
       return;
     } catch (err: any) {
       // 打印输出（pipe 模式下不会自动显示）
@@ -188,20 +193,8 @@ function createZip(config: DeployConfig): Promise<string> {
     archive.file(join(ROOT, "scf_bootstrap"), { name: "scf_bootstrap" });
     // 添加 serverless.yml
     archive.file(join(ROOT, "serverless.yml"), { name: "serverless.yml" });
-
-    // 添加 .next 生产文件（排除 dev/cache/diagnostics/trace/types）
-    const nextDir = join(ROOT, ".next");
-    const excludeDirs = new Set(["dev", "cache", "diagnostics", "trace", "types"]);
-    for (const entry of readdirSync(nextDir)) {
-      const src = join(nextDir, entry);
-      const dest = `.next/${entry}`;
-      if (excludeDirs.has(entry)) continue;
-      if (lstatSync(src).isDirectory()) {
-        archive.directory(src, dest);
-      } else {
-        archive.file(src, { name: dest });
-      }
-    }
+    // 添加 .next/standalone（standalone 模式下的运行目录）
+    archive.directory(join(ROOT, ".next", "standalone"), ".next/standalone");
 
     archive.finalize();
   });
