@@ -43,7 +43,8 @@ SCF 的 `InstallDependency: "TRUE"` 会在 zip 根目录运行 `npm install`，�
 | `lib/sqljs-wrapper.ts` | 删除 | 230 行 WASM 包装器不再需要 |
 | `lib/db.ts` | 重写 | 直接用 better-sqlite3，约 20 行 |
 | `package.json` | 修改 | `sql.js` → `better-sqlite3`；`@types/sql.js` → `@types/better-sqlite3` |
-| `scripts/deploy.ts` | 新增函数 | `swapBetterSqlite3Binary()`，约 40 行 |
+| `scripts/deploy.ts` | 新增函数 | `swapBetterSqlite3Binary()`（~40行）+ `cleanStandalone()`（~30行） |
+| `scf_bootstrap` | 修改 | 添加 `export PORT=9000` |
 | `app/watering/services/db.ts` | 微调 | 移除 `parseJSON` 的 sql.js 注释，API 不变 |
 
 ### lib/db.ts — 数据库连接
@@ -95,6 +96,63 @@ await swapBetterSqlite3Binary();
 - 内置一个 Node 版本 → ABI 映射表（Node 18:108, 20:115, 22:127, 24:135），如果 SCF Node 版本不在表中，尝试运行时探测
 - 使用 `fetch` + `zlib` + 纯 JS tar 解析，不依赖系统 `curl`/`tar`
 - 下载失败 → `process.exit(1)`，不部署损坏的包
+
+### scripts/deploy.ts — 部署包精简
+
+`buildProject()` 后、`createZip()` 前，新增 `cleanStandalone()` 步骤。Next.js standalone 会 trace 进大量非运行时文件，需在打包前清理：
+
+**排除清单（从 `.next/standalone/` 中删除）：**
+
+| 文件/目录 | 大小 | 理由 |
+|-----------|------|------|
+| `docs/` | 752 KB | 设计文档 |
+| `README.md`、`CLAUDE.md`、`AGENTS.md` | ~5 KB | 项目文档 |
+| `eslint.config.mjs` | — | 开发工具 |
+| `next.config.ts` | — | 构建时配置 |
+| `tsconfig.json` | — | TypeScript 配置 |
+| `vitest.config.ts` | — | 测试配置 |
+| `instrumentation.ts` | — | 已编译到 `.next/server/` |
+| `package-lock.json` | 372 KB | 非运行时需要 |
+| `scripts/` | — | 部署脚本 |
+| `.env` | — | 用 `.env.local` 代替 |
+| `scf_bootstrap` | — | zip 根目录已有，standalone 内重复 |
+| `serverless.yml` | — | 同上，重复 |
+
+**保留：** `.next/`、`node_modules/`、`server.js`、`package.json`、`app/`、`components/`、`lib/`、`data/`、`public/`、`.env.local`
+
+### scripts/deploy.ts — 环境变量处理
+
+- standalone 中保留 `.env.local`（从项目根目录的 `.env.local` 复制到 standalone，覆盖 Next.js 自动 trace 的版本）
+- 删除 standalone 中的 `.env`（避免泄露默认值到生产环境）
+- 在 `.env.local` 中确保 `PORT=9000`
+
+### scf_bootstrap — 端口配置
+
+修改 `scf_bootstrap`，显式设置端口为 9000：
+
+```bash
+#!/bin/bash
+export PORT=9000
+/var/lang/node24/bin/node .next/standalone/server.js
+```
+
+### Zip 包结构验证
+
+```
+zip root/
+  scf_bootstrap          ← SCF 入口脚本
+  serverless.yml         ← SCF 配置（通过 API 部署时可选）
+  .next/standalone/      ← 精简后的 standalone 目录
+    server.js
+    package.json
+    .env.local           ← 运行时环境变量（含 PORT=9000）
+    .next/               ← Next.js 编译输出
+    node_modules/        ← 平铺依赖（含 Linux better-sqlite3）
+    data/                ← 数据库文件目录
+    public/              ← 静态资源
+```
+
+`scf_bootstrap` 中 `.next/standalone/server.js` 的路径与 zip 结构匹配，正确。
 
 ### JSON 字段处理 — 不变
 
