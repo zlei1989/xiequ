@@ -11,7 +11,7 @@ import {
   rmSync,
   lstatSync,
 } from "fs";
-import { resolve, join } from "path";
+import { resolve, join, basename } from "path";
 import archiver from "archiver";
 import COS from "cos-nodejs-sdk-v5";
 import { scf } from "tencentcloud-sdk-nodejs";
@@ -182,7 +182,7 @@ function createZip(config: DeployConfig): Promise<string> {
 
 /** 上传 zip 到腾讯云 COS，返回对象 Key */
 function uploadToCos(config: DeployConfig, zipPath: string): Promise<string> {
-  const filename = zipPath.replace(/^.*[\\/]/, "");
+  const filename = basename(zipPath);
   const objectKey = `deploy/${filename}`;
 
   console.log(`☁️  正在上传到 COS → ${config.cosBucket}/${objectKey}`);
