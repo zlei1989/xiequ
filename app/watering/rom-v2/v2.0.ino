@@ -252,6 +252,9 @@ void setup()
   network.setConnectedHandler(networkConnectedHandler);
   network.setWatchStateHandler(networkAsyncWatchStateHandler);
   network.setStateChangeHandler(networkStateChangeHandler);
+
+  // 初始化空闲计时器
+  _lastOperationTime = millis();
 }
 
 /**
@@ -262,6 +265,17 @@ void setup()
  */
 void loop()
 {
+  // 空闲睡眠倒计时检查
+  if (_sleepDuration > 0 && _idled) {
+    unsigned long now = millis();
+    if (now - _lastOperationTime >= _sleepDuration) {
+      log("Sleep {\"duration\":%lu,\"idle\":%lu}",
+          _sleepDuration, (unsigned long)(now - _lastOperationTime));
+      Serial.flush();
+      esp_deep_sleep_start();
+    }
+  }
+
   // 网络连接与状态轮询
   network.next();
 
@@ -437,39 +451,29 @@ void networkStateChangeHandler(JsonDocument *state, NetworkExt *network,
   light.twinkle(2, Light::SPEED_FAST);
 
   // 如果设备开关关闭或需要执行新流程，先终止当前流程
-  if ((*state)["data"]["switch"] != "on" ||
-      (*state)["data"]["process"].is<JsonObject>())
+  if ((*state)["switch"] != "on" ||
+      (*state)["process"].is<JsonObject>())
   {
     process.terminate();
     _idled = true;
     yield();
   }
 
-  // 设备开关关闭：检查是否需要进入深度睡眠
-  if ((*state)["data"]["switch"] != "on")
+  // 设备开关关闭：记录 sleepDuration（倒计时逻辑在 loop 中，不立即睡眠）
+  if ((*state)["switch"] != "on")
   {
-    if ((*state)["data"]["sleepDuration"].is<unsigned long>())
+    if ((*state)["sleepDuration"].is<unsigned long>())
     {
-      // 配置深度睡眠唤醒定时器
-      unsigned long sleepDuration =
-          (*state)["data"]["sleepDuration"].as<unsigned long>();
-      log("Sleep {\"duration\":%lu}", sleepDuration);
-      // 转换为微秒（ESP32 深度睡眠 API 使用微秒单位）
-      unsigned long long timeInUs = sleepDuration;
-      timeInUs *= 1000;
-      esp_sleep_enable_timer_wakeup(timeInUs);
-      // 确保串口日志输出完毕
-      Serial.flush();
-      // 进入深度睡眠，设备重启后从 setup() 开始执行
-      esp_deep_sleep_start();
+      _sleepDuration = (*state)["sleepDuration"].as<unsigned long>();
+      log("Sleep Duration Set {\"duration\":%lu}", _sleepDuration);
     }
     yield();
     return;
   }
 
-  // 设备开关打开但无有效流程配置：仅更新状态，不执行操作
-  if (!(*state)["data"]["process"].is<JsonObject>() ||
-      !(*state)["data"]["process"]["steps"].is<JsonArray>())
+  // 设备开关打开但无有效流程配置：仅更新状态
+  if (!(*state)["process"].is<JsonObject>() ||
+      !(*state)["process"]["steps"].is<JsonArray>())
   {
     _idled = true;
     yield();
@@ -478,7 +482,8 @@ void networkStateChangeHandler(JsonDocument *state, NetworkExt *network,
 
   // 启动新流程
   _idled = false;
-  process.setSchema((*state)["data"].as<JsonObject>());
+  _lastOperationTime = millis();  // 刷新操作时间
+  process.setSchema((*state).as<JsonObject>());
   process.execute();
 }
 
@@ -529,6 +534,8 @@ void processFinishHandler(Process *process, void *context)
         JsonObject object = fields.to<JsonObject>();
         Process *process = reinterpret_cast<Process *>(context);
         object["stateId"] = process->getStateId();
+        _idled = true;
+        _lastOperationTime = millis();
         // 推送完成事件
         return network->pushState("finish", &fields);
       },
