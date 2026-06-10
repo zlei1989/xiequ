@@ -1,26 +1,24 @@
-import { Database } from "@/lib/sqljs-wrapper";
+import Database from "better-sqlite3";
 import path from "path";
+import { mkdirSync } from "fs";
 
-let db: Database | null = null;
-let dbPromise: Promise<Database> | null = null;
+type SQLiteDB = Database.Database;
 
-const DB_PATH = path.join(process.cwd(), "data", "app.db");
+let db: SQLiteDB | null = null;
 
-export async function getDb(): Promise<Database> {
+const DB_PATH = process.env.DB_PATH || path.join(process.cwd(), "data", "app.db");
+
+export function getDb(): SQLiteDB {
   if (db) return db;
-  if (!dbPromise) {
-    dbPromise = Database.create(DB_PATH).then((d) => {
-      db = d;
-      // 启用 WAL 模式提升并发性能（sql.js 中的 pragma）
-      d.pragma("journal_mode = WAL");
-      return d;
-    });
-  }
-  return dbPromise;
+
+  mkdirSync(path.dirname(DB_PATH), { recursive: true });
+  db = new Database(DB_PATH);
+  db.pragma("journal_mode = WAL");
+  return db;
 }
 
 /** 同步获取数据库（仅在确保已初始化后调用） */
-export function getDbSync(): Database {
+export function getDbSync(): SQLiteDB {
   if (!db) {
     throw new Error("Database not initialized. Call getDb() first.");
   }
