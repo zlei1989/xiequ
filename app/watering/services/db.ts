@@ -1,4 +1,5 @@
 import { getDb } from "@/lib/db";
+import { newId } from "@/lib/utils";
 import type { DeviceConfig, DeviceState, DeviceItem } from "../types";
 
 /**
@@ -36,6 +37,7 @@ export async function initDb() {
       exec_delay INTEGER NOT NULL DEFAULT 0,
       schedules JSON NOT NULL DEFAULT '[]',
       voltage JSON,
+      processes_version TEXT,
       created_time TEXT NOT NULL,
       last_write_time TEXT NOT NULL
     )
@@ -44,6 +46,13 @@ export async function initDb() {
   // 为旧数据库添加 voltage 列（兼容无此列的旧表）
   try {
     db.exec(`ALTER TABLE watering_devices ADD COLUMN voltage JSON`);
+  } catch {
+    // 列已存在，忽略
+  }
+
+  // 为旧数据库添加 processes_version 列
+  try {
+    db.exec(`ALTER TABLE watering_devices ADD COLUMN processes_version TEXT`);
   } catch {
     // 列已存在，忽略
   }
@@ -88,7 +97,7 @@ export async function getAllDevices(): Promise<DeviceItem[]> {
   const db = await getDb();
   const rows = db.prepare(`
     SELECT d.chip_id, d.name, d.mac_address, d.processes, d.idle_sleep, d.idle_timeout,
-           d.boot_exec, d.exec_delay, d.schedules, d.voltage, d.created_time, d.last_write_time,
+           d.boot_exec, d.exec_delay, d.schedules, d.voltage, d.processes_version, d.created_time, d.last_write_time,
            s.state_id, s.switch, s.buttons, s.sensors, s.loads,
            s.current_index, s.current_process, s.message,
            s.last_tick_time as state_last_tick_time, s.last_write_time as state_last_write_time
@@ -110,6 +119,7 @@ export async function getAllDevices(): Promise<DeviceItem[]> {
       execDelay: row.exec_delay,
       schedules: parseJSON(row.schedules, [] as DeviceConfig["schedules"]),
       voltage: parseJSON(row.voltage, undefined as DeviceConfig["voltage"]),
+      processesVersion: row.processes_version ?? undefined,
       createdTime: row.created_time,
       lastWriteTime: row.last_write_time,
     };
@@ -156,6 +166,7 @@ export async function getDeviceConfig(chipId: string): Promise<DeviceConfig | nu
     execDelay: row.exec_delay,
     schedules: parseJSON(row.schedules, [] as DeviceConfig["schedules"]),
     voltage: parseJSON(row.voltage, undefined as DeviceConfig["voltage"]),
+    processesVersion: row.processes_version ?? undefined,
     createdTime: row.created_time,
     lastWriteTime: row.last_write_time,
   };
@@ -166,13 +177,27 @@ export async function getDeviceConfig(chipId: string): Promise<DeviceConfig | nu
  */
 export async function saveDeviceConfig(config: DeviceConfig) {
   const db = await getDb();
+
+  // processesVersion 生成：对比旧值，变更时生成新版本
+  const oldConfig = await getDeviceConfig(config.chipId);
+  if (!config.processesVersion || !oldConfig) {
+    config.processesVersion = newId();
+  } else {
+    const oldProcessesJson = JSON.stringify(oldConfig.processes);
+    const newProcessesJson = JSON.stringify(config.processes);
+    if (oldProcessesJson !== newProcessesJson) {
+      config.processesVersion = newId();
+    }
+  }
+
   db.prepare(`
-    INSERT INTO watering_devices (chip_id, name, mac_address, processes, idle_sleep, idle_timeout, boot_exec, exec_delay, schedules, voltage, created_time, last_write_time)
-    VALUES (@chip_id, @name, @mac_address, @processes, @idle_sleep, @idle_timeout, @boot_exec, @exec_delay, @schedules, @voltage, @created_time, @last_write_time)
+    INSERT INTO watering_devices (chip_id, name, mac_address, processes, idle_sleep, idle_timeout, boot_exec, exec_delay, schedules, voltage, processes_version, created_time, last_write_time)
+    VALUES (@chip_id, @name, @mac_address, @processes, @idle_sleep, @idle_timeout, @boot_exec, @exec_delay, @schedules, @voltage, @processes_version, @created_time, @last_write_time)
     ON CONFLICT(chip_id) DO UPDATE SET
       name=@name, mac_address=@mac_address, processes=@processes, idle_sleep=@idle_sleep,
       idle_timeout=@idle_timeout, boot_exec=@boot_exec, exec_delay=@exec_delay,
-      schedules=@schedules, voltage=@voltage, last_write_time=@last_write_time
+      schedules=@schedules, voltage=@voltage, processes_version=@processes_version,
+      last_write_time=@last_write_time
   `).run({
     "@chip_id": config.chipId,
     "@name": config.name,
@@ -184,6 +209,7 @@ export async function saveDeviceConfig(config: DeviceConfig) {
     "@exec_delay": config.execDelay,
     "@schedules": JSON.stringify(config.schedules),
     "@voltage": config.voltage ? JSON.stringify(config.voltage) : null,
+    "@processes_version": config.processesVersion ?? null,
     "@created_time": config.createdTime,
     "@last_write_time": config.lastWriteTime,
   });
