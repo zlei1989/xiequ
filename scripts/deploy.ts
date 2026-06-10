@@ -7,7 +7,7 @@ import {
   createReadStream,
   createWriteStream,
   unlinkSync,
-  rmdirSync,
+  rmSync,
 } from "fs";
 import { resolve, join } from "path";
 import archiver from "archiver";
@@ -254,7 +254,7 @@ async function main() {
   // 清理临时文件
   try {
     unlinkSync(zipPath);
-    rmdirSync(TMP_DIR);
+    rmSync(TMP_DIR, { recursive: true, force: true });
     console.log("🧹 已清理临时文件");
   } catch {
     // 清理失败不影响整体结果
