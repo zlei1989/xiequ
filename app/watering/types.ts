@@ -60,6 +60,7 @@ export type DeviceConfig = {
   execDelay: number;
   schedules: Schedule[];
   voltage?: VoltageConfig;
+  processesVersion?: string;  // 流程配置版本（变更时更新）
   createdTime: string;
   lastWriteTime: string;
 };
@@ -75,6 +76,8 @@ export type DeviceState = {
   index?: number;
   process?: Process;
   message?: string;
+  sleep?: number;           // 固件轮询间隔（毫秒）
+  sleepDuration?: number;   // 空闲深度睡眠时长（毫秒）
   lastWriteTime: string;
 };
 
