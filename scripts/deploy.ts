@@ -157,8 +157,8 @@ function createZip(config: DeployConfig): Promise<string> {
 
     // 添加 scf_bootstrap（必须放在根目录，SCF 入口）
     archive.file(join(ROOT, "scf_bootstrap"), { name: "scf_bootstrap" });
-    // 添加 package.json（SCF 需要它来安装依赖）
-    archive.file(join(ROOT, "package.json"), { name: "package.json" });
+    // 添加 serverless.yml
+    archive.file(join(ROOT, "serverless.yml"), { name: "serverless.yml" });
 
     // 添加 .next 生产文件（排除 dev/cache/diagnostics/trace/types）
     const nextDir = join(ROOT, ".next");
