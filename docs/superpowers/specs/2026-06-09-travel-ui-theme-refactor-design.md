@@ -59,7 +59,7 @@ handleToggle(location):
 
 ### 颜色
 
-两个 action 的 `color` 统一改为 `"light"`。
+toggle action 的 `color` 为 `"light"`，delete action 的 `color` 为 `"danger"`（红色）。
 
 ### 文案
 
@@ -153,7 +153,8 @@ page.tsx
 │
 ├── LocationListItem
 │   ├── hasMoments prop → 隐藏 toggle SwipeAction
-│   └── color: "light"
+│   ├── toggle color: "light"
+│   └── delete color: "danger"
 │
 ├── LocationViewPopup
 │   └── Switch disabled={moments.length > 0}
@@ -175,4 +176,4 @@ page.tsx
 - **规则验证**：有瞬间的位置开关禁用（Popup + SwipeAction 均不可切换）
 - **自动创建**：无瞬间的位置勾选"已去"后，确认精彩瞬间列表中多了一条当天日期空文本记录
 - **日期选择**：点击 Form.Item 日期行弹出 DatePicker，确认后正确更新
-- **视觉效果**：SwipeAction 颜色为 light，禁用态灰色
+- **视觉效果**：SwipeAction toggle 为 light，delete 为 danger（红色），禁用态灰色

@@ -1,0 +1,24 @@
+#comments .ui-listview>li p:not(:first-child){white-space:normal;font-size:1em}
+#day-options,#trip-options{border:none;width:12em}
+#trip2-options, #comment-options{width:16em}
+.controlgroup-textinput{padding:.22em}
+.ui-page.zlei-page-add h1:before{content:"Add "}
+.ui-page.zlei-page-edit h1:before{content:"Edit "}
+.ui-text-right{text-align:right}
+a, img{-webkit-touch-callout:none}
+body{-moz-user-select:none;-webkit-user-select:none;-ms-user-select:none;-khtml-user-select:none}
+input[name="commentFees"]{width:8em}
+/* 高亮 行程类型 */
+#trips span[rel="type"]:after{color:#fff;padding:0.25em;text-shadow:none}
+#trips .交通 span[rel="type"]:after{content:"交通";background-color:#33b679}/* 鼠尾草绿 */
+#trips .观光 span[rel="type"]:after{content:"观光";background-color:#f4511e}/* 橙红 */
+#trips .购物 span[rel="type"]:after{content:"购物";background-color:#039be5}/* 孔雀蓝 */
+#trips .住宿 span[rel="type"]:after{content:"住宿";background-color:#616161}/* 石墨黑 */
+/* 高亮 备注类型 */
+#comments .票证 span[rel="type"]:after{content:"票证";color:#33b679}/* 鼠尾草绿 */
+#comments .备忘 span[rel="type"]:after{content:"备忘";color:#f4511e}/* 橙红 */
+#comments .攻略 span[rel="type"]:after{content:"攻略";color:#039be5}/* 孔雀蓝 */
+#comments .游记 span[rel="type"]:after{content:"游记";color:#3f51b5}/* 蓝莓紫 */
+#comments .记账 span[rel="type"]:after{content:"记账";color:#616161}/* 石墨黑 */
+/* 高亮 当前进程 */
+#days .progress:after,#trips .progress:after{position:absolute;top:0;left:0;display:block;width:.25em;height:100%;background:#039be5;content:""}

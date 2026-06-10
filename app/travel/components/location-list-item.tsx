@@ -61,7 +61,7 @@ export function LocationListItem({
         {
           key: "delete",
           text: "删除",
-          color: "light" as const,
+          color: "danger" as const,
           onClick: handleDelete,
         },
       ]}

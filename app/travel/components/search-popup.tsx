@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { DotLoading, ErrorBlock, List, Popup, SearchBar, Toast } from "antd-mobile";
+import { DotLoading, ErrorBlock, List, NavBar, Popup, SearchBar, Toast } from "antd-mobile";
 import { searchPlace } from "../services/amap";
 import type { AMapPoiItem } from "../services/amap";
 
@@ -50,7 +50,8 @@ export function SearchPopup({
         overflow: "auto",
       }}
     >
-      <SearchBar placeholder="选择位置" onSearch={handleSearch} showCancelButton />
+      <NavBar onBack={onClose}>添加位置</NavBar>
+      <SearchBar placeholder="选择位置" onSearch={handleSearch} />
       {searching ? (
         <List>
           <List.Item prefix={<DotLoading />}>搜索中</List.Item>

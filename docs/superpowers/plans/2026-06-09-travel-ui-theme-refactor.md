@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox syntax for tracking.
 
-**Goal:** 实现"精彩瞬间"与"已去"状态联动规则，日期选择改用 DatePickerView，SwipeAction 统一 light 颜色。
+**Goal:** 实现"精彩瞬间"与"已去"状态联动规则，日期选择改用 DatePickerView，SwipeAction toggle 用 light 颜色，delete 用 danger（红色）。
 
 **Architecture:** 在 page.tsx 集中处理 toggle 规则（hasMoments 判断 + 自动创建瞬间），通过 props 将禁用态传递给子组件。MomentEditPopup 新增嵌入式 DatePickerPopup。
 
@@ -17,7 +17,7 @@
 | 文件 | 操作 | 职责 |
 |------|------|------|
 | `app/travel/list/page.tsx` | 修改 | 核心规则：hasMoments 判断、handleToggle 联动自动创建瞬间 |
-| `app/travel/components/location-list-item.tsx` | 修改 | SwipeAction color="light"、文案、有瞬间时隐藏 toggle |
+| `app/travel/components/location-list-item.tsx` | 修改 | SwipeAction toggle=light/delete=danger、文案、有瞬间时隐藏 toggle |
 | `app/travel/components/location-view-popup.tsx` | 修改 | Switch disabled 当有瞬间 |
 | `app/travel/components/moment-edit-popup.tsx` | 修改 | Input 只读 + DatePickerPopup、TextArea rows=4 |
 
@@ -186,7 +186,7 @@ export function LocationListItem({
         {
           key: "delete",
           text: "删除",
-          color: "light" as const,
+          color: "danger" as const,
           onClick: handleDelete,
         },
       ]}
@@ -224,7 +224,7 @@ npx tsc --noEmit --pretty 2>&1 | head -50
 
 ```bash
 git add app/travel/components/location-list-item.tsx
-git commit -m "feat(travel): SwipeAction light color, new text, hide toggle when has moments"
+git commit -m "feat(travel): SwipeAction toggle light / delete danger color, new text, hide toggle when has moments"
 ```
 
 ---

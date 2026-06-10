@@ -1,0 +1,352 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
+    />
+    <title>Taiwan Plan v1.8.4</title>
+    <script src="src/jquery.min.js"></script>
+    <script src="src/jquery-ui.min.js"></script>
+    <script src="src/jquery-ui.touch-punch.min.js"></script>
+    <script src="src/jquery.mobile.min.js"></script>
+    <!--<link rel="stylesheet" href="css/jquery-ui.min.css">-->
+    <link rel="stylesheet" href="css/jquery.mobile.min.css" />
+    <link rel="stylesheet" href="css/zlei.app.css" />
+    <!-- 各类图标 -->
+    <link href="css/favicon.ico" rel="bookmark" type="image/x-icon" />
+    <link href="css/favicon.ico" rel="icon" type="image/x-icon" />
+    <link href="css/favicon.ico" rel="shortcut icon" type="image/x-icon" />
+    <!-- IOS图标 -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <link rel="apple-touch-icon" href="css/touch-icon.png" />
+  </head>
+  <body>
+    <!-- 日期列表 -->
+    <div id="days" data-role="page">
+      <div data-role="header" data-position="fixed" data-theme="b">
+        <a name="sync" data-icon="refresh" data-iconpos="notext">Sync</a>
+        <h1>Taiwan Plan (<a href="#help" name="help" data-transition="flip">?</a>)</h1>
+        <a href="#set-day" name="new" data-icon="plus" data-iconpos="notext" data-transition="flip"
+          >Add Day</a
+        >
+      </div>
+      <!-- /header -->
+      <div role="main" class="ui-content">
+        <ul data-role="listview">
+          <li>
+            <a href="#trips" data-transition="slide">
+              <h2>2016-01-01</h2>
+              <p>Beijing</p>
+              <p class="ui-li-aside">1 DAY</p>
+            </a>
+          </li>
+        </ul>
+      </div>
+      <!-- /content -->
+      <!-- 日期选项 -->
+      <div
+        id="day-options"
+        data-role="popup"
+        data-history="false"
+        data-tolerance="0,0"
+        data-shadow="false"
+        data-theme="b"
+      >
+        <div data-role="navbar" data-iconpos="left">
+          <ul>
+            <li><a href="#remove-day" data-icon="delete" data-transition="flip">Delete</a></li>
+            <li><a href="#set-day" data-icon="edit" data-transition="flip">Edit</a></li>
+          </ul>
+        </div>
+        <!-- /navbar -->
+      </div>
+      <!-- /popup -->
+    </div>
+    <!-- /page -->
+
+    <!-- 设置日期 -->
+    <div id="set-day" data-role="page">
+      <div data-role="header" data-theme="b">
+        <a data-rel="back" data-icon="back" data-iconpos="notext">Back</a>
+        <h1>Day</h1>
+        <a name="save" data-rel="back" data-icon="check" data-iconpos="notext">Save</a>
+      </div>
+      <!-- /header -->
+      <div role="main" class="ui-content">
+        <label>Start Time</label>
+        <input name="dayDatetime" type="datetime-local" />
+      </div>
+      <!-- /content -->
+    </div>
+    <!-- /page -->
+
+    <!-- 删除确认 -->
+    <div id="remove-day" data-role="page" data-theme="b">
+      <div data-role="header">
+        <a data-rel="back" data-icon="back" data-iconpos="notext">Back</a>
+        <h1>Delete Day ?</h1>
+      </div>
+      <!-- /header -->
+      <div role="main" class="ui-content">
+        <h3 class="ui-title">Are you sure you want to delete <var>2016-01-01</var> ?</h3>
+        <p>This action cannot be undone.</p>
+        <p><a data-rel="back" name="delete" class="ui-btn ui-corner-all ui-shadow">Delete</a></p>
+      </div>
+      <!-- /content -->
+    </div>
+    <!-- /page -->
+
+    <!-- 行程列表 -->
+    <div id="trips" data-role="page" data-title="Trips">
+      <div data-role="header" data-position="fixed" data-theme="b">
+        <a data-rel="back" data-icon="arrow-l" data-iconpos="notext">Back</a>
+        <h1><span>2016-01-01</span> Trips</h1>
+        <a href="#set-trip" name="new" data-icon="plus" data-iconpos="notext" data-transition="flip"
+          >Add Trip</a
+        >
+      </div>
+      <!-- /header -->
+      <div role="main" class="ui-content">
+        <ul data-role="listview">
+          <li>
+            <a href="#comments" data-transition="slide">
+              <h2>Beijing</h2>
+              <p>Palying, about 8 hours 30 minutes</p>
+              <p class="ui-li-aside">09:00 AM</p></a
+            >
+          </li>
+        </ul>
+      </div>
+      <!-- /content -->
+      <!-- 功能列表 -->
+      <div
+        id="trip-options"
+        data-role="popup"
+        data-history="false"
+        data-tolerance="0,0"
+        data-shadow="false"
+        data-theme="b"
+      >
+        <div data-role="navbar" data-iconpos="left">
+          <ul>
+            <li><a href="#remove-trip" data-icon="delete" data-transition="flip">Delete</a></li>
+            <li><a href="#set-trip" data-icon="edit" data-transition="flip">Edit</a></li>
+          </ul>
+        </div>
+      </div>
+      <!-- /popup -->
+    </div>
+    <!-- /page -->
+
+    <!-- 设置行程 -->
+    <div id="set-trip" data-role="page">
+      <div data-role="header" data-position="fixed" data-theme="b">
+        <a data-rel="back" data-icon="back" data-iconpos="notext">Back</a>
+        <h1>Trip</h1>
+        <a data-rel="back" name="save" data-icon="check" data-iconpos="notext">Save</a>
+      </div>
+      <!-- /header -->
+      <div role="main" class="ui-content">
+        <label>Subject</label>
+        <input type="text" name="tripSubject" />
+        <label>Type</label>
+        <select name="tripType">
+          <option></option>
+          <option value="交通">交通</option>
+          <option value="观光">观光</option>
+          <option value="购物">购物</option>
+          <option value="住宿">住宿</option>
+        </select>
+        <label>Minutes</label>
+        <input name="tripMinutes" type="number" />
+        <label>Content</label>
+        <textarea name="tripContent"></textarea>
+      </div>
+      <!-- /content -->
+    </div>
+    <!-- /page -->
+
+    <!-- 删除确认 -->
+    <div id="remove-trip" data-role="page" data-theme="b">
+      <div data-role="header">
+        <a data-rel="back" data-icon="back" data-iconpos="notext">Back</a>
+        <h1>Delete Trip ?</h1>
+      </div>
+      <!-- /header -->
+      <div role="main" class="ui-content">
+        <h3 class="ui-title">Are you sure you want to delete <var>Beijing</var> ?</h3>
+        <p>This action cannot be undone.</p>
+        <a data-rel="back" name="delete" class="ui-btn ui-corner-all ui-shadow">Delete</a>
+      </div>
+      <!-- /content -->
+    </div>
+    <!-- /page -->
+
+    <!-- 备忘列表 -->
+    <div id="comments" data-role="page" data-title="Trip and Comments">
+      <div data-role="header" data-position="fixed" data-theme="b">
+        <a data-rel="back" data-icon="arrow-l" data-iconpos="notext">Back</a>
+        <h1>90:00 AM, Playing</h1>
+        <a
+          href="#set-comment"
+          name="new"
+          data-icon="plus"
+          data-iconpos="notext"
+          data-transition="flip"
+          >Add Comment</a
+        >
+      </div>
+      <!-- /header -->
+      <div role="main" class="ui-content">
+        <div class="ui-body ui-body-a ui-corner-all">
+          <h3>Beijing</h3>
+          <div class="trip-summaries">
+            <p>Capital...</p>
+          </div>
+          <p>
+            fees: <small class="trip-sum-fees">35.00 CNY</small> <br />date:
+            <small class="trip-date">2016-01-01</small> <br />duration: about
+            <small class="trip-duration">8 hours 30 minutes</small>
+          </p>
+        </div>
+        <ul data-role="listview" data-inset="true" data-shadow="false">
+          <li>
+            <p><span rel="type"></span>, 35.00 CNY</p>
+            <p>201611015660326</p>
+          </li>
+        </ul>
+      </div>
+      <!-- /content -->
+      <!-- 功能列表 -->
+      <div
+        id="comment-options"
+        data-role="popup"
+        data-history="false"
+        data-theme="b"
+        data-overlay-theme="b"
+      >
+        <fieldset class="ui-grid-a">
+          <div class="ui-block-a">
+            <a href="#remove-comment" data-role="button" data-icon="delete" data-transition="flip"
+              >Delete</a
+            >
+          </div>
+          <div class="ui-block-b">
+            <a href="#set-comment" data-role="button" data-icon="edit" data-transition="flip"
+              >Edit</a
+            >
+          </div>
+        </fieldset>
+      </div>
+      <!-- /popup -->
+      <!-- 功能列表 -->
+      <div
+        id="trip2-options"
+        data-role="popup"
+        data-history="false"
+        data-theme="b"
+        data-overlay-theme="b"
+      >
+        <fieldset class="ui-grid-a">
+          <div class="ui-block-a">
+            <a href="#remove-trip" data-role="button" data-icon="delete" data-transition="flip"
+              >Delete</a
+            >
+          </div>
+          <div class="ui-block-b">
+            <a href="#set-trip" data-role="button" data-icon="edit" data-transition="flip">Edit</a>
+          </div>
+        </fieldset>
+      </div>
+      <!-- /popup -->
+    </div>
+    <!-- /page -->
+
+    <!-- 设置备注 -->
+    <div id="set-comment" data-role="page">
+      <div data-role="header" data-position="fixed" data-theme="b">
+        <a data-rel="back" data-icon="back" data-iconpos="notext">Back</a>
+        <h1>Comment</h1>
+        <a data-rel="back" name="save" data-icon="check" data-iconpos="notext">Save</a>
+      </div>
+      <!-- /header -->
+      <div role="main" class="ui-content">
+        <label>Type</label>
+        <select name="commentType">
+          <option></option>
+          <option value="票证">票证</option>
+          <option value="备忘">备忘</option>
+          <option value="攻略">攻略</option>
+          <option value="游记">游记</option>
+          <option value="记账">记账</option>
+        </select>
+        <label>Comment</label>
+        <textarea name="commentContent"></textarea>
+        <label>Fees</label>
+        <div data-role="controlgroup" data-type="horizontal">
+          <input
+            type="number"
+            value="0.00"
+            name="commentFees"
+            data-wrapper-class="controlgroup-textinput ui-btn"
+          />
+          <select name="commentCurrency">
+            <option>CNY</option>
+            <option>TWD</option>
+            <option>HKD</option>
+          </select>
+        </div>
+      </div>
+      <!-- /content -->
+    </div>
+    <!-- /page -->
+
+    <!-- 删除确认 -->
+    <div id="remove-comment" data-role="page" data-theme="b">
+      <div data-role="header">
+        <a data-rel="back" data-icon="back" data-iconpos="notext">Back</a>
+        <h1>Delete Comment ?</h1>
+      </div>
+      <!-- /header -->
+      <div role="main" class="ui-content">
+        <h3 class="ui-title">Are you sure you want to delete <var>Ticket</var> ?</h3>
+        <p>This action cannot be undone.</p>
+        <a data-rel="back" name="delete" class="ui-btn ui-corner-all ui-shadow">Delete</a>
+      </div>
+      <!-- /content -->
+    </div>
+    <!-- /page -->
+
+    <!-- 使用帮助 -->
+    <div id="help" data-role="page" data-title="help">
+      <div data-role="header" data-position="fixed" data-theme="b">
+        <a data-rel="back" data-icon="arrow-l" data-iconpos="notext">Back</a>
+        <h1>Help</h1>
+      </div>
+      <!-- /header -->
+      <div role="main" class="ui-content">
+        <div class="ui-body ui-body-a ui-corner-all">
+          <ul>
+            <li>日期与行程列表通过左滑标题进行修改。</li>
+            <li>备注通过长按内容进行修改。</li>
+            <li>自旅行结束以后，内容即关闭修改。即本地修改并不再影响服务器内容。</li>
+          </ul>
+        </div>
+      </div>
+      <!-- /content -->
+    </div>
+    <!-- /page -->
+
+    <!-- 应用代码 -->
+    <script src="src/zlei.common.js"></script>
+    <script src="src/zlei.app.js"></script>
+    <script src="src/zlei.appUI.js"></script>
+    <script src="src/zlei.appUI.days.js"></script>
+    <script src="src/zlei.appUI.trips.js"></script>
+    <script src="src/zlei.appUI.comments.js"></script>
+    <script src="src/zlei.init.js"></script>
+  </body>
+</html>
