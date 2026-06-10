@@ -189,6 +189,68 @@ async function swapBetterSqlite3Binary(): Promise<void> {
   console.log("✅ better-sqlite3 二进制已替换为 Linux x64 版本");
 }
 
+// ─── 部署包精简 ────────────────────────────────────────────
+
+/** 需从 standalone 中删除的非运行时文件列表 */
+const CLEANUP_PATTERNS = [
+  // 文档
+  "docs",
+  "README.md",
+  "CLAUDE.md",
+  "AGENTS.md",
+  // 开发工具配置
+  "eslint.config.mjs",
+  "next.config.ts",
+  "tsconfig.json",
+  "vitest.config.ts",
+  // 源文件（已编译到 .next/server/）
+  "instrumentation.ts",
+  // 非运行时文件
+  "package-lock.json",
+  "scripts",
+  // 环境变量（保留 .env.local）
+  ".env",
+  // zip 根目录已有，standalone 内重复
+  "scf_bootstrap",
+  "serverless.yml",
+];
+
+/** 递归删除目录 */
+function rmDir(dirPath: string) {
+  if (!existsSync(dirPath)) return;
+  rmSync(dirPath, { recursive: true, force: true });
+}
+
+/** 清理 standalone 目录中的非运行时文件 */
+function cleanStandalone(): void {
+  const standaloneDir = join(ROOT, ".next", "standalone");
+
+  console.log("🧹 清理 standalone 非运行时文件...");
+
+  for (const pattern of CLEANUP_PATTERNS) {
+    const target = join(standaloneDir, pattern);
+    if (existsSync(target)) {
+      const isDir = statSync(target).isDirectory();
+      if (isDir) {
+        rmDir(target);
+      } else {
+        unlinkSync(target);
+      }
+      console.log(`   已删除: ${pattern}`);
+    }
+  }
+
+  // 确保 .env.local 存在：从项目根目录复制（覆盖 standalone 自动 trace 的版本）
+  const rootEnvLocal = join(ROOT, ".env.local");
+  const standaloneEnvLocal = join(standaloneDir, ".env.local");
+  if (existsSync(rootEnvLocal)) {
+    writeFileSync(standaloneEnvLocal, readFileSync(rootEnvLocal));
+    console.log("   .env.local 已更新（来源：项目根目录）");
+  }
+
+  console.log("✅ standalone 清理完成");
+}
+
 // ─── 工具 ────────────────────────────────────────────────
 
 const ROOT = resolve(__dirname, "..");
