@@ -4,6 +4,8 @@ import {
   mkdirSync,
   statSync,
   readFileSync,
+  readdirSync,
+  writeFileSync,
   createReadStream,
   createWriteStream,
   unlinkSync,
@@ -88,9 +90,26 @@ function loadConfig(): DeployConfig {
   };
 }
 
-// ─── 构建 ────────────────────────────────────────────────
+// ─── 工具 ────────────────────────────────────────────────
 
 const ROOT = resolve(__dirname, "..");
+
+/** 递归复制目录 */
+function copyDir(src: string, dest: string) {
+  if (!existsSync(src)) return;
+  mkdirSync(dest, { recursive: true });
+  for (const entry of readdirSync(src)) {
+    const srcPath = join(src, entry);
+    const destPath = join(dest, entry);
+    if (statSync(srcPath).isDirectory()) {
+      copyDir(srcPath, destPath);
+    } else {
+      writeFileSync(destPath, readFileSync(srcPath));
+    }
+  }
+}
+
+// ─── 构建 ────────────────────────────────────────────────
 
 /** 执行 next build（Windows 下 .next/standalone 可能被锁定，自动重试） */
 function buildProject(): void {
@@ -112,13 +131,6 @@ function buildProject(): void {
       const result = execSync("npx next build", { cwd: ROOT, stdio: "pipe", encoding: "utf-8", shell });
       process.stdout.write(result);
       console.log("✅ 构建完成");
-
-      // standalone 模式：复制 public 和 static 到 standalone 目录
-      console.log("📋 复制 static/public 到 standalone...");
-      const standaloneDir = join(ROOT, ".next", "standalone");
-      execSync(`cp -r public "${standaloneDir}/"`, { cwd: ROOT, stdio: "ignore" });
-      execSync(`mkdir -p "${standaloneDir}/.next" && cp -r .next/static "${standaloneDir}/.next/"`, { cwd: ROOT, stdio: "ignore" });
-      console.log("✅ 复制完成");
       return;
     } catch (err: any) {
       // 打印输出（pipe 模式下不会自动显示）
@@ -285,6 +297,16 @@ async function main() {
 
   // 2. 构建
   buildProject();
+
+  // 2.5. standalone 模式：复制 public 和 static 到 standalone 目录
+  console.log("📋 复制 static/public 到 standalone...");
+  const standaloneDir = join(ROOT, ".next", "standalone");
+  copyDir(join(ROOT, "public"), join(standaloneDir, "public"));
+  const staticSrc = join(ROOT, ".next", "static");
+  const staticDst = join(standaloneDir, ".next", "static");
+  mkdirSync(join(standaloneDir, ".next"), { recursive: true });
+  copyDir(staticSrc, staticDst);
+  console.log("✅ 复制完成");
 
   // 3. 打包
   const zipPath = await createZip(config);
