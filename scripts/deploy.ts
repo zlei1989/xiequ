@@ -16,6 +16,7 @@ import archiver from "archiver";
 import COS from "cos-nodejs-sdk-v5";
 import { scf } from "tencentcloud-sdk-nodejs";
 import dayjs from "dayjs";
+import { gunzipSync } from "zlib";
 
 // ─── 配置加载 ────────────────────────────────────────────
 
@@ -88,6 +89,104 @@ function loadConfig(): DeployConfig {
     scfSecretKey: process.env.DEPLOY_SCF_SECRET_KEY!,
     scfFunction: process.env.DEPLOY_SCF_FUNCTION!,
   };
+}
+
+// ─── better-sqlite3 二进制替换 ─────────────────────────────
+
+/** Node.js 主版本 → NODE_MODULE_VERSION (ABI) 映射表 */
+const NODE_ABI_MAP: Record<number, number> = {
+  14: 83, 16: 93, 18: 108, 19: 111, 20: 115, 21: 120, 22: 127, 23: 131, 24: 135,
+};
+
+/** 从 scf_bootstrap 中解析 SCF 目标 Node 主版本号 */
+function parseScfNodeVersion(): number {
+  const bootstrapPath = join(ROOT, "scf_bootstrap");
+  const content = readFileSync(bootstrapPath, "utf-8");
+  const match = content.match(/\/var\/lang\/node(\d+)\/bin\/node/);
+  if (!match) {
+    console.error("❌ 无法从 scf_bootstrap 中解析 SCF Node 版本");
+    process.exit(1);
+  }
+  return parseInt(match[1], 10);
+}
+
+/** 简单 tar 解析：从 tar Buffer 中找到 better_sqlite3.node 并返回其内容 */
+function extractNodeFromTar(tarBuffer: Buffer): Buffer {
+  let offset = 0;
+  while (offset + 512 <= tarBuffer.length) {
+    const header = tarBuffer.subarray(offset, offset + 512);
+    // 全零块 = 归档结束标记
+    if (header.every(b => b === 0)) break;
+
+    const name = header.toString("utf-8", 0, 100).replace(/\0/g, "");
+    const sizeStr = header.toString("utf-8", 124, 136).replace(/\0/g, "");
+    const size = parseInt(sizeStr, 8) || 0;
+
+    offset += 512;
+
+    if (name.endsWith("better_sqlite3.node")) {
+      return tarBuffer.subarray(offset, offset + size);
+    }
+
+    // 跳到下一个 entry（512 字节对齐）
+    offset += Math.ceil(size / 512) * 512;
+  }
+  throw new Error("tar 包中未找到 better_sqlite3.node");
+}
+
+/** 下载 Linux x64 的 better-sqlite3 预编译二进制并替换 standalone 中的版本 */
+async function swapBetterSqlite3Binary(): Promise<void> {
+  const standaloneDir = join(ROOT, ".next", "standalone");
+  const binaryPath = join(
+    standaloneDir, "node_modules", "better-sqlite3", "build", "Release", "better_sqlite3.node",
+  );
+
+  if (!existsSync(binaryPath)) {
+    console.log("⚠️ better-sqlite3 未在 standalone 中找到，跳过二进制替换");
+    return;
+  }
+
+  // 读取已安装版本
+  const pkgJsonPath = join(standaloneDir, "node_modules", "better-sqlite3", "package.json");
+  const pkgJson = JSON.parse(readFileSync(pkgJsonPath, "utf-8"));
+  const version: string = pkgJson.version;
+
+  // 解析 SCF Node ABI
+  const nodeMajor = parseScfNodeVersion();
+  const nodeAbi = NODE_ABI_MAP[nodeMajor];
+  if (!nodeAbi) {
+    console.error(`❌ 未知的 Node.js 主版本 ${nodeMajor}，请在 NODE_ABI_MAP 中补充映射`);
+    process.exit(1);
+  }
+
+  const filename = `better-sqlite3-v${version}-node-v${nodeAbi}-linux-x64.tar.gz`;
+  const url = `https://github.com/WiseLibs/better-sqlite3/releases/download/v${version}/${filename}`;
+
+  console.log(`📥 下载 better-sqlite3 Linux 预编译二进制 v${version} (Node ABI ${nodeAbi})...`);
+  console.log(`   ${url}`);
+
+  let response: Response;
+  try {
+    response = await fetch(url);
+  } catch {
+    console.error("❌ 网络请求失败，请检查网络连接或 GitHub 可达性");
+    console.error(`   URL: ${url}`);
+    process.exit(1);
+  }
+
+  if (!response.ok) {
+    console.error(`❌ 下载失败: HTTP ${response.status} ${response.statusText}`);
+    console.error(`   请确认版本 v${version} 支持 Node ABI ${nodeAbi}`);
+    console.error(`   可访问 https://github.com/WiseLibs/better-sqlite3/releases 确认预编译包`);
+    process.exit(1);
+  }
+
+  const compressed = Buffer.from(await response.arrayBuffer());
+  const decompressed = gunzipSync(compressed);
+  const nodeBinary = extractNodeFromTar(decompressed);
+
+  writeFileSync(binaryPath, nodeBinary);
+  console.log("✅ better-sqlite3 二进制已替换为 Linux x64 版本");
 }
 
 // ─── 工具 ────────────────────────────────────────────────
