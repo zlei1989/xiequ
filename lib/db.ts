@@ -1,8 +1,8 @@
-import Database from "better-sqlite3";
+import { Database } from "node-sqlite3-wasm";
 import path from "path";
 import { mkdirSync } from "fs";
 
-type SQLiteDB = Database.Database;
+type SQLiteDB = Database;
 
 let db: SQLiteDB | null = null;
 
@@ -13,7 +13,8 @@ export function getDb(): SQLiteDB {
 
   mkdirSync(path.dirname(DB_PATH), { recursive: true });
   db = new Database(DB_PATH);
-  db.pragma("journal_mode = WAL");
+  // node-sqlite3-wasm 通过 exec() 执行 PRAGMA（无 pragma() 方法）
+  db.exec("PRAGMA journal_mode = WAL");
   return db;
 }
 
