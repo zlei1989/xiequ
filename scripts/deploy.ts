@@ -10,6 +10,8 @@ import {
   createWriteStream,
   unlinkSync,
   rmSync,
+  lstatSync,
+  readlinkSync,
 } from "fs";
 import { resolve, join, basename } from "path";
 import archiver from "archiver";
@@ -221,6 +223,38 @@ function rmDir(dirPath: string) {
   rmSync(dirPath, { recursive: true, force: true });
 }
 
+/** 解析 standalone 中 .next/node_modules/ 下的符号链接，替换为实际目录 */
+function resolveSymlinks(): void {
+  const nodeModulesDir = join(ROOT, ".next", "standalone", ".next", "node_modules");
+  if (!existsSync(nodeModulesDir)) return;
+
+  for (const entry of readdirSync(nodeModulesDir)) {
+    const entryPath = join(nodeModulesDir, entry);
+    try {
+      const lst = lstatSync(entryPath);
+      if (!lst.isSymbolicLink()) continue;
+
+      // 读取符号链接的真实目标
+      const target = readlinkSync(entryPath);
+      // 如果目标是相对路径，从符号链接所在目录解析
+      const resolvedTarget = resolve(nodeModulesDir, target);
+
+      if (!existsSync(resolvedTarget)) {
+        console.warn(`⚠️ 符号链接 ${entry} 目标不存在: ${resolvedTarget}，跳过`);
+        continue;
+      }
+
+      console.log(`🔗 解析符号链接: ${entry} → 复制为实际目录`);
+      // 先删除符号链接
+      unlinkSync(entryPath);
+      // 复制实际目录到该位置
+      copyDir(resolvedTarget, entryPath);
+    } catch {
+      // 非符号链接或读取失败，跳过
+    }
+  }
+}
+
 /** 清理 standalone 目录中的非运行时文件 */
 function cleanStandalone(): void {
   const standaloneDir = join(ROOT, ".next", "standalone");
@@ -239,6 +273,9 @@ function cleanStandalone(): void {
       console.log(`   已删除: ${pattern}`);
     }
   }
+
+  // 解析 Turbopack 创建的符号链接（Windows → Linux 跨平台部署时会断裂）
+  resolveSymlinks();
 
   // 确保 .env.local 存在：从项目根目录复制（覆盖 standalone 自动 trace 的版本）
   const rootEnvLocal = join(ROOT, ".env.local");
