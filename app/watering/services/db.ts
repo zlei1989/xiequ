@@ -280,7 +280,7 @@ export async function updateTick(chipId: string) {
   const now = Date.now();
   const existing = db.prepare("SELECT 1 FROM watering_device_state WHERE chip_id = ?").get(chipId);
   if (existing) {
-    db.prepare("UPDATE watering_device_state SET last_tick_time = ? WHERE chip_id = ?").run(now, chipId);
+    db.prepare("UPDATE watering_device_state SET last_tick_time = ? WHERE chip_id = ?").run([now, chipId]);
   }
 }
 
@@ -291,7 +291,7 @@ export async function getDeviceLogs(chipId: string, limit = 100) {
   const db = getDb();
   const rows = db.prepare(
     "SELECT id, chip_id, event, state, created_time FROM watering_logs WHERE chip_id = ? ORDER BY created_time DESC LIMIT ?"
-  ).all(chipId, limit) as any[];
+  ).all([chipId, limit]) as any[];
   return rows.map((row) => ({
     id: row.id,
     chipId: row.chip_id,
@@ -306,12 +306,12 @@ export async function getDeviceLogs(chipId: string, limit = 100) {
  */
 export async function writeDeviceLog(chipId: string, event: string, state?: Record<string, unknown>) {
   const db = getDb();
-  db.prepare("INSERT INTO watering_logs (chip_id, event, state, created_time) VALUES (?, ?, ?, ?)").run(
+  db.prepare("INSERT INTO watering_logs (chip_id, event, state, created_time) VALUES (?, ?, ?, ?)").run([
     chipId,
     event,
     state ? JSON.stringify(state) : null,
     new Date().toISOString()
-  );
+  ]);
 }
 
 /**
