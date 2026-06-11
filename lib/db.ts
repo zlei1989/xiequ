@@ -13,8 +13,8 @@ export function getDb(): SQLiteDB {
 
   mkdirSync(path.dirname(DB_PATH), { recursive: true });
   db = new Database(DB_PATH);
-  // node-sqlite3-wasm 通过 exec() 执行 PRAGMA（无 pragma() 方法）
-  db.exec("PRAGMA journal_mode = WAL");
+  // WAL 模式在 WASM (Emscripten VFS) 和只读文件系统中不受支持，
+  // 使用默认的 DELETE 日志模式，兼容性最好
   return db;
 }
 

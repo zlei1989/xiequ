@@ -1,3 +1,5 @@
 #!/bin/bash
 export PORT=9000
+# SCF 函数代码目录只读，数据库必须放在 /tmp（可写，最大 512MB）
+export DB_PATH=/tmp/data/app.db
 /var/lang/node22/bin/node .next/standalone/server.js
