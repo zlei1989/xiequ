@@ -23,7 +23,9 @@ function parseJSON<T>(value: unknown, fallback: T): T {
  * 初始化浇花模块数据库表
  */
 export async function initDb() {
+  console.log("[INITDB] Starting initDb...");
   const db = getDb();
+  console.log("[INITDB] getDb() returned, about to exec CREATE TABLE...");
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS watering_devices (

@@ -10,8 +10,10 @@ import {
   createWriteStream,
   unlinkSync,
   rmSync,
+  lstatSync,
+  readlinkSync,
 } from "fs";
-import { resolve, join, basename } from "path";
+import { resolve, join, basename, relative, dirname } from "path";
 import archiver from "archiver";
 import COS from "cos-nodejs-sdk-v5";
 import { scf } from "tencentcloud-sdk-nodejs";
@@ -113,7 +115,6 @@ const CLEANUP_PATTERNS = [
   ".env",
   // zip 根目录已有，standalone 内重复
   "scf_bootstrap",
-  "serverless.yml",
 ];
 
 /** 递归删除目录 */
@@ -171,6 +172,61 @@ function copyDir(src: string, dest: string) {
   }
 }
 
+/** 递归遍历目录，将指向外部（非 standalone 内）的绝对路径符号链接
+ *  替换为实际文件副本。
+ *  Turbopack 为 serverExternalPackages 创建绝对路径符号链接（如
+ *  node-sqlite3-wasm-c23ad69eff3ea050 → /d/.../node_modules/node-sqlite3-wasm/），
+ *  这些符号链接在 Linux 生产环境中无法解析，导致 require() 失败。
+ *  选择复制而非相对符号链接，是因为 Windows 创建符号链接需要管理员权限。
+ */
+function resolveSymlinks(standaloneDir: string): void {
+  console.log("🔗 解析 standalone 中的外部符号链接...");
+  let fixed = 0;
+
+  function walk(dir: string) {
+    if (!existsSync(dir)) return;
+    for (const entry of readdirSync(dir)) {
+      const fullPath = join(dir, entry);
+      let stat;
+      try {
+        stat = lstatSync(fullPath);
+      } catch {
+        continue;
+      }
+      if (stat.isSymbolicLink()) {
+        const linkTarget = readlinkSync(fullPath);
+        const resolvedTarget = resolve(dirname(fullPath), linkTarget);
+        // 仅处理指向 standalone 目录外部的符号链接
+        if (!resolvedTarget.startsWith(standaloneDir)) {
+          // 查找 standalone 内是否存在对应的实际文件
+          // 符号链接名称如 "node-sqlite3-wasm-c23ad69eff3ea050"，
+          // 实际包可能在 standalone/node_modules/ 下
+          const packageName = entry.replace(/-[0-9a-f]{16}$/, "");
+          const possibleTarget = join(standaloneDir, "node_modules", packageName);
+          if (existsSync(possibleTarget) && statSync(possibleTarget).isDirectory()) {
+            // 删除断链，复制实际文件
+            unlinkSync(fullPath);
+            copyDir(possibleTarget, fullPath);
+            console.log(`   修复: ${relative(standaloneDir, fullPath)} ← ${possibleTarget}`);
+            fixed++;
+          } else {
+            console.warn(`   ⚠️  外部符号链接无内部对应: ${entry} → ${linkTarget}`);
+          }
+        }
+      } else if (stat.isDirectory()) {
+        walk(fullPath);
+      }
+    }
+  }
+
+  walk(standaloneDir);
+  if (fixed > 0) {
+    console.log(`✅ 已修复 ${fixed} 个外部符号链接`);
+  } else {
+    console.log("✅ 无需修复的外部符号链接");
+  }
+}
+
 // ─── 构建 ────────────────────────────────────────────────
 
 /** 执行 next build（Windows 下 .next/standalone 可能被锁定，自动重试） */
@@ -188,8 +244,18 @@ function buildProject(): void {
         }
       }
       // 用 pipe 模式捕获错误输出，检测 EBUSY 以触发重试
-      // Windows 下指定 bash 避免 cmd 的中文路径 EBUSY 问题
-      const shell = process.platform === "win32" ? process.env.SHELL || "bash.exe" : true;
+      // Windows 下优先使用 bash 避免 cmd 的中文路径 EBUSY 问题；
+      // 若 bash 不可用（如纯 PowerShell 环境）则回退到默认 shell
+      let shell: string | boolean = true;
+      if (process.platform === "win32") {
+        const bashPath = process.env.SHELL || "bash.exe";
+        try {
+          execSync(`"${bashPath}" --version`, { stdio: "ignore", timeout: 5000 });
+          shell = bashPath;
+        } catch {
+          console.warn("⚠️  bash 不可用，回退到默认 shell（若路径含中文可能失败）");
+        }
+      }
       const result = execSync("npx next build", { cwd: ROOT, stdio: "pipe", encoding: "utf-8", shell });
       process.stdout.write(result);
       console.log("✅ 构建完成");
@@ -265,8 +331,6 @@ function createZip(config: DeployConfig): Promise<string> {
 
     // 添加 scf_bootstrap（必须放在根目录，SCF 入口）
     archive.file(join(ROOT, "scf_bootstrap"), { name: "scf_bootstrap" });
-    // 添加 serverless.yml
-    archive.file(join(ROOT, "serverless.yml"), { name: "serverless.yml" });
     // 添加 .next/standalone（standalone 模式下的运行目录）
     archive.directory(join(ROOT, ".next", "standalone"), ".next/standalone");
 
@@ -363,9 +427,13 @@ async function main() {
   // 2.5. 清理 standalone 非运行时文件
   cleanStandalone();
 
+  // 2.55. 修复 Turbopack 为 serverExternalPackages 创建的绝对路径符号链接
+  // 这些符号链接在 Linux 生产环境中无法解析，需替换为相对路径
+  const standaloneDir = join(ROOT, ".next", "standalone");
+  resolveSymlinks(standaloneDir);
+
   // 2.6. standalone 模式：复制 public 和 static 到 standalone 目录
   console.log("📋 复制 static/public 到 standalone...");
-  const standaloneDir = join(ROOT, ".next", "standalone");
   copyDir(join(ROOT, "public"), join(standaloneDir, "public"));
   const staticSrc = join(ROOT, ".next", "static");
   const staticDst = join(standaloneDir, ".next", "static");

@@ -13,7 +13,7 @@ service/
 ├── .env.local              ← 已有：存敏感配置（已被 .gitignore 忽略）
 ├── .env.example            ← 已有：加入部署相关示例变量（仅 key 名，值留空）
 ├── scf_bootstrap           ← 已有：SCF 启动脚本
-├── serverless.yml          ← 已有（可选保留，不冲突）
+├── serverless.yml          ← 已删除
 └── package.json            ← 新增 "deploy" script
 ```
 

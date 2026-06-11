@@ -116,7 +116,6 @@ await swapBetterSqlite3Binary();
 | `scripts/` | — | 部署脚本 |
 | `.env` | — | 用 `.env.local` 代替 |
 | `scf_bootstrap` | — | zip 根目录已有，standalone 内重复 |
-| `serverless.yml` | — | 同上，重复 |
 
 **保留：** `.next/`、`node_modules/`、`server.js`、`package.json`、`app/`、`components/`、`lib/`、`data/`、`public/`、`.env.local`
 
@@ -141,7 +140,6 @@ export PORT=9000
 ```
 zip root/
   scf_bootstrap          ← SCF 入口脚本
-  serverless.yml         ← SCF 配置（通过 API 部署时可选）
   .next/standalone/      ← 精简后的 standalone 目录
     server.js
     package.json

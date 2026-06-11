@@ -414,7 +414,6 @@ const CLEANUP_PATTERNS = [
   ".env",
   // zip 根目录已有，standalone 内重复
   "scf_bootstrap",
-  "serverless.yml",
 ];
 
 /** 递归删除目录 */

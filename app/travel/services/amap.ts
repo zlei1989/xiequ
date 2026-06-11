@@ -11,8 +11,6 @@
  * 环境变量：NEXT_PUBLIC_AMAP_KEY, NEXT_PUBLIC_AMAP_SECRET
  */
 
-import { load } from "@amap/amap-jsapi-loader";
-
 export function getAmapKey(): string {
   return process.env.NEXT_PUBLIC_AMAP_KEY || "";
 }
@@ -45,16 +43,18 @@ export function loadAmap(): Promise<any> {
     };
   }
 
-  amapPromise = load({
-    key: getAmapKey(),
-    version: "2.0",
-    plugins: [
-      "AMap.PlaceSearch",
-      "AMap.DistrictSearch",
-      "AMap.Geolocation",
-      "AMap.Geocoder",
-    ],
-  });
+  amapPromise = import("@amap/amap-jsapi-loader").then(({ load }) =>
+    load({
+      key: getAmapKey(),
+      version: "2.0",
+      plugins: [
+        "AMap.PlaceSearch",
+        "AMap.DistrictSearch",
+        "AMap.Geolocation",
+        "AMap.Geocoder",
+      ],
+    })
+  );
 
   return amapPromise;
 }
