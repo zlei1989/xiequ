@@ -12,6 +12,7 @@
     "deploy": "npx tsx scripts/deploy.ts"
   },
   "dependencies": {
+    "@amap/amap-jsapi-loader": "^1.0.1",
     "@ant-design/icons": "^6.2.5",
     "antd": "^6.4.3",
     "antd-mobile": "^5.42.3",
