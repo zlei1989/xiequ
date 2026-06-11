@@ -2,31 +2,30 @@
  * 高德地图 SDK 封装
  *
  * 负责：
- * - 地图加载（动态注入 script）
+ * - 地图加载（@amap/amap-jsapi-loader）
  * - 位置搜索（PlaceSearch）
  * - GPS 定位（Geolocation）
  * - 地理编码（Geocoder）
  * - 行政区查询（DistrictSearch）
  *
- * 环境变量：NEXT_PUBLIC_AMAP_KEY
+ * 环境变量：NEXT_PUBLIC_AMAP_KEY, NEXT_PUBLIC_AMAP_SECRET
  */
 
-const AMAP_SCRIPT_URL = "//webapi.amap.com/maps?v=1.4.15";
+import { load } from "@amap/amap-jsapi-loader";
 
 export function getAmapKey(): string {
   return process.env.NEXT_PUBLIC_AMAP_KEY || "";
 }
 
-export function getAmapScriptUrl(): string {
-  const key = getAmapKey();
-  return `${AMAP_SCRIPT_URL}&key=${key}&plugin=AMap.Driving,AMap.PlaceSearch,AMap.DistrictSearch,AMap.Geolocation,AMap.Geocoder`;
+export function getAmapSecret(): string {
+  return process.env.NEXT_PUBLIC_AMAP_SECRET || "";
 }
 
 // 地图 SDK 加载 Promise（防止重复加载）
 let amapPromise: Promise<any> | null = null;
 
 /**
- * 动态加载高德地图 SDK
+ * 动态加载高德地图 SDK（基于 @amap/amap-jsapi-loader）
  */
 export function loadAmap(): Promise<any> {
   if (typeof window === "undefined") {
@@ -38,13 +37,25 @@ export function loadAmap(): Promise<any> {
   if (amapPromise) {
     return amapPromise;
   }
-  amapPromise = new Promise((resolve, reject) => {
-    const el = document.createElement("script");
-    el.src = getAmapScriptUrl();
-    el.onload = () => resolve((window as any).AMap);
-    el.onerror = () => reject(new Error("AMap SDK 加载失败"));
-    document.querySelector("head")?.appendChild(el);
+
+  const secret = getAmapSecret();
+  if (secret) {
+    (window as any)._AMapSecurityConfig = {
+      securityJsCode: secret,
+    };
+  }
+
+  amapPromise = load({
+    key: getAmapKey(),
+    version: "2.0",
+    plugins: [
+      "AMap.PlaceSearch",
+      "AMap.DistrictSearch",
+      "AMap.Geolocation",
+      "AMap.Geocoder",
+    ],
   });
+
   return amapPromise;
 }
 
