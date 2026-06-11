@@ -3,7 +3,7 @@ import { newId } from "@/lib/utils";
 import type { DeviceConfig, DeviceState, DeviceItem } from "../types";
 
 /**
- * better-sqlite3 将 JSON/TEXT 列作为字符串返回，需手动解析。
+ * SQLite WASM 将 JSON/TEXT 列作为字符串返回，需手动解析。
  * 此辅助函数安全地将 JSON 字符串解析为对象/数组，如果已经是对象则直接返回。
  */
 function parseJSON<T>(value: unknown, fallback: T): T {
