@@ -10,6 +10,7 @@ import {
   Button,
   Card,
   Form,
+  NavBar,
   Picker,
   Popup,
   Radio,
@@ -134,11 +135,9 @@ export function EventButtons({
         position="bottom"
         bodyStyle={{ borderTopLeftRadius: 12, borderTopRightRadius: 12 }}
       >
-        <div className="px-3 pb-6 pt-4">
-          <h3 className="mb-3 text-center text-base font-medium">
-            change 参数
-          </h3>
+        <NavBar onBack={closePopup}>change 参数</NavBar>
 
+        <div className="px-3 pb-6">
           <Form layout="horizontal">
             <Form.Item label="变更类型">
               <Radio.Group
