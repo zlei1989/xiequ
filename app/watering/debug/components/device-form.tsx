@@ -111,7 +111,7 @@ export function DeviceForm({
   return (
     <>
       {/* ---- 设备标识 ---- */}
-      <Form layout="horizontal" mode="card">
+      <Form layout="horizontal">
         <Form.Header>设备标识</Form.Header>
         <Form.Item label="chipId">
           <Input
@@ -138,7 +138,7 @@ export function DeviceForm({
       </Form>
 
       {/* ---- 数字传感器 ---- */}
-      <Form layout="horizontal" mode="card">
+      <Form layout="horizontal">
         <Form.Header>数字传感器 (0/1)</Form.Header>
         {Object.entries(gpio.digitalSensors).map(([key, val]) => (
           <Form.Item
@@ -163,7 +163,7 @@ export function DeviceForm({
       </Form>
 
       {/* ---- 按钮 ---- */}
-      <Form layout="horizontal" mode="card">
+      <Form layout="horizontal">
         <Form.Header>按钮 (0/1，切为 0 后 2 秒自动回 1)</Form.Header>
         {Object.entries(gpio.buttons).map(([key, val]) => (
           <Form.Item
@@ -182,7 +182,7 @@ export function DeviceForm({
       </Form>
 
       {/* ---- 模拟传感器 ---- */}
-      <Form layout="horizontal" mode="card">
+      <Form layout="horizontal">
         <Form.Header>模拟传感器 (0-1023)</Form.Header>
         {Object.entries(gpio.analogSensors).map(([key, val]) => (
           <Form.Item
@@ -229,7 +229,7 @@ export function DeviceForm({
       </Form>
 
       {/* ---- 负载（纯展示） ---- */}
-      <Form layout="horizontal" mode="card">
+      <Form layout="horizontal">
         <Form.Header>负载</Form.Header>
         <Grid columns={2} gap={12}>
           {Object.entries(gpio.loads).map(([key, val]) => {
