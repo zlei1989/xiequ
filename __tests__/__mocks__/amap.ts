@@ -44,6 +44,7 @@ export function createAmapMock() {
     destroy: vi.fn(),
     setMapStyle: vi.fn(),
     setContainer: vi.fn(),
+    getContainer: vi.fn().mockReturnValue(null),
   });
 
   const event = {
