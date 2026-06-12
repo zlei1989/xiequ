@@ -5,7 +5,7 @@
 
 ## 1. 背景
 
-当前 debug 页面使用 antd (desktop) 组件（Card、Button、Select、Input、InputNumber、Space、Row、Col、Tag），与项目主栈 antd-mobile 不一致。此外，传感器统一处理为 0-1023 范围，与 ESP32 固件实际分类（数字/模拟）不符。
+当前 debug 页面使用 antd (desktop) 组件（Card、Button、Select、Input、InputNumber、Space、Row、Col、Tag），与项目主栈 antd-mobile 不一致。此外，传感器统一处理为 0-1024 范围，与 ESP32 固件实际分类（数字/模拟）不符。
 
 ## 2. 固件语义对齐
 
@@ -14,7 +14,7 @@
 | 类型 | 组件 | 键名 | 值域 | 说明 |
 |------|------|------|------|------|
 | 数字传感器 ×2 | Sensor | `sensor_1`, `sensor_2` | 0/1 | 水浸检测 |
-| 模拟传感器 ×3 | AnalogSensor | `sensor_0`, `sensor_3`, `sensor_4` | 0-1023 | 温度、负载电压、电源电压 |
+| 模拟传感器 ×3 | AnalogSensor | `sensor_0`, `sensor_3`, `sensor_4` | 0-1024 | 温度、负载电压、电源电压 |
 | 按钮 ×5 | Button | `button_0`~`button_4` | 0/1 | 物理按键，默认高电平(1) |
 | 负载 ×4 | Motor | `load_0`~`load_3` | 0/255/1024 | 水泵，由 Process 流程驱动 |
 
@@ -46,7 +46,7 @@ type GpioState = {
 // 新：数字/模拟分类
 type GpioState = {
   digitalSensors: Record<string, number>;  // sensor_1, sensor_2 — 0/1
-  analogSensors: Record<string, number>;   // sensor_0, sensor_3, sensor_4 — 0-1023
+  analogSensors: Record<string, number>;   // sensor_0, sensor_3, sensor_4 — 0-1024
   buttons: Record<string, number>;         // button_0~4 — 0/1，默认 1
   loads: Record<string, number>;           // load_0~3 — 纯展示
 };
@@ -54,7 +54,7 @@ type GpioState = {
 // 默认值
 const DEFAULT_GPIO: GpioState = {
   digitalSensors: { sensor_1: 0, sensor_2: 0 },
-  analogSensors: { sensor_0: 1827, sensor_3: 0, sensor_4: 355 },
+  analogSensors: { sensor_0: 1024, sensor_3: 0, sensor_4: 355 },
   buttons: { button_0: 1, button_1: 1, button_2: 1, button_3: 1, button_4: 1 },
   loads: { load_0: 0, load_1: 0, load_2: 0, load_3: 0 },
 };
@@ -64,31 +64,35 @@ const DEFAULT_GPIO: GpioState = {
 
 ## 5. 页面布局与组件映射
 
-页面纵向排列，标题区 + 7 个卡片：
+页面纵向排列，标题区 + 表单分组：
 
 ### 5.0 页面标题
 
 ```
 ┌─ IoT 设备模拟器 ──────────────────┐  ← NavBar back={null}
 │ 模拟 ESP32 设备发起 getState / ... │  ← NoticeBar color="default"
+├────────────────────────────────────┤
+│  Form sections...                  │  ← Space direction="vertical" block
+│  Form sections...                  │
 └────────────────────────────────────┘
 ```
 
 - 标题：antd-mobile `<NavBar back={null}>`
 - 副标题：antd-mobile `<NoticeBar color="default">`
+- 内容区：`<Space direction="vertical" block>` 包裹所有表单分组
 
 ### 5.1 设备标识
 
 ```
-┌─ 设备标识 ─────────────────────┐
+┌─ 设备标识 ─────────────────────┐  ← Form + Form.Header
 │ chipId  [5872424              ] │
 │ MAC     [20:E7:C8:59:9B:28    ] │
-│ stateId [                      ] │
+│ stateId [          (只读)      ] │  ← readOnly，getState 响应自动填充
 └────────────────────────────────┘
 ```
 
-- 组件：antd-mobile `<Input>` ×3
-- 去掉原 Space.Compact + disabled Button 装饰
+- 组件：antd-mobile `<Form>` + `<Form.Header>` + `<Form.Item>` + `<Input>` ×3
+- stateId 为 `readOnly`，由 getState 响应自动更新
 
 ### 5.2 数字传感器 (×2)
 
@@ -105,18 +109,18 @@ const DEFAULT_GPIO: GpioState = {
 ### 5.3 模拟传感器 (×3)
 
 ```
-┌─ 模拟传感器 ───────────────────┐
+┌─ 模拟传感器 ───────────────────┐  ← Form + Form.Header
 │ sensor_0 (温度)                 │
-│ [═══════╪═══════] 512  [输入框]│
+│ [═══════╪═══════]  [-] 512 [+] │  ← Grid(4col): Slider span=3 + Stepper span=1
 │ sensor_3 (负载电压)              │
-│ [═══════╪═══════] 0    [输入框]│
+│ [═══════╪═══════]  [-]   0 [+] │
 │ sensor_4 (电源电压)              │
-│ [═══════╪═══════] 355  [输入框]│
+│ [═══════╪═══════]  [-] 355 [+] │
 └────────────────────────────────┘
 ```
 
-- 组件：antd-mobile `<Slider>` (0-1023) + `<Input>` (手动输入精确值)
-- 双向绑定：Slider 拖动更新 Input，Input 输入更新 Slider
+- 组件：antd-mobile `<Grid columns={4}>` + `<Slider>` (span=3, 0-1024) + `<Stepper>` (span=1)
+- Slider 拖动 + Stepper 步进增减，同一 Form.Item 内双向同步
 
 ### 5.4 按钮 (×5)
 
@@ -138,17 +142,17 @@ const DEFAULT_GPIO: GpioState = {
 ### 5.5 负载 (×4) — 纯展示
 
 ```
-┌─ 负载 ────────────────────────────────┐
-│   ⭕ load_0    ⭕ load_1              │
-│    0 停止       180 PWM 71%          │
-│                                        │
-│   ⭕ load_2    ⭕ load_3              │
-│    1024 全速     0 停止               │
-└────────────────────────────────────────┘
+┌─ 负载 ─────────────────────────────────┐  ← Form + Form.Header
+│   ⭕ load_0         ⭕ load_1           │  ← Grid columns=2
+│    0 停止            180 PWM 71%       │    AutoCenter > ProgressCircle
+│                                         │
+│   ⭕ load_2         ⭕ load_3           │
+│    1024 全速          0 停止            │
+└─────────────────────────────────────────┘
 ```
 
-- 组件：antd-mobile `<ProgressCircle>` ×4，2×2 网格排列
-- 颜色规则：0=灰色(#999)，1-255=绿色(#52c41a)，1024=红色(#ff4d4f)
+- 组件：antd-mobile `<Grid columns={2}>` + `<AutoCenter>` + `<ProgressCircle>` ×4
+- 颜色规则：0=灰色(`--adm-color-weak`)，1-255=绿色(`--adm-color-success`)，1024=红色(`--adm-color-danger`)
 - 百分比计算：PWM 模式下 `percent = value / 255 * 100`；1024=100%；0=0%
 - 状态文字：0="停止"，1-255=`PWM xx%`，1024="全速"
 - **不可编辑**，值由 getState 响应自动更新
@@ -190,18 +194,20 @@ const DEFAULT_GPIO: GpioState = {
 ### 5.7 请求日志
 
 ```
-┌─ 请求日志 ─────────────── [清空] ─┐
-│ ┌ REQ ┐ 14:30:02  ┌ 200 ┐       │
-│ /watering/api/get-state?...       │
-│                                   │
-│ ┌ RES ┐ 14:30:02  ┌ 200 ┐       │
-│ { "code": 0, ... }                │
-└───────────────────────────────────┘
+┌─ 请求日志 ─────────────── [清空] ─┐  ← Card + extra Button
+│ 空态：ErrorBlock status="empty"    │
+│                                    │
+│ [REQ] 14:30:02      [200]         │  ← List.Item prefix=Tag, extra=Tag
+│ /watering/api/get-state?...        │      description=URL(截断/展开)
+│ {"code":0,...}                     │      children=timestamp + body
+└────────────────────────────────────┘
 ```
 
-- 组件：antd-mobile `<Card>` + header extra `<Button size="mini">`
-- 日志条目：自定义 CSS（当前已无重度 antd 依赖），将 `<Tag>` 替换为自绘标签
-- 新增：对请求 URL 自动省略过长部分，点击可展开完整 URL
+- 容器：antd-mobile `<Card>` + extra `<Button size="mini" color="danger">`
+- 空态：antd-mobile `<ErrorBlock status="empty" />`
+- 列表：antd-mobile `<List>` + `<List.Item>` > `<Tag>` 标签 + URL 截断/展开
+- 样式：Tailwind（`max-h-[400px]`、`overflow-y-auto`、`break-all` 等），仅 `--border-top` 用 CSS 变量
+- URL 超出 80 字符自动截断，点击展开/收起
 
 ## 6. 错误处理与边界情况
 
@@ -210,19 +216,17 @@ const DEFAULT_GPIO: GpioState = {
 | 按钮定时器 | 组件卸载时 `clearTimeout`，防止内存泄漏 |
 | 按钮手动恢复 | 2 秒内用户再次切回 1，取消定时器 |
 | Slider/Input 双向绑定 | 防止循环更新：Slider onChange 更新 Input，Input onBlur 更新 Slider |
-| 模拟传感器越界 | Input 输入超出 0-1023 时自动 clamp |
+| 模拟传感器越界 | Stepper/Slider 值超出 0-1024 时自动 clamp |
 | 请求中 loading | 所有操作按钮共享 loading 状态，请求中 disabled + 显示 spinner |
 | 日志溢出 | 保持当前 max-h-[400px] + overflow-y-auto，无分页 |
 
 ## 7. 测试
 
 - 现有 hook 逻辑不变，无需新增 hook 测试
-- 按钮自动复位逻辑需新增单元测试：`__tests__/watering/debug/button-autoreset.test.ts`
+- 按钮自动复位逻辑单元测试：`__tests__/watering/debug/button-autoreset.test.tsx`（3 个测试）
   - 切换为 0 后 2 秒自动回 1
   - 2 秒内手动切回 1 则取消定时器
-  - 组件卸载时清除定时器
-- 模拟传感器 clamp 逻辑需测试
-- antd-mobile 组件仅做渲染测试（快照或存在性断言）
+  - 模拟传感器值 clamp（0-1024 边界）
 
 ## 8. 依赖
 

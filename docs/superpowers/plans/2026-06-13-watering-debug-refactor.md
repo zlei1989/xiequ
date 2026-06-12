@@ -23,7 +23,7 @@
 export type GpioState = {
   /** 数字传感器 — sensor_1(水浸1), sensor_2(水浸2)，值域 0/1 */
   digitalSensors: Record<string, number>;
-  /** 模拟传感器 — sensor_0(温度), sensor_3(负载电压), sensor_4(电源电压)，值域 0-1023 */
+  /** 模拟传感器 — sensor_0(温度), sensor_3(负载电压), sensor_4(电源电压)，值域 0-1024 */
   analogSensors: Record<string, number>;
   /** 按钮 — button_0~4，值域 0/1，默认 1（高电平） */
   buttons: Record<string, number>;
@@ -33,7 +33,7 @@ export type GpioState = {
 
 const DEFAULT_GPIO: GpioState = {
   digitalSensors: { sensor_1: 0, sensor_2: 0 },
-  analogSensors: { sensor_0: 1827, sensor_3: 0, sensor_4: 355 },
+  analogSensors: { sensor_0: 1024, sensor_3: 0, sensor_4: 355 },
   buttons: { button_0: 1, button_1: 1, button_2: 1, button_3: 1, button_4: 1 },
   loads: { load_0: 0, load_1: 0, load_2: 0, load_3: 0 },
 };
@@ -327,7 +327,7 @@ git commit -m "feat(watering): device-form 重写为 antd-mobile — 设备标�
 
 ```tsx
       {/* ---- 模拟传感器 ---- */}
-      <Card title="模拟传感器 (0-1023)">
+      <Card title="模拟传感器 (0-1024)">
         <div className="flex flex-col gap-3 px-2 pb-1">
           {Object.entries(gpio.analogSensors).map(([key, val]) => (
             <div key={key}>
@@ -342,7 +342,7 @@ git commit -m "feat(watering): device-form 重写为 antd-mobile — 设备标�
                   value={String(val)}
                   onChange={(v) => {
                     const num = Math.min(
-                      1023,
+                      1024,
                       Math.max(0, parseInt(v, 10) || 0),
                     );
                     onGpioChange({
@@ -359,7 +359,7 @@ git commit -m "feat(watering): device-form 重写为 antd-mobile — 设备标�
               </div>
               <Slider
                 min={0}
-                max={1023}
+                max={1024}
                 step={1}
                 value={val}
                 onChange={(v) => {
@@ -381,7 +381,7 @@ git commit -m "feat(watering): device-form 重写为 antd-mobile — 设备标�
 
 Slider/Input 双向绑定：
 - Slider 拖动 → onChange 直接更新 gpio → val prop 变化 → Input value 自动跟随
-- Input 手动输入 → onChange clamp(0-1023) → 更新 gpio → Slider value 自动跟随
+- Input 手动输入 → onChange clamp(0-1024) → 更新 gpio → Slider value 自动跟随
 
 - [ ] **Step 2: 添加负载 ProgressCircle 卡片**
 
@@ -1005,9 +1005,9 @@ describe('按钮自动复位', () => {
 });
 
 describe('模拟传感器值 clamp', () => {
-  it('超出 1023 时 clamp 为 1023', () => {
-    const clamp = (v: number) => Math.min(1023, Math.max(0, v));
-    expect(clamp(2000)).toBe(1023);
+  it('超出 1024 时 clamp 为 1024', () => {
+    const clamp = (v: number) => Math.min(1024, Math.max(0, v));
+    expect(clamp(2000)).toBe(1024);
     expect(clamp(-5)).toBe(0);
     expect(clamp(512)).toBe(512);
   });
@@ -1078,15 +1078,34 @@ git commit -m "chore: format + check 通过，最终验证"
 | bootstrap 用 `<Picker>` 自弹层 | 改为 `<Popup>` + `<NavBar>` + `<Form>` + `<Radio.Group>` + footer `<Button>` | 与 change 统一风格；Picker 自带弹层嵌套 Popup 会双层叠加 |
 | change 用 `<Picker>` 选 type | 改为 `<Radio.Group>` | 同上，避免弹层冲突 |
 | change 用 `<Input>` 填 message | 改为 `<TextArea rows={3}>` | 多行输入框更符合消息语义 |
-| 弹层内容用 `<div>` + `className` 包裹 | 改为 `<Form footer={Button}>` | 全部使用 antd-mobile 组件，去掉 className 手写样式 |
+| 弹层内容用 `<div>` + `className` 包裹 | 改为 `<Form footer={Button}>` | 全部使用 antd-mobile 组件 |
 | 按钮网格用 `<div className="grid">` | 改为 `<Grid columns={2} gap={8}>` | 统一使用 antd-mobile 组件 |
-| bootstrap/change 确认用 `onConfirm` 回调 | 改为 Form footer 中的 `<Button onClick>` | Form footer 是 antd-mobile 推荐的表单提交样式 |
+
+### device-form.tsx
+
+| 计划 | 实际 | 原因 |
+|------|------|------|
+| Card 包裹 + div 布局 | 改为 `<Form>` + `<Form.Header>` 分组，无 Card/List | 全部使用 antd-mobile 表单组件 |
+| 模拟传感器 Slider + Input 双向绑定 | 改为 `Grid(4col)` + Slider(span=3) + Stepper(span=1) | 步进器比输入框更适合移动端精确调值 |
+| 模拟传感器值域 0-1023 | 改为 0-1024 | 匹配固件 Motor 开关模式值 1024 |
+| 负载 ProgressCircle 直接排列 | 改为 `AutoCenter` + `Space vertical` 居中布局 | 视觉居中更好 |
+| Form 布局 `layout="horizontal"` | 去掉，使用默认布局 | 通栏样式在移动端更简洁 |
+| stateId Input 可编辑 | 改为 `readOnly` | 值由 getState 响应自动填充，不应手动修改 |
 
 ### page.tsx
 
 | 计划 | 实际 | 原因 |
 |------|------|------|
 | 标题用 `<h4>` + `<p>` (Tailwind) | 改为 `<NavBar back={null}>` + `<NoticeBar>` | 统一使用 antd-mobile 组件 |
+| 内容区用 `<div className="flex flex-col gap-4">` | 改为 `<Space direction="vertical" block>` | 统一使用 antd-mobile 组件 |
+
+### response-log.tsx
+
+| 计划 | 实际 | 原因 |
+|------|------|------|
+| 自绘 `<span>` 标签 + div 布局 | 改为 `<List>` + `<List.Item>` + `<Tag>` + `<ErrorBlock>` | 全部使用 antd-mobile 列表组件 |
+| 空态用 div 文字 | 改为 `<ErrorBlock status="empty" />` | 使用 antd-mobile 空态组件 |
+| 内联 `style={{}}` | 改为 Tailwind className | 项目使用 Tailwind 统一样式方案 |
 
 ### lib/db.ts
 
@@ -1099,3 +1118,12 @@ git commit -m "chore: format + check 通过，最终验证"
 | 计划 | 实际 | 原因 |
 |------|------|------|
 | 立即更新用 `onGpioChange({...gpio, ...})` | 改为函数式 `onGpioChange((prev) => ({...prev, ...}))` | React 18 自动批处理下多次 toggle 会丢更新 |
+
+### 最终组件清单
+
+| 文件 | 使用的 antd-mobile 组件 |
+|------|------------------------|
+| page.tsx | `NavBar`, `NoticeBar`, `Space` |
+| device-form.tsx | `Form`, `Form.Header`, `Form.Item`, `Input`, `Switch`, `Grid`, `Grid.Item`, `Slider`, `Stepper`, `ProgressCircle`, `Space`, `AutoCenter` |
+| event-buttons.tsx | `Card`, `Grid`, `Grid.Item`, `Button`, `Popup`, `NavBar`, `Form`, `Form.Item`, `Radio`, `Radio.Group`, `Space`, `TextArea` |
+| response-log.tsx | `Card`, `Button`, `ErrorBlock`, `List`, `List.Item`, `Tag` |
