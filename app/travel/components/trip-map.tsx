@@ -35,8 +35,8 @@ export const TripMap = forwardRef<
       const [mapReady, setMapReady] = useState(false);
       /** SDK 加载错误 */
       const [loadError, setLoadError] = useState<string | null>(null);
-      /** 重试计数 */
-      const retryRef = useRef(0);
+      /** 重试计数 —— 作为 useEffect 依赖，递增时触发重新初始化 */
+      const [retryKey, setRetryKey] = useState(0);
 
       // 主题跟随（mapReady 后再传实例）
       useMapTheme(mapReady ? mapRef.current : null);
@@ -122,7 +122,7 @@ export const TripMap = forwardRef<
           }
           setMapReady(false);
         };
-      }, []);
+      }, [retryKey]);
 
       /** 标注重建 effect —— 依赖 mapReady + locations */
       useEffect(() => {
@@ -136,20 +136,14 @@ export const TripMap = forwardRef<
         engineRef.current.update(locations);
       }, [locations, mapReady, onMarkerClick]);
 
-      /** 重试加载 */
+      /** 重试加载 —— 递增 retryKey 触发 effect 重新执行 */
       function handleRetry() {
-        retryRef.current += 1;
+        setRetryKey((k) => k + 1);
         setLoadError(null);
-        // 触发 effect 重新执行：卸载清理 → 重挂载
-        if (mapRef.current) {
-          mapRef.current.destroy();
-          mapRef.current = null;
-        }
-        setMapReady(false);
       }
 
       // 加载失败降级 UI（重试 3 次后放弃）
-      if (loadError && retryRef.current >= 3) {
+      if (loadError && retryKey >= 3) {
         return (
           <div
             style={{
