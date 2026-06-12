@@ -37,7 +37,7 @@ export default function DebugPage() {
         content="模拟 ESP32 设备发起 getState / pushState 请求，用于调试服务端设备协议"
         color="default"
       />
-      <Space  direction='vertical' block className="gap-4">
+      <Space  direction="vertical" block className="gap-4">
         <DeviceForm
           identity={identity}
           onIdentityChange={setIdentity}

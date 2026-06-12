@@ -12,7 +12,7 @@
  * @see instrumentation.ts — 应用启动时预初始化数据库
  */
 
-import { mkdirSync, existsSync } from 'fs';
+import { mkdirSync, existsSync, rmdirSync } from 'fs';
 import path from 'path';
 
 import { Database } from 'node-sqlite3-wasm';
@@ -62,6 +62,21 @@ export function getDb(): SQLiteDB {
   }
 
   try {
+    // 清理上次进程崩溃可能遗留的陈旧锁目录
+    // node-sqlite3-wasm 使用目录作为文件锁（mkdirSync），进程异常退出时
+    // 不会自动清理。残留的 .lock 目录会导致新进程无法获取锁，busy_timeout
+    // 重试也无效（因为没有活动进程会释放它）。
+    const lockDir = DB_PATH + '.lock';
+    if (existsSync(lockDir)) {
+      try {
+        rmdirSync(lockDir);
+        console.log('[DB] Cleaned up stale lock directory:', lockDir);
+      } catch {
+        // 删除失败说明锁可能被其他活动进程持有，不阻塞初始化
+        console.warn('[DB] Lock directory exists but could not be removed:', lockDir);
+      }
+    }
+
     db = new Database(DB_PATH);
     const elapsed = Date.now() - initStart;
     // 设置忙等待超时：并发读写时等待最多 5 秒再报 "database is locked"
