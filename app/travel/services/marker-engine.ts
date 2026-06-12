@@ -84,7 +84,7 @@ export function createMarkerEngine(
   /** 添加标注到地图 */
   function addToMap(marker: AMap.Marker) {
     if (clusterer) {
-      clusterer.addMarker(marker);
+      clusterer.addMarkers([marker]);
     } else {
       map.add(marker);
     }
@@ -93,7 +93,7 @@ export function createMarkerEngine(
   /** 从地图移除标注 */
   function removeFromMap(marker: AMap.Marker) {
     if (clusterer) {
-      clusterer.removeMarker(marker);
+      clusterer.removeMarkers([marker]);
     } else {
       map.remove(marker);
     }

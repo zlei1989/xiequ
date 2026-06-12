@@ -123,8 +123,9 @@ export async function getAllDevices(): Promise<DeviceItem[]> {
     FROM watering_devices d
     LEFT JOIN watering_device_state s ON d.chip_id = s.chip_id
     ORDER BY d.name
-  // SQLite WASM 驱动返回类型不完整，需用 any 中转以访问 snake_case 列名
-  `).all() as any[]; // eslint-disable-line @typescript-eslint/no-explicit-any
+  `)
+    // SQLite WASM 驱动返回类型不完整，需用 any 中转以访问 snake_case 列名
+    .all() as any[]; // eslint-disable-line @typescript-eslint/no-explicit-any
 
   const now = Date.now();
   return rows.map((row) => {

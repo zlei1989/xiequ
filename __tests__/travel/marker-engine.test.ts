@@ -80,10 +80,10 @@ describe('createMarkerEngine', () => {
     // 删除 id='1'
     engine.update([makeLocation({ id: '2' })]);
 
-    // MarkerClusterer.removeMarker 被调用
+    // MarkerClusterer.removeMarkers 被调用
     /* eslint-disable @typescript-eslint/no-unsafe-member-access,
         @typescript-eslint/no-unsafe-assignment */
-    const clustererRemove = mockAmap.MarkerClusterer.mock.results[0]?.value?.removeMarker;
+    const clustererRemove = mockAmap.MarkerClusterer.mock.results[0]?.value?.removeMarkers;
     /* eslint-enable @typescript-eslint/no-unsafe-member-access,
         @typescript-eslint/no-unsafe-assignment */
     expect(clustererRemove).toHaveBeenCalledTimes(1);

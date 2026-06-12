@@ -5,9 +5,13 @@
  *
  * 读取 document.documentElement.dataset.prefersColorScheme 获取系统主题，
  * 通过 MutationObserver 监听变化，调用 map.setMapStyle() 切换 AMap 暗色/亮色样式。
+ *
+ * 使用 useSyncExternalStore 订阅 DOM 属性变化，
+ * 避免 effect 中同步 setState 导致的级联渲染，同时确保 map 实例晚于 hook
+ * 挂载（异步加载）的场景下，map 变为可用时能立即同步当前主题样式。
  */
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useSyncExternalStore } from 'react';
 
 /** AMap 地图样式 ID */
 const STYLE_MAP = {
@@ -31,39 +35,25 @@ function readTheme(): Theme {
  * @returns 当前主题字符串（'light' | 'dark'），map 为 null 时返回 null
  */
 export function useMapTheme(map: AMap.Map | null): Theme | null {
-  // 在 state 初始化时同步设置地图样式，避免 effect 中额外 setState
-  const [theme, setTheme] = useState<Theme | null>(() => {
-    if (!map) return null;
-    const initial = readTheme();
-    map.setMapStyle(STYLE_MAP[initial]);
-    return initial;
-  });
+  // 用 useSyncExternalStore 订阅 DOM 属性变化，
+  // React 自动管理订阅生命周期和重渲染
+  const theme = useSyncExternalStore(
+    useCallback((onStoreChange: () => void) => {
+      const observer = new MutationObserver(onStoreChange);
+      observer.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['data-prefers-color-scheme'],
+      });
+      return () => { observer.disconnect(); };
+    }, []),
+    useCallback(() => readTheme(), []),
+  );
 
+  // 当 map 实例或主题变化时，同步到地图样式
   useEffect(() => {
     if (!map) return;
+    map.setMapStyle(STYLE_MAP[theme]);
+  }, [map, theme]);
 
-    // 监听 data-prefers-color-scheme 属性变化
-    const observer = new MutationObserver(() => {
-      const next = readTheme();
-      // 用 functional setState 比较新旧主题，避免闭包过期问题
-      setTheme((prev) => {
-        if (next !== prev) {
-          map.setMapStyle(STYLE_MAP[next]);
-          return next;
-        }
-        return prev;
-      });
-    });
-
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['data-prefers-color-scheme'],
-    });
-
-    return () => {
-      observer.disconnect();
-    };
-  }, [map]);
-
-  return theme;
+  return map ? theme : null;
 }

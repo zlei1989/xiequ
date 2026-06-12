@@ -71,8 +71,8 @@ declare namespace AMap {
       markers: Marker[],
       options?: MarkerClustererOptions,
     );
-    addMarker(marker: Marker): void;
-    removeMarker(marker: Marker): void;
+    addMarkers(markers: Marker[]): void;
+    removeMarkers(markers: Marker[]): void;
     setMarkers(markers: Marker[]): void;
     destroy(): void;
   }
