@@ -1,10 +1,15 @@
 /**
- * 日志查看器 — 按 stateId 分组展示 IoT 通信日志，支持耗时计算和格式化
+ * 日志查看器 — 用 antd-mobile Steps + Card + Space 展示 IoT 通信日志
+ *
+ * 每个 stateId 组为一个 Card，组内每条事件为一个 Steps.Step。
+ * 保留原有的分组、排序、格式化逻辑。
  */
 
 'use client';
 
-import { Timeline, Tag, Divider } from 'antd';
+import { Card, Space, Steps, Tag, ErrorBlock } from 'antd-mobile';
+
+/** ── 常量 ── */
 
 const eventLabels: Record<string, string> = {
   bootstrap: '开机',
@@ -17,14 +22,16 @@ const eventLabels: Record<string, string> = {
 };
 
 const eventColors: Record<string, string> = {
-  bootstrap: 'green',
-  execute: 'orange',
-  finish: 'orange',
-  terminate: 'orange',
-  change: 'blue',
+  bootstrap: 'success',
+  execute: 'warning',
+  finish: 'success',
+  terminate: 'danger',
+  change: 'primary',
   heartbeat: 'default',
-  offline: 'gray',
+  offline: 'default',
 };
+
+/** ── 类型 ── */
 
 export type LogItem = {
   event: string;
@@ -36,7 +43,12 @@ export type LogItem = {
   cause?: string;
 };
 
-/** 按 stateId 分组，每组按时间排序（倒序：最新的 stateId 组在前，组内正序）*/
+/** ── 工具函数 ── */
+
+/**
+ * 按 stateId 分组，每组按时间排序
+ * 组内按时间正序，组间按最新一条时间倒序（最新的组在前）
+ */
 export function groupByStateId(logs: LogItem[]): Array<{ stateId: string; items: LogItem[] }> {
   const map: Record<string, LogItem[]> = {};
   for (const log of logs) {
@@ -89,7 +101,10 @@ function hasExecute(items: LogItem[]): boolean {
   return items.some((item) => item.event === 'execute' || item.event === 'change');
 }
 
-/** 格式化日志消息 — 匹配 iot-wfm formatMessage */
+/**
+ * 格式化日志消息
+ * 优先使用 item.message，否则根据事件类型生成中文描述
+ */
 export function formatMessage(item: LogItem): string {
   if (item.message) return item.message;
   switch (item.event) {
@@ -108,57 +123,119 @@ export function formatMessage(item: LogItem): string {
   }
 }
 
+/**
+ * 判定事件对应的 Step status
+ *
+ * - 正常结束类事件 → finish
+ * - 异常中断类事件 → error
+ * - 心跳等持续类事件 → wait
+ */
+function getStepStatus(event: string): 'wait' | 'finish' | 'error' {
+  switch (event) {
+    case 'bootstrap':
+    case 'execute':
+    case 'finish':
+    case 'change':
+      return 'finish';
+    case 'terminate':
+    case 'offline':
+      return 'error';
+    case 'heartbeat':
+      return 'wait';
+    default:
+      return 'finish';
+  }
+}
+
+/**
+ * 判定组的整体状态
+ *
+ * 包含 finish/execute 且不含 offline/terminate → 已完成
+ * 其他 → 异常
+ */
+function getGroupStatus(items: LogItem[]): { status: 'finish' | 'error'; label: string; color: string } {
+  const hasFinish = items.some((i) => i.event === 'finish' || i.event === 'execute');
+  const hasAbnormal = items.some((i) => i.event === 'offline' || i.event === 'terminate');
+  if (hasFinish && !hasAbnormal) {
+    return { status: 'finish', label: '已完成', color: 'success' };
+  }
+  return { status: 'error', label: '异常', color: 'danger' };
+}
+
+/** 格式化时间为 HH:MM:SS */
+function formatTime(isoString: string): string {
+  return new Date(isoString).toLocaleString('zh-CN', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  });
+}
+
+/** ── 组件 ── */
+
 export function LogViewer({ logs }: { logs: LogItem[] }) {
   if (logs.length === 0) {
     return (
-      <div className="py-8 text-center text-gray-400">
-        暂无日志
-      </div>
+      <ErrorBlock
+        status="empty"
+        title="暂无日志"
+      />
     );
   }
 
   const groups = groupByStateId(logs);
 
   return (
-    <div>
-      {groups.map((group, gi) => (
-        <div key={group.stateId}>
-          {gi > 0 && <Divider className="my-3" />}
-          <Timeline
-            items={group.items.map((item, _idx) => ({
-              color: eventColors[item.event] || 'gray',
-              content: (
-                <div className="text-sm">
-                  <div
-                    className="mb-0.5 flex items-center gap-1.5"
-                  >
-                    <Tag color={eventColors[item.event]}>
-                      {eventLabels[item.event] || item.event}
-                    </Tag>
-                    <span className="text-xs text-gray-400">
-                      {new Date(item.createdTime).toLocaleString('zh-CN', {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        second: '2-digit',
-                      })}
+    <Space direction="vertical" block>
+      {groups.map((group) => {
+        const groupStatus = getGroupStatus(group.items);
+        const duration = hasExecute(group.items) ? formatDuration(group.items) : null;
+
+        return (
+          <Card
+            key={group.stateId}
+            title={
+              <Space align="center">
+                <span className="text-sm font-medium">
+                  stateId: {group.stateId}
+                </span>
+                <Tag color={groupStatus.color} fill="solid">
+                  {groupStatus.label}
+                </Tag>
+              </Space>
+            }
+          >
+            <Steps direction="vertical">
+              {group.items.map((item, idx) => (
+                <Steps.Step
+                  key={`${group.stateId}-${idx}`}
+                  title={
+                    <Space align="center">
+                      <Tag color={eventColors[item.event] || 'default'} fill="solid">
+                        {eventLabels[item.event] || item.event}
+                      </Tag>
+                      <span className="text-xs text-gray-400">
+                        {formatTime(item.createdTime)}
+                      </span>
+                    </Space>
+                  }
+                  description={
+                    <span className="text-[13px] text-gray-700">
+                      {formatMessage(item)}
                     </span>
-                  </div>
-                  <div className="text-[13px] text-gray-800">
-                    {formatMessage(item)}
-                  </div>
-                </div>
-              ),
-            }))}
-          />
-          {hasExecute(group.items) && (
-            <div
-              className="ml-6 mt-1 text-xs text-gray-400"
-            >
-              用时 {formatDuration(group.items)}
-            </div>
-          )}
-        </div>
-      ))}
-    </div>
+                  }
+                  status={getStepStatus(item.event)}
+                />
+              ))}
+            </Steps>
+            {duration && (
+              <div className="mt-2 flex justify-end text-xs text-gray-400">
+                用时 {duration}
+              </div>
+            )}
+          </Card>
+        );
+      })}
+    </Space>
   );
 }
