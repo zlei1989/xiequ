@@ -93,7 +93,7 @@ describe('按钮自动复位', () => {
     // 7 个 switch：前 2 个是数字传感器，后 5 个是按钮
     // button_0 在索引 2
     const switches = screen.getAllByRole('switch');
-    const btnSwitch = switches[2];
+    const btnSwitch = switches[2]!;
 
     // 点击切为 0
     fireEvent.click(btnSwitch);
@@ -137,7 +137,7 @@ describe('按钮自动复位', () => {
     };
 
     const switches = screen.getAllByRole('switch');
-    const btnSwitch = switches[2];
+    const btnSwitch = switches[2]!;
 
     // 切为 0
     fireEvent.click(btnSwitch);

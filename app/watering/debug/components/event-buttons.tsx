@@ -11,14 +11,12 @@ import { useState, useCallback } from 'react';
 
 import type { PickerValue } from 'antd-mobile/es/components/picker';
 
-const CHANGE_TYPE_COLUMNS = [
-  [
-    { label: 'step_ready (步骤就绪)', value: 'step_ready' },
-    { label: 'step_begin (步骤开始)', value: 'step_begin' },
-    { label: 'step_end (步骤正常结束)', value: 'step_end' },
-    { label: 'step_timeout (步骤超时)', value: 'step_timeout' },
-    { label: 'step_interrupt (步骤中断)', value: 'step_interrupt' },
-  ],
+const CHANGE_TYPES = [
+  { label: 'step_ready (步骤就绪)', value: 'step_ready' },
+  { label: 'step_begin (步骤开始)', value: 'step_begin' },
+  { label: 'step_end (步骤正常结束)', value: 'step_end' },
+  { label: 'step_timeout (步骤超时)', value: 'step_timeout' },
+  { label: 'step_interrupt (步骤中断)', value: 'step_interrupt' },
 ];
 
 const CAUSE_COLUMNS = [
@@ -109,26 +107,15 @@ export function EventButtons({
         </div>
       </Card>
 
-      {/* ---- bootstrap Popup ---- */}
-      <Popup
+      {/* ---- bootstrap Picker（自弹层，不套 Popup） ---- */}
+      <Picker
+        columns={CAUSE_COLUMNS}
         visible={popupType === 'bootstrap'}
+        value={bootstrapCause}
+        onConfirm={handleBootstrapConfirm}
         onClose={closePopup}
-        position="bottom"
-        bodyStyle={{ borderTopLeftRadius: 12, borderTopRightRadius: 12 }}
-      >
-        <div className="px-3 pb-6 pt-4">
-          <h3 className="mb-3 text-center text-base font-medium">
-            bootstrap 参数
-          </h3>
-          <div className="mb-4 text-sm text-gray-500">启动原因 (cause)</div>
-          <Picker
-            columns={CAUSE_COLUMNS}
-            value={bootstrapCause}
-            onConfirm={handleBootstrapConfirm}
-            onCancel={closePopup}
-          />
-        </div>
-      </Popup>
+        title="启动原因 (cause)"
+      />
 
       {/* ---- change Popup ---- */}
       <Popup
@@ -142,11 +129,23 @@ export function EventButtons({
             change 参数
           </h3>
           <div className="mb-2 text-sm text-gray-500">变更类型 (type)</div>
-          <Picker
-            columns={CHANGE_TYPE_COLUMNS}
-            value={changeType}
-            onSelect={(val) => { setChangeType(val); }}
-          />
+          <div className="flex flex-col gap-1">
+            {CHANGE_TYPES.map((item) => (
+              <div
+                key={item.value}
+                className={`cursor-pointer rounded-md px-3 py-2 text-sm transition-colors ${
+                  changeType[0] === item.value
+                    ? 'bg-blue-50 text-blue-600'
+                    : 'text-gray-700 active:bg-gray-50'
+                }`}
+                onClick={() => {
+                  setChangeType([item.value]);
+                }}
+              >
+                {item.label}
+              </div>
+            ))}
+          </div>
           <div className="mb-2 mt-4 text-sm text-gray-500">
             附加消息 (message)
           </div>
