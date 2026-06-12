@@ -128,29 +128,9 @@ export function EventButtons({
       >
         <NavBar onBack={closePopup}>bootstrap 参数</NavBar>
 
-        <Grid columns={1} gap={16}>
-          <Grid.Item>
-            <Form layout="horizontal">
-              <Form.Item label="启动原因">
-                <Radio.Group
-                  value={bootstrapCause}
-                  onChange={(val: RadioValue) => {
-                    setBootstrapCause(String(val));
-                  }}
-                >
-                  <Space direction="vertical" block>
-                    {CAUSE_OPTIONS.map((item) => (
-                      <Radio key={item.value} value={item.value} block>
-                        {item.label}
-                      </Radio>
-                    ))}
-                  </Space>
-                </Radio.Group>
-              </Form.Item>
-            </Form>
-          </Grid.Item>
-
-          <Grid.Item>
+        <Form
+          layout="horizontal"
+          footer={
             <Button
               block
               color="primary"
@@ -158,8 +138,25 @@ export function EventButtons({
             >
               确认发送
             </Button>
-          </Grid.Item>
-        </Grid>
+          }
+        >
+          <Form.Item label="启动原因">
+            <Radio.Group
+              value={bootstrapCause}
+              onChange={(val: RadioValue) => {
+                setBootstrapCause(String(val));
+              }}
+            >
+              <Space direction="vertical" block>
+                {CAUSE_OPTIONS.map((item) => (
+                  <Radio key={item.value} value={item.value} block>
+                    {item.label}
+                  </Radio>
+                ))}
+              </Space>
+            </Radio.Group>
+          </Form.Item>
+        </Form>
       </Popup>
 
       {/* ---- change Popup ---- */}
@@ -171,38 +168,9 @@ export function EventButtons({
       >
         <NavBar onBack={closePopup}>change 参数</NavBar>
 
-        <Grid columns={1} gap={16}>
-          <Grid.Item>
-            <Form layout="horizontal">
-              <Form.Item label="变更类型">
-                <Radio.Group
-                  value={changeType}
-                  onChange={(val: RadioValue) => {
-                    setChangeType(String(val));
-                  }}
-                >
-                  <Space direction="vertical" block>
-                    {CHANGE_TYPES.map((item) => (
-                      <Radio key={item.value} value={item.value} block>
-                        {item.label}
-                      </Radio>
-                    ))}
-                  </Space>
-                </Radio.Group>
-              </Form.Item>
-
-              <Form.Item label="附加消息">
-                <TextArea
-                  placeholder="可选"
-                  value={changeMessage}
-                  onChange={(v) => { setChangeMessage(v); }}
-                  rows={3}
-                />
-              </Form.Item>
-            </Form>
-          </Grid.Item>
-
-          <Grid.Item>
+        <Form
+          layout="horizontal"
+          footer={
             <Button
               block
               color="primary"
@@ -210,8 +178,34 @@ export function EventButtons({
             >
               确认发送
             </Button>
-          </Grid.Item>
-        </Grid>
+          }
+        >
+          <Form.Item label="变更类型">
+            <Radio.Group
+              value={changeType}
+              onChange={(val: RadioValue) => {
+                setChangeType(String(val));
+              }}
+            >
+              <Space direction="vertical" block>
+                {CHANGE_TYPES.map((item) => (
+                  <Radio key={item.value} value={item.value} block>
+                    {item.label}
+                  </Radio>
+                ))}
+              </Space>
+            </Radio.Group>
+          </Form.Item>
+
+          <Form.Item label="附加消息">
+            <TextArea
+              placeholder="可选"
+              value={changeMessage}
+              onChange={(v) => { setChangeMessage(v); }}
+              rows={3}
+            />
+          </Form.Item>
+        </Form>
       </Popup>
     </>
   );
