@@ -22,6 +22,9 @@ declare namespace AMap {
     add(overlay: object): void;
     remove(overlay: object): void;
     destroy(): void;
+    setMapStyle(style: string): void;
+    setContainer(container: HTMLDivElement): void;
+    getContainer(): HTMLElement | null;
   }
   interface MapOptions {
     zoom: number;
@@ -33,17 +36,65 @@ declare namespace AMap {
   class Marker {
     constructor(options: MarkerOptions);
     on(event: string, callback: () => void): void;
+    setIcon(icon: Icon): void;
+    setLabel(label: { content: string; offset: Pixel }): void;
   }
   interface MarkerOptions {
     position: [number, number];
     title?: string;
     label?: { content: string; offset: Pixel };
+    icon?: Icon;
+    offset?: Pixel;
   }
 
   /** 像素坐标（用于 Marker 偏移） */
   // eslint-disable-next-line @typescript-eslint/no-extraneous-class
   class Pixel {
     constructor(x: number, y: number);
+  }
+
+  /** 自定义图标 */
+  // eslint-disable-next-line @typescript-eslint/no-extraneous-class
+  class Icon {
+    constructor(options: IconOptions);
+  }
+  interface IconOptions {
+    image: string;
+    size: Pixel;
+    imageOffset?: Pixel;
+  }
+
+  /** 点聚合 */
+  class MarkerClusterer {
+    constructor(
+      map: Map,
+      markers: Marker[],
+      options?: MarkerClustererOptions,
+    );
+    addMarker(marker: Marker): void;
+    removeMarker(marker: Marker): void;
+    setMarkers(markers: Marker[]): void;
+    destroy(): void;
+  }
+  interface MarkerClustererOptions {
+    gridSize?: number;
+    renderClusterMarker?: (context: ClusterMarkerContext) => ClusterMarkerRender;
+    renderMarker?: (context: MarkerRenderContext) => MarkerRender;
+  }
+  interface ClusterMarkerContext {
+    count: number;
+    markers: Marker[];
+  }
+  interface ClusterMarkerRender {
+    content: string;
+    offset: Pixel;
+  }
+  interface MarkerRenderContext {
+    marker: Marker;
+    count: number;
+  }
+  interface MarkerRender {
+    content: string;
   }
 
   /** 事件系统 */
@@ -166,10 +217,16 @@ interface AMapModule {
   Geolocation: new (options: AMap.GeolocationOptions) => AMap.Geolocation;
   Geocoder: new (options: AMap.GeocoderOptions) => AMap.Geocoder;
   DistrictSearch: new (options: AMap.DistrictSearchOptions) => AMap.DistrictSearch;
+  Icon: new (options: AMap.IconOptions) => AMap.Icon;
+  MarkerClusterer: new (
+    map: AMap.Map,
+    markers: AMap.Marker[],
+    options?: AMap.MarkerClustererOptions,
+  ) => AMap.MarkerClusterer;
 }
 
 /** 扩展 Window（AMap 通过异步加载注入，初始不存在） */
 interface Window {
-  AMap: AMapModule | undefined;
+  AMap: (AMapModule & { MarkerClusterer?: AMapModule['MarkerClusterer'] }) | undefined;
   _AMapSecurityConfig?: { securityJsCode: string };
 }
