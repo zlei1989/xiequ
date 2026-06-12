@@ -1,10 +1,13 @@
 /**
  * OSS 对象存储适配器层
  *
- * 设计参考旧项目 XpnOssAdapter 接口 + TencentOss 实现：
- * - OssAdapter 接口屏蔽底层 SDK 差异
- * - TencentCosAdapter 基于 cos-nodejs-sdk-v5 实现
- * - 后续如需支持阿里云 OSS，只需新增 AliOssAdapter
+ * 设计模式：策略 + 工厂，参考旧项目 XpnOssAdapter 接口 + TencentOss 实现。
+ *
+ * 接口层（OssAdapter）屏蔽底层 SDK 差异：
+ * - TencentCosAdapter 基于 cos-nodejs-sdk-v5 实现（当前唯一实现）
+ * - 后续如需支持阿里云 OSS，只需新增 AliOssAdapter 实现同一接口
+ *
+ * 工厂方法 getOssAdapter() 根据环境变量自动选择适配器并初始化。
  *
  * 环境变量：
  * - OSS_ENDPOINT: 存储区域，如 ap-beijing
@@ -13,7 +16,7 @@
  * - OSS_BUCKET: 存储空间名称
  */
 
-import COS from "cos-nodejs-sdk-v5";
+import COS from 'cos-nodejs-sdk-v5';
 
 // ─── 适配器接口（参考 XpnOssAdapter） ────────────────────────────────────
 
@@ -63,10 +66,10 @@ export type OssPutOptions = {
  * 上传数据头部描述（参考 XpnOssPutHeaders）
  */
 export type OssPutHeaders = Record<string, string> & {
-  "Cache-Control"?: string;
-  "Content-Disposition"?: string;
-  "Content-Encoding"?: string;
-  "Content-Type"?: string;
+  'Cache-Control'?: string;
+  'Content-Disposition'?: string;
+  'Content-Encoding'?: string;
+  'Content-Type'?: string;
   Expires?: string;
 };
 
@@ -82,22 +85,22 @@ export class TencentCosAdapter implements OssAdapter {
   /**
    * 目标存储主机（Region）
    */
-  protected _endpoint: string = "ap-beijing";
+  protected _endpoint: string = 'ap-beijing';
 
   /**
    * 身份标识（SecretId）
    */
-  protected _key: string = "";
+  protected _key: string = '';
 
   /**
    * 通讯密钥（SecretKey）
    */
-  protected _secret: string = "";
+  protected _secret: string = '';
 
   /**
    * 空间名称（Bucket）
    */
-  protected _bucket: string = "";
+  protected _bucket: string = '';
 
   /**
    * SDK 指针（懒初始化，参考 TencentOss._sdk）
@@ -135,10 +138,12 @@ export class TencentCosAdapter implements OssAdapter {
    */
   public getSdk(): COS {
     if (!this._sdk) {
+      // INFO: 关键状态变更 — 首次创建 COS 客户端实例
+      console.log(`[OSS] Creating COS client (Bucket=${this._bucket}, Region=${this._endpoint})`);
       this._sdk = new COS({
         SecretId: this._key,
         SecretKey: this._secret,
-        Protocol: "https:",
+        Protocol: 'https:',
       });
     }
     return this._sdk;
@@ -148,8 +153,10 @@ export class TencentCosAdapter implements OssAdapter {
    * 判断文件是否存在
    *
    * 参考 TencentOss.exists()，使用 headObject 探测。
+   * 404 视为文件不存在（正常情况），403 及其他错误视为异常。
    */
   public exists(path: string): Promise<boolean> {
+    const start = Date.now();
     return new Promise((resolve, reject) => {
       this.getSdk().headObject(
         {
@@ -158,28 +165,39 @@ export class TencentCosAdapter implements OssAdapter {
           Key: path,
         },
         (err: any, _ret: any) => {
+          const elapsed = Date.now() - start;
           if (!_ret && err) {
             if (err.statusCode === 404) {
+              // DEBUG: 文件不存在是正常查询结果，非错误
+              if (elapsed > 500) console.log(`[OSS] headObject 404 (${elapsed}ms) path=${path}`);
               resolve(false);
             } else if (err.statusCode === 403) {
+              // ERROR: 权限不足，打印堆栈和上下文方便排查
+              console.error(`[OSS] headObject 403 (${elapsed}ms) path=${path}:`, err.message || err);
+              if (err?.stack) console.error(err.stack);
               reject(err);
             } else {
+              // ERROR: 其他网络或服务端错误
+              console.error(`[OSS] headObject error (${elapsed}ms) path=${path} statusCode=${err.statusCode}:`, err.message || err);
+              if (err?.stack) console.error(err.stack);
               reject(err);
             }
           } else {
+            if (elapsed > 500) console.log(`[OSS] headObject OK (${elapsed}ms) path=${path}`);
             resolve(true);
           }
-        }
+        },
       );
     });
   }
 
   /**
-   * 获得文件内容
+   * 获得文件内容（UTF-8 字符串）
    *
    * 参考 TencentOss.getString()。
    */
   public getString(path: string): Promise<string> {
+    const start = Date.now();
     return new Promise((resolve, reject) => {
       this.getSdk().getObject(
         {
@@ -188,12 +206,17 @@ export class TencentCosAdapter implements OssAdapter {
           Key: path,
         },
         (err: any, ret: any) => {
+          const elapsed = Date.now() - start;
           if (ret) {
-            const str = ret.Body.toString("utf-8");
-            return resolve(str);
+            const str = ret.Body.toString('utf-8');
+            if (elapsed > 500) console.log(`[OSS] getObject OK (${elapsed}ms) path=${path}`);
+            resolve(str); return;
           }
+          // ERROR: 下载失败，打印堆栈和上下文
+          console.error(`[OSS] getObject failed (${elapsed}ms) path=${path}:`, err?.message || err);
+          if (err?.stack) console.error(err.stack);
           reject(err);
-        }
+        },
       );
     });
   }
@@ -202,27 +225,34 @@ export class TencentCosAdapter implements OssAdapter {
    * 获得上传签名 URL
    *
    * 参考 TencentOss.getSignedPutUrl()。
+   * 签名 URL 包含临时鉴权参数，客户端可直接用于 PUT 上传。
    */
   public getSignedPutUrl(
     path: string,
-    options?: OssPutOptions
+    options?: OssPutOptions,
   ): Promise<string> {
+    const start = Date.now();
     return new Promise((resolve, reject) => {
       this.getSdk().getObjectUrl(
         {
           Bucket: this.getBucket(),
           Region: this.getEndpoint(),
           Key: path,
-          Method: "PUT",
+          Method: 'PUT',
           Sign: true,
           Headers: options?.headers,
         },
         (err: any, ret: any) => {
+          const elapsed = Date.now() - start;
           if (err) {
-            return reject(err);
+            // ERROR: 签名 URL 生成失败，打印堆栈和上下文
+            console.error(`[OSS] getSignedPutUrl failed (${elapsed}ms) path=${path}:`, err?.message || err);
+            if (err?.stack) console.error(err.stack);
+            reject(err); return;
           }
-          return resolve(ret.Url);
-        }
+          if (elapsed > 500) console.log(`[OSS] getSignedPutUrl OK (${elapsed}ms) path=${path}`);
+          resolve(ret.Url);
+        },
       );
     });
   }
@@ -231,27 +261,34 @@ export class TencentCosAdapter implements OssAdapter {
    * 获得下载签名 URL
    *
    * 参考 TencentOss.getSignedUrl()。
+   * 签名 URL 包含临时鉴权参数，客户端可直接用于 GET 下载。
    */
   public getSignedUrl(
     path: string,
-    options?: OssPutOptions
+    options?: OssPutOptions,
   ): Promise<string> {
+    const start = Date.now();
     return new Promise((resolve, reject) => {
       this.getSdk().getObjectUrl(
         {
           Bucket: this.getBucket(),
           Region: this.getEndpoint(),
           Key: path,
-          Method: "GET",
+          Method: 'GET',
           Sign: true,
           Headers: options?.headers,
         },
         (err: any, ret: any) => {
+          const elapsed = Date.now() - start;
           if (err) {
-            return reject(err);
+            // ERROR: 签名 URL 生成失败，打印堆栈和上下文
+            console.error(`[OSS] getSignedUrl failed (${elapsed}ms) path=${path}:`, err?.message || err);
+            if (err?.stack) console.error(err.stack);
+            reject(err); return;
           }
-          return resolve(ret.Url);
-        }
+          if (elapsed > 500) console.log(`[OSS] getSignedUrl OK (${elapsed}ms) path=${path}`);
+          resolve(ret.Url);
+        },
       );
     });
   }
@@ -259,13 +296,15 @@ export class TencentCosAdapter implements OssAdapter {
   /**
    * 上传字符串
    *
-   * 参考 TencentOss.putString()，自动设置 Content-Type。
+   * 参考 TencentOss.putString()，自动设置 Content-Type 为 text/plain;charset=UTF-8。
+   * 若 options.headers 中已指定 Content-Type，则使用指定值。
    */
   public putString(
     path: string,
     content: string,
-    options?: OssPutOptions
+    options?: OssPutOptions,
   ): Promise<void> {
+    const start = Date.now();
     return new Promise((resolve, reject) => {
       if (!options) {
         options = {};
@@ -273,8 +312,8 @@ export class TencentCosAdapter implements OssAdapter {
       if (!options.headers) {
         options.headers = {};
       }
-      if ("Content-Type" in options.headers !== true) {
-        options.headers["Content-Type"] = "text/plain;charset=UTF-8";
+      if (!('Content-Type' in options.headers)) {
+        options.headers['Content-Type'] = 'text/plain;charset=UTF-8';
       }
 
       this.getSdk().putObject(
@@ -282,16 +321,21 @@ export class TencentCosAdapter implements OssAdapter {
           Bucket: this.getBucket(),
           Region: this.getEndpoint(),
           Key: path,
-          ContentType: options.headers["Content-Type"],
-          ContentEncoding: options.headers["Content-Encoding"],
+          ContentType: options.headers['Content-Type'],
+          ContentEncoding: options.headers['Content-Encoding'],
           Body: content,
         },
         (err: any, _ret: any) => {
+          const elapsed = Date.now() - start;
           if (err) {
-            return reject(err);
+            // ERROR: 上传失败，打印堆栈和上下文
+            console.error(`[OSS] putObject failed (${elapsed}ms) path=${path}:`, err?.message || err);
+            if (err?.stack) console.error(err.stack);
+            reject(err); return;
           }
-          return resolve();
-        }
+          if (elapsed > 500) console.log(`[OSS] putObject OK (${elapsed}ms) path=${path}`);
+          resolve();
+        },
       );
     });
   }
@@ -304,7 +348,7 @@ export class TencentCosAdapter implements OssAdapter {
   public async appendString(
     path: string,
     content: string,
-    options?: OssPutOptions
+    options?: OssPutOptions,
   ): Promise<void> {
     let newContent: string;
     if (await this.exists(path)) {
@@ -313,15 +357,16 @@ export class TencentCosAdapter implements OssAdapter {
     } else {
       newContent = content;
     }
-    return await this.putString(path, newContent, options);
+    await this.putString(path, newContent, options);
   }
 
   /**
-   * 删除内容
+   * 删除对象
    *
    * 参考 TencentOss.delete()。
    */
   public delete(path: string): Promise<void> {
+    const start = Date.now();
     return new Promise((resolve, reject) => {
       this.getSdk().deleteObject(
         {
@@ -330,11 +375,16 @@ export class TencentCosAdapter implements OssAdapter {
           Key: path,
         },
         (err: any, _data: any) => {
+          const elapsed = Date.now() - start;
           if (err) {
-            return reject(err);
+            // ERROR: 删除失败，打印堆栈和上下文
+            console.error(`[OSS] deleteObject failed (${elapsed}ms) path=${path}:`, err?.message || err);
+            if (err?.stack) console.error(err.stack);
+            reject(err); return;
           }
-          return resolve();
-        }
+          if (elapsed > 500) console.log(`[OSS] deleteObject OK (${elapsed}ms) path=${path}`);
+          resolve();
+        },
       );
     });
   }
@@ -371,11 +421,13 @@ export function getOssAdapter(): OssAdapter {
 
   if (!isOssConfigured()) {
     throw new Error(
-      "OSS 未配置。请设置 OSS_ENDPOINT, OSS_SECRET_ID, OSS_SECRET_KEY, OSS_BUCKET 环境变量。"
+      'OSS 未配置。请设置 OSS_ENDPOINT, OSS_SECRET_ID, OSS_SECRET_KEY, OSS_BUCKET 环境变量。',
     );
   }
 
   // 工厂模式：参考 XpnOss.factory()，根据配置创建对应适配器
+  // INFO: 关键状态变更 — 首次创建 OSS 适配器单例
+  console.log(`[OSS] Creating TencentCosAdapter (Bucket=${process.env.OSS_BUCKET}, Region=${process.env.OSS_ENDPOINT})`);
   const adapter = new TencentCosAdapter();
   adapter.setEndpoint(process.env.OSS_ENDPOINT!);
   adapter.setKey(process.env.OSS_SECRET_ID!);

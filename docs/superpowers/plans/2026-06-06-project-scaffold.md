@@ -154,7 +154,7 @@ export function getDb(): Database.Database {
 ```ts
 /**
  * OSS 对象存储客户端封装
- * 
+ *
  * 使用时需要配置以下环境变量：
  * - OSS_REGION: 区域
  * - OSS_ACCESS_KEY_ID: AccessKey ID
@@ -319,7 +319,7 @@ import { AppCard } from "@/components/ui/app-card";
 
 const apps = [
   {
-    title: "浇花助手",
+    title: "浇花帮手",
     description: "IoT 设备管理，远程控制浇花",
     href: "/watering",
     icon: "🌱",
@@ -366,7 +366,7 @@ export default function Home() {
 
 Run: `pnpm dev`
 
-Expected: 首页显示"个人工具箱"标题和两张卡片（浇花助手、旅行计划），点击可跳转（目前 404 正常）。
+Expected: 首页显示"个人工具箱"标题和两张卡片（浇花帮手、旅行计划），点击可跳转（目前 404 正常）。
 
 - [ ] **Step 3: Commit**
 
@@ -499,7 +499,7 @@ export default function WateringLayout({ children }: { children: ReactNode }) {
     <Layout style={{ minHeight: "100vh" }}>
       <Header style={{ background: "#fff", padding: "0 16px", display: "flex", alignItems: "center", gap: 12, borderBottom: "1px solid #f0f0f0" }}>
         <Button type="text" icon={<HomeOutlined />} onClick={() => router.push("/")} />
-        <span style={{ fontSize: 16, fontWeight: 500 }}>浇花助手</span>
+        <span style={{ fontSize: 16, fontWeight: 500 }}>浇花帮手</span>
       </Header>
       <Layout>
         <Sider width={200} theme="light" style={{ borderRight: "1px solid #f0f0f0" }}>
@@ -553,7 +553,7 @@ export default function DeviceLogsPage({ params }: { params: Promise<{ chipId: s
 Run: `pnpm dev`
 
 Expected:
-- 首页点击"浇花助手"跳转到 /watering，显示侧边栏布局 + "设备列表（待实现）"
+- 首页点击"浇花帮手"跳转到 /watering，显示侧边栏布局 + "设备列表（待实现）"
 - 顶部有返回首页按钮
 
 - [ ] **Step 7: Commit**
@@ -924,12 +924,12 @@ Create `app/watering/services/iot-protocol.ts`:
 ```ts
 /**
  * IoT 设备通信协议
- * 
+ *
  * 负责：
  * - 设备状态推送（设备 → 服务器）
  * - 设备状态拉取（设备 ← 服务器，长轮询/SSE）
  * - 设备指令下发（开关、流程指定）
- * 
+ *
  * 具体协议细节待后续实现时补充
  */
 
@@ -1074,13 +1074,13 @@ Create `app/travel/services/amap.ts`:
 ```ts
 /**
  * 高德地图 SDK 封装
- * 
+ *
  * 负责：
  * - 地图加载
  * - 位置搜索（PlaceSearch）
  * - GPS 定位（Geolocation）
  * - 地理编码（Geocoder）
- * 
+ *
  * 需要 AMap API Key 环境变量：NEXT_PUBLIC_AMAP_KEY
  */
 
@@ -1099,12 +1099,12 @@ import type { Location, Moment } from "../types";
 
 /**
  * 旅行模块 OSS 数据存储
- * 
+ *
  * 负责：
  * - 位置数据读写（JSON 文件存储在 OSS）
  * - 图片上传（签名 URL）
  * - 图片下载（带裁剪参数的签名 URL）
- * 
+ *
  * 具体实现待后续补充，与旧项目保持相同的 OSS 存储结构
  */
 ```

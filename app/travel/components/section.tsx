@@ -1,8 +1,16 @@
-"use client";
+/**
+ * 通用 Section 组件 — 带标题和额外操作区的 Card 包装
+ */
 
-import type { ReactNode } from "react";
-import { Card } from "antd-mobile";
+'use client';
 
+import { Card } from 'antd-mobile';
+
+import type { ReactNode } from 'react';
+
+/**
+ * 带标题和可选操作区的 Card 容器
+ */
 export function Section({
   title,
   extra,

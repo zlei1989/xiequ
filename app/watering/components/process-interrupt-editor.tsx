@@ -1,8 +1,18 @@
-"use client";
+/**
+ * 中断条件编辑器 — 编辑单个 Interrupt 的传感器、信号类型、阈值等参数
+ *
+ * 数字信号 vs 模拟信号：
+ * - 数字信号（digital）：只有 0/1 两种状态，通过 Switch 开关配置触发状态
+ * - 模拟信号（analog）：连续值，通过逻辑比较（>/<）和阈值判断是否触发
+ *   两种类型共享同一 Interrupt 数据结构，通过 signalType 字段区分
+ */
 
-import { Input, InputNumber, Switch, Select, Empty, Radio } from "antd";
-import type { Interrupt } from "../types";
-import type { GpioInfo } from "../hooks/use-device-config";
+'use client';
+
+import { Input, InputNumber, Switch, Select, Empty, Radio } from 'antd';
+
+import type { GpioInfo } from '../hooks/use-device-config';
+import type { Interrupt } from '../types';
 
 export function ProcessInterruptEditor({
   interrupt,
@@ -20,54 +30,54 @@ export function ProcessInterruptEditor({
     label: k,
   }));
 
-  const signalType = interrupt.signalType ?? "digital";
-  const logic = interrupt.logic ?? ">";
+  const signalType = interrupt.signalType ?? 'digital';
+  const logic = interrupt.logic ?? '>';
   const threshold = interrupt.threshold ?? 0;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       <div>
-        <label style={{ fontSize: 13, color: "#666", marginBottom: 4, display: "block" }}>
+        <label style={{ fontSize: 13, color: '#666', marginBottom: 4, display: 'block' }}>
           中断名称
         </label>
         <Input
           value={interrupt.name}
-          onChange={(e) => onChange({ ...interrupt, name: e.target.value })}
+          onChange={(e) => { onChange({ ...interrupt, name: e.target.value }); }}
           placeholder="输入中断名称"
         />
       </div>
 
       <div>
-        <label style={{ fontSize: 13, color: "#666", marginBottom: 4, display: "block" }}>
+        <label style={{ fontSize: 13, color: '#666', marginBottom: 4, display: 'block' }}>
           传感器
         </label>
         {sensorOptions.length > 0 ? (
           <Select
             value={interrupt.component}
-            onChange={(v) => onChange({ ...interrupt, component: v })}
+            onChange={(v) => { onChange({ ...interrupt, component: v }); }}
             options={sensorOptions}
-            style={{ width: "100%" }}
+            style={{ width: '100%' }}
           />
         ) : (
           <Empty
             image={Empty.PRESENTED_IMAGE_SIMPLE}
             description="设备无可用传感器（sensors），请等待设备上报 GPIO 状态"
-            style={{ margin: "8px 0" }}
+            style={{ margin: '8px 0' }}
           />
         )}
       </div>
 
       <div>
-        <label style={{ fontSize: 13, color: "#666", marginBottom: 4, display: "block" }}>
+        <label style={{ fontSize: 13, color: '#666', marginBottom: 4, display: 'block' }}>
           信号类型
         </label>
         <Radio.Group
           value={signalType}
           onChange={(e) =>
-            onChange({
-              ...interrupt,
-              signalType: e.target.value,
-            })
+          { onChange({
+            ...interrupt,
+            signalType: e.target.value,
+          }); }
           }
           optionType="button"
           buttonStyle="solid"
@@ -78,15 +88,15 @@ export function ProcessInterruptEditor({
       </div>
 
       {/* 数字信号：显示触发状态开关 */}
-      {signalType === "digital" && (
+      {signalType === 'digital' && (
         <div>
-          <label style={{ fontSize: 13, color: "#666", marginBottom: 4, display: "block" }}>
+          <label style={{ fontSize: 13, color: '#666', marginBottom: 4, display: 'block' }}>
             触发状态
           </label>
           <Switch
             checked={interrupt.state === 1 || interrupt.state === true}
             onChange={(checked) =>
-              onChange({ ...interrupt, state: checked ? 1 : 0 })
+            { onChange({ ...interrupt, state: checked ? 1 : 0 }); }
             }
             checkedChildren="触发 (1)"
             unCheckedChildren="未触发 (0)"
@@ -95,19 +105,19 @@ export function ProcessInterruptEditor({
       )}
 
       {/* 模拟信号：显示逻辑选择 + 触发阈值 */}
-      {signalType === "analog" && (
+      {signalType === 'analog' && (
         <>
           <div>
-            <label style={{ fontSize: 13, color: "#666", marginBottom: 4, display: "block" }}>
+            <label style={{ fontSize: 13, color: '#666', marginBottom: 4, display: 'block' }}>
               逻辑
             </label>
             <Radio.Group
               value={logic}
               onChange={(e) =>
-                onChange({
-                  ...interrupt,
-                  logic: e.target.value,
-                })
+              { onChange({
+                ...interrupt,
+                logic: e.target.value,
+              }); }
               }
               optionType="button"
               buttonStyle="solid"
@@ -118,72 +128,76 @@ export function ProcessInterruptEditor({
           </div>
 
           <div>
-            <label style={{ fontSize: 13, color: "#666", marginBottom: 4, display: "block" }}>
+            <label style={{ fontSize: 13, color: '#666', marginBottom: 4, display: 'block' }}>
               触发阈值
             </label>
             <InputNumber
               value={threshold}
               onChange={(v) =>
-                onChange({ ...interrupt, threshold: v ?? 0 })
+              { onChange({ ...interrupt, threshold: v ?? 0 }); }
               }
               min={0}
               step={1}
-              style={{ width: "100%" }}
+              style={{ width: '100%' }}
               placeholder="输入模拟信号触发阈值"
             />
-            <div style={{ fontSize: 11, color: "#999", marginTop: 4 }}>
-              当传感器值{logic === ">" ? "大于" : "小于"}阈值时触发中断
+            <div style={{ fontSize: 11, color: '#999', marginTop: 4 }}>
+              当传感器值{logic === '>' ? '大于' : '小于'}阈值时触发中断
             </div>
           </div>
         </>
       )}
 
       <div>
-        <label style={{ fontSize: 13, color: "#666", marginBottom: 4, display: "block" }}>
+        <label style={{ fontSize: 13, color: '#666', marginBottom: 4, display: 'block' }}>
           屏蔽抖动间隔（毫秒）
         </label>
         <InputNumber
           value={interrupt.intercept}
-          onChange={(v) => onChange({ ...interrupt, intercept: v ?? 0 })}
+          onChange={(v) => { onChange({ ...interrupt, intercept: v ?? 0 }); }}
           step={100}
           min={0}
-          style={{ width: "100%" }}
+          style={{ width: '100%' }}
         />
+        {/*
+         * intercept 用于防抖：在首次触发中断后，该时间段内忽略同一传感器的重复触发。
+         * 避免因信号抖动导致中断逻辑被多次执行。
+         */}
       </div>
 
       <div>
-        <label style={{ fontSize: 13, color: "#666", marginBottom: 4, display: "block" }}>
+        <label style={{ fontSize: 13, color: '#666', marginBottom: 4, display: 'block' }}>
           延迟检测（毫秒）
         </label>
         <InputNumber
           value={interrupt.delay}
-          onChange={(v) => onChange({ ...interrupt, delay: v ?? 0 })}
+          onChange={(v) => { onChange({ ...interrupt, delay: v ?? 0 }); }}
           step={1000}
           min={0}
-          style={{ width: "100%" }}
+          style={{ width: '100%' }}
         />
       </div>
 
       <div>
-        <label style={{ fontSize: 13, color: "#666", marginBottom: 4, display: "block" }}>
+        <label style={{ fontSize: 13, color: '#666', marginBottom: 4, display: 'block' }}>
           持续时间（毫秒）
         </label>
         <InputNumber
           value={interrupt.duration}
-          onChange={(v) => onChange({ ...interrupt, duration: v ?? 0 })}
+          onChange={(v) => { onChange({ ...interrupt, duration: v ?? 0 }); }}
           step={1000}
           min={0}
-          style={{ width: "100%" }}
+          style={{ width: '100%' }}
         />
       </div>
 
       <div>
-        <label style={{ fontSize: 13, color: "#666", marginBottom: 4, display: "block" }}>
+        <label style={{ fontSize: 13, color: '#666', marginBottom: 4, display: 'block' }}>
           禁用
         </label>
         <Switch
           checked={!interrupt.disabled}
-          onChange={(checked) => onChange({ ...interrupt, disabled: !checked })}
+          onChange={(checked) => { onChange({ ...interrupt, disabled: !checked }); }}
           checkedChildren="启用"
           unCheckedChildren="禁用"
         />

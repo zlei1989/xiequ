@@ -1,27 +1,43 @@
-"use client";
+/**
+ * 封面图/头像图组件 — antd-mobile Image 的封装，支持圆角和懒加载
+ */
 
-import type { CSSProperties, ReactNode } from "react";
-import { Image } from "antd-mobile";
+'use client';
 
+import { Image } from 'antd-mobile';
+
+import type { CSSProperties, ReactNode } from 'react';
+
+/**
+ * 封装 antd-mobile Image，统一处理圆角、懒加载等样式约定
+ */
 export function CoverImage({
   src,
   alt,
-  width = "100%",
+  width = '100%',
   height = 200,
-  fit = "cover",
-  shape = "rounded",
+  fit = 'cover',
+  shape = 'rounded',
   fallback,
 }: {
+  /** 图片地址 */
   src: string;
+  /** 无障碍描述 */
   alt: string;
+  /** 宽度，默认 100% */
   width?: number | string;
+  /** 高度，默认 200 */
   height?: number | string;
-  fit?: "contain" | "cover" | "fill" | "none" | "scale-down";
-  shape?: "rounded" | "circle";
+  /** 填充方式 */
+  fit?: 'contain' | 'cover' | 'fill' | 'none' | 'scale-down';
+  /** 形状：圆角或圆形 */
+  shape?: 'rounded' | 'circle';
+  /** 加载失败时的占位内容 */
   fallback?: ReactNode;
 }) {
+  /** 圆形时强制 50% 圆角；圆角形状由 antd-mobile Image 默认处理 */
   const style: CSSProperties = {
-    borderRadius: shape === "circle" ? "50%" : undefined,
+    borderRadius: shape === 'circle' ? '50%' : undefined,
   };
 
   return (

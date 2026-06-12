@@ -1,10 +1,18 @@
-"use client";
+/**
+ * IoT 设备模拟器调试页
+ *
+ * 模拟 ESP32 设备发起 getState / pushState 请求，用于调试服务端设备协议。
+ */
 
-import { useIotSimulator } from "./hooks/use-iot-simulator";
-import { DeviceForm } from "./components/device-form";
-import { EventButtons } from "./components/event-buttons";
-import { ResponseLog } from "./components/response-log";
-import { Typography } from "antd";
+'use client';
+
+import { Typography } from 'antd';
+
+import { DeviceForm } from './components/device-form';
+import { EventButtons } from './components/event-buttons';
+import { ResponseLog } from './components/response-log';
+import { useIotSimulator } from './hooks/use-iot-simulator';
+
 
 const { Title, Paragraph } = Typography;
 
@@ -24,12 +32,12 @@ export default function DebugPage() {
   } = useIotSimulator();
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div>
         <Title level={4} style={{ margin: 0 }}>
           IoT 设备模拟器
         </Title>
-        <Paragraph type="secondary" style={{ margin: "4px 0 0" }}>
+        <Paragraph type="secondary" style={{ margin: '4px 0 0' }}>
           模拟 ESP32 设备发起 getState / pushState 请求，用于调试服务端设备协议
         </Paragraph>
       </div>

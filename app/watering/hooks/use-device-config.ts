@@ -1,15 +1,25 @@
-"use client";
+/**
+ * 设备配置管理 Hook
+ *
+ * 提供单个设备的配置加载、保存、删除功能。
+ * 自动从设备状态中提取 GPIO 引脚信息（sensor/button/load）。
+ * sql.js/WASM 可能将 JSON 列作为字符串返回，需要 parseJsonArray / parseJsonVoltage 安全解析。
+ */
 
-import { useState, useEffect, useCallback } from "react";
-import type { DeviceConfig } from "../types";
-import { getDevices } from "../actions";
-import { updateDeviceConfig } from "../actions/set-config";
-import { removeDevice } from "../actions/delete-device";
+'use client';
 
-/** 确保值是一个数组 — sql.js 可能将 JSON 列作为字符串返回 */
+import { useState, useEffect, useCallback } from 'react';
+
+import { getDevices } from '../actions';
+import { removeDevice } from '../actions/delete-device';
+import { updateDeviceConfig } from '../actions/set-config';
+
+import type { DeviceConfig } from '../types';
+
+/** 安全解析 JSON 数组 — sql.js/WASM 可能将 JSON 列序列化为字符串 */
 function parseJsonArray(v: unknown): any[] {
   if (Array.isArray(v)) return v;
-  if (typeof v === "string") {
+  if (typeof v === 'string') {
     try {
       const parsed = JSON.parse(v);
       return Array.isArray(parsed) ? parsed : [];
@@ -20,19 +30,19 @@ function parseJsonArray(v: unknown): any[] {
   return [];
 }
 
-/** 解析 voltage_config JSON，可能是字符串 */
-function parseJsonVoltage(v: unknown): DeviceConfig["voltage"] {
+/** 安全解析 voltage_config — 支持对象或 JSON 字符串两种格式 */
+function parseJsonVoltage(v: unknown): DeviceConfig['voltage'] {
   if (!v) return undefined;
-  if (typeof v === "object" && v !== null && !Array.isArray(v)) {
+  if (typeof v === 'object' && v !== null && !Array.isArray(v)) {
     const obj = v as Record<string, unknown>;
-    if (typeof obj.sensor === "string" && typeof obj.r1 === "number" && typeof obj.r2 === "number") {
+    if (typeof obj.sensor === 'string' && typeof obj.r1 === 'number' && typeof obj.r2 === 'number') {
       return { sensor: obj.sensor, r1: obj.r1, r2: obj.r2 };
     }
   }
-  if (typeof v === "string") {
+  if (typeof v === 'string') {
     try {
       const parsed = JSON.parse(v);
-      if (parsed && typeof parsed.sensor === "string" && typeof parsed.r1 === "number" && typeof parsed.r2 === "number") {
+      if (parsed && typeof parsed.sensor === 'string' && typeof parsed.r1 === 'number' && typeof parsed.r2 === 'number') {
         return { sensor: parsed.sensor, r1: parsed.r1, r2: parsed.r2 };
       }
     } catch {
@@ -49,6 +59,7 @@ export interface GpioInfo {
   buttons: string[];
 }
 
+/** 设备配置管理 Hook */
 export function useDeviceConfig(chipId: string) {
   const [config, setConfig] = useState<DeviceConfig | null>(null);
   const [gpio, setGpio] = useState<GpioInfo>({ loads: [], sensors: [], buttons: [] });
@@ -74,31 +85,50 @@ export function useDeviceConfig(chipId: string) {
         const rawButtons = Object.keys(found.state?.buttons ?? {});
         setGpio({
           loads: Object.keys(found.state?.loads ?? {}),
-          sensors: rawSensors.filter((k) => !k.startsWith("button_")),
+          sensors: rawSensors.filter((k) => !k.startsWith('button_')),
           buttons: [
             ...rawButtons,
-            ...rawSensors.filter((k) => k.startsWith("button_")),
+            ...rawSensors.filter((k) => k.startsWith('button_')),
           ],
         });
+      } else {
+        // 设备列表中未找到，可能已被删除
+        console.warn('[Watering] 未找到设备配置:', { chipId });
       }
+    } catch (err) {
+      console.error('[Watering] 加载设备配置失败:', { chipId, error: err });
+      if (err instanceof Error && err.stack) console.error(err.stack);
     } finally {
       setLoading(false);
     }
   }, [chipId]);
 
+  /** 保存设备配置 — 记日志后重新抛出，由调用方决定如何提示用户 */
   const save = useCallback(async (data: Partial<DeviceConfig>) => {
     setLoading(true);
     try {
       await updateDeviceConfig(chipId, data);
+    } catch (err) {
+      console.error('[Watering] 保存设备配置失败:', { chipId, error: err });
+      if (err instanceof Error && err.stack) console.error(err.stack);
+      throw err; // 重新抛出，让页面层处理用户提示
     } finally {
       setLoading(false);
     }
   }, [chipId]);
 
+  /** 删除设备 — 记日志后重新抛出，由调用方决定如何提示用户 */
   const remove = useCallback(async () => {
-    await removeDevice(chipId);
+    try {
+      await removeDevice(chipId);
+    } catch (err) {
+      console.error('[Watering] 删除设备失败:', { chipId, error: err });
+      if (err instanceof Error && err.stack) console.error(err.stack);
+      throw err; // 重新抛出，让页面层处理用户提示
+    }
   }, [chipId]);
 
+  // 组件挂载及 chipId 变化时加载设备配置
   useEffect(() => {
     load();
   }, [load]);

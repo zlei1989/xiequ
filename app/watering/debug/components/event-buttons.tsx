@@ -1,21 +1,25 @@
-"use client";
+/**
+ * 模拟器事件按钮 — 触发 getState / pushBootstrap / pushChange / pushFinish
+ */
 
-import { Button, Space, Select, Input, Card } from "antd";
-import { PlayCircleOutlined, CloudUploadOutlined } from "@ant-design/icons";
-import { useState } from "react";
+'use client';
+
+import { PlayCircleOutlined, CloudUploadOutlined } from '@ant-design/icons';
+import { Button, Space, Select, Input, Card } from 'antd';
+import { useState } from 'react';
 
 const CHANGE_TYPES = [
-  { value: "step_ready", label: "step_ready (步骤就绪)" },
-  { value: "step_begin", label: "step_begin (步骤开始)" },
-  { value: "step_end", label: "step_end (步骤正常结束)" },
-  { value: "step_timeout", label: "step_timeout (步骤超时)" },
-  { value: "step_interrupt", label: "step_interrupt (步骤中断)" },
+  { value: 'step_ready', label: 'step_ready (步骤就绪)' },
+  { value: 'step_begin', label: 'step_begin (步骤开始)' },
+  { value: 'step_end', label: 'step_end (步骤正常结束)' },
+  { value: 'step_timeout', label: 'step_timeout (步骤超时)' },
+  { value: 'step_interrupt', label: 'step_interrupt (步骤中断)' },
 ];
 
 const CAUSE_OPTIONS = [
-  { value: "0", label: "0 (正常上电)" },
-  { value: "2", label: "2 (外部唤醒)" },
-  { value: "4", label: "4 (定时器唤醒)" },
+  { value: '0', label: '0 (正常上电)' },
+  { value: '2', label: '2 (外部唤醒)' },
+  { value: '4', label: '4 (定时器唤醒)' },
 ];
 
 export function EventButtons({
@@ -31,13 +35,13 @@ export function EventButtons({
   onPushFinish: () => Promise<void>;
   loading: boolean;
 }) {
-  const [changeType, setChangeType] = useState("step_begin");
-  const [changeMessage, setChangeMessage] = useState("");
-  const [bootstrapCause, setBootstrapCause] = useState("0");
+  const [changeType, setChangeType] = useState('step_begin');
+  const [changeMessage, setChangeMessage] = useState('');
+  const [bootstrapCause, setBootstrapCause] = useState('0');
 
   return (
     <Card title="模拟事件" size="small">
-      <Space wrap orientation="vertical" style={{ width: "100%" }}>
+      <Space wrap orientation="vertical" style={{ width: '100%' }}>
         <Space wrap>
           <Button
             type="primary"
@@ -79,7 +83,7 @@ export function EventButtons({
           <Input
             placeholder="message (可选)"
             value={changeMessage}
-            onChange={(e) => setChangeMessage(e.target.value)}
+            onChange={(e) => { setChangeMessage(e.target.value); }}
             style={{ width: 200 }}
           />
         </Space>

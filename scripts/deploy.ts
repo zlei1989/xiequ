@@ -1,3 +1,16 @@
+/**
+ * Next.js → 腾讯云 SCF 自动化部署脚本
+ *
+ * 完整流水线：加载配置 → 构建 → 清理 standalone → 修复符号链接 → 打包 zip
+ *            → 上传 COS → 更新 SCF 函数代码
+ *
+ * 环境变量要求（来自 .env.local）：
+ *   COS 相关: DEPLOY_COS_BUCKET, DEPLOY_COS_REGION, DEPLOY_COS_SECRET_ID, DEPLOY_COS_SECRET_KEY
+ *   SCF 相关: DEPLOY_SCF_REGION, DEPLOY_SCF_SECRET_ID, DEPLOY_SCF_SECRET_KEY, DEPLOY_SCF_FUNCTION
+ *
+ * 技术栈：archiver (zip), cos-nodejs-sdk-v5 (上传), tencentcloud-sdk-nodejs (SCF)
+ */
+
 import { execSync } from "child_process";
 import {
   existsSync,
@@ -21,7 +34,12 @@ import dayjs from "dayjs";
 
 // ─── 配置加载 ────────────────────────────────────────────
 
-/** 从 .env.local 文件加载环境变量（如果还未加载） */
+/**
+ * 从 .env.local 手动解析并加载环境变量
+ *
+ * tsx 不会自动加载 .env.local，需要逐行解析 KEY=VALUE 格式。
+ * 已存在的环境变量不会被覆盖（命令行注入优先）。
+ */
 function loadEnv() {
   const envPath = resolve(__dirname, "..", ".env.local");
   if (!existsSync(envPath)) {
@@ -54,7 +72,12 @@ interface DeployConfig {
   scfFunction: string;
 }
 
-/** 读取并校验所有部署环境变量，缺失则报错退出 */
+/**
+ * 读取并校验所有部署环境变量
+ *
+ * 逐一检查 requiredVars 列表中的变量，缺失则收集后统一报错退出。
+ * 返回类型安全的 DeployConfig 对象。
+ */
 function loadConfig(): DeployConfig {
   const requiredVars: { key: string; label: string }[] = [
     { key: "DEPLOY_COS_BUCKET", label: "COS Bucket 名称" },
@@ -117,13 +140,22 @@ const CLEANUP_PATTERNS = [
   "scf_bootstrap",
 ];
 
-/** 递归删除目录 */
+/**
+ * 递归删除目录（不存在则静默跳过）
+ *
+ * 使用 rmSync 的 recursive + force 选项，无需手动遍历。
+ */
 function rmDir(dirPath: string) {
   if (!existsSync(dirPath)) return;
   rmSync(dirPath, { recursive: true, force: true });
 }
 
-/** 清理 standalone 目录中的非运行时文件 */
+/**
+ * 清理 standalone 目录中的非运行时文件
+ *
+ * 按 CLEANUP_PATTERNS 列表删除文档、配置、源码等不参与运行的冗余文件，
+ * 并确保 .env.local 以项目根目录版本为准（覆盖 Next.js trace 生成的版本）。
+ */
 function cleanStandalone(): void {
   const standaloneDir = join(ROOT, ".next", "standalone");
 
@@ -157,7 +189,11 @@ function cleanStandalone(): void {
 
 const ROOT = resolve(__dirname, "..");
 
-/** 递归复制目录 */
+/**
+ * 递归复制目录（不存在则静默跳过）
+ *
+ * 使用同步 I/O 逐个文件复制，适用于部署脚本中少量目录的拷贝。
+ */
 function copyDir(src: string, dest: string) {
   if (!existsSync(src)) return;
   mkdirSync(dest, { recursive: true });
@@ -191,6 +227,7 @@ function resolveSymlinks(standaloneDir: string): void {
       try {
         stat = lstatSync(fullPath);
       } catch {
+        // lstatSync 对断链或无权限的文件会抛出异常，跳过这些项
         continue;
       }
       if (stat.isSymbolicLink()) {
@@ -229,9 +266,15 @@ function resolveSymlinks(standaloneDir: string): void {
 
 // ─── 构建 ────────────────────────────────────────────────
 
-/** 执行 next build（Windows 下 .next/standalone 可能被锁定，自动重试） */
+/**
+ * 执行 next build
+ *
+ * 带 EBUSY 自动重试机制（Windows 下 .next 目录可能被杀毒软件锁定）。
+ * 优先用 bash 执行避免 cmd 中文路径编码问题。
+ */
 function buildProject(): void {
   console.log("🔨 正在构建 Next.js 项目...");
+  const buildStart = Date.now();
   const maxRetries = 3;
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
@@ -244,21 +287,24 @@ function buildProject(): void {
         }
       }
       // 用 pipe 模式捕获错误输出，检测 EBUSY 以触发重试
-      // Windows 下优先使用 bash 避免 cmd 的中文路径 EBUSY 问题；
+      // Windows 下优先使用 bash 避免 cmd 的中文路径编码导致 EBUSY；
       // 若 bash 不可用（如纯 PowerShell 环境）则回退到默认 shell
       let shell: string | boolean = true;
       if (process.platform === "win32") {
+        // 探测可用的 bash：先试 SHELL 环境变量，再试 bash.exe
         const bashPath = process.env.SHELL || "bash.exe";
         try {
           execSync(`"${bashPath}" --version`, { stdio: "ignore", timeout: 5000 });
           shell = bashPath;
         } catch {
+          // bash 不可用 → 回退默认 shell，中文路径项目可能构建失败
           console.warn("⚠️  bash 不可用，回退到默认 shell（若路径含中文可能失败）");
         }
       }
       const result = execSync("npx next build", { cwd: ROOT, stdio: "pipe", encoding: "utf-8", shell });
       process.stdout.write(result);
-      console.log("✅ 构建完成");
+      const elapsed = ((Date.now() - buildStart) / 1000).toFixed(1);
+      console.log(`✅ 构建完成 (${elapsed}s)`);
       return;
     } catch (err: any) {
       // 打印输出（pipe 模式下不会自动显示）
@@ -268,12 +314,13 @@ function buildProject(): void {
       if (msg.includes("EBUSY") && attempt < maxRetries) {
         console.log(`⚠️  构建目录被锁定，2 秒后重试 (${attempt}/${maxRetries})...`);
         execSync("cmd /c rd /s /q .next 2>nul", { cwd: ROOT, stdio: "ignore" });
-        // 等待 2 秒让文件锁释放
         // 等待 2 秒让文件锁释放（spin-wait 兼容所有平台）
         const end = Date.now() + 2000;
         while (Date.now() < end) { /* wait */ }
       } else {
+        // ERROR: 构建失败，打印堆栈方便追溯到具体阶段
         console.error("❌ 构建失败，请检查上方错误信息");
+        if (err.stack) console.error(err.stack);
         process.exit(1);
       }
     }
@@ -284,7 +331,14 @@ function buildProject(): void {
 
 const TMP_DIR = join(ROOT, ".deploy-tmp");
 
-/** 将 .next/ + scf_bootstrap + package.json 打包为 zip */
+/**
+ * 将 .next/standalone/ + scf_bootstrap 打包为 zip
+ *
+ * 使用 archiver 流式压缩，输出到临时目录 .deploy-tmp/。
+ * 压缩级别 1（最快），文件命名含时间戳以区分版本。
+ *
+ * @returns zip 文件本地路径
+ */
 function createZip(config: DeployConfig): Promise<string> {
   const packageName = `server_scf_${dayjs().format("YYYYMMDDHHmmss")}.zip`;
   const zipPath = join(TMP_DIR, packageName);
@@ -294,6 +348,7 @@ function createZip(config: DeployConfig): Promise<string> {
   }
 
   console.log(`📦 正在打包 → ${packageName}`);
+  const packStart = Date.now();
 
   return new Promise<string>((resolvePromise, reject) => {
     const output = createWriteStream(zipPath);
@@ -302,7 +357,8 @@ function createZip(config: DeployConfig): Promise<string> {
     output.on("close", () => {
       const size = statSync(zipPath).size;
       const sizeMB = (size / (1024 * 1024)).toFixed(2);
-      console.log(`✅ 打包完成 (${sizeMB} MB)`);
+      const elapsed = ((Date.now() - packStart) / 1000).toFixed(1);
+      console.log(`✅ 打包完成 (${sizeMB} MB, ${elapsed}s)`);
       if (size > 50 * 1024 * 1024) {
         console.warn(`⚠️  包体积超过 50MB，部署可能较慢`);
       }
@@ -311,11 +367,13 @@ function createZip(config: DeployConfig): Promise<string> {
 
     output.on("error", (err: Error) => {
       console.error("❌ 写入文件失败:", err.message);
+      if (err.stack) console.error(err.stack);
       reject(err);
     });
 
     archive.on("error", (err: Error) => {
       console.error("❌ 打包失败:", err.message);
+      if (err.stack) console.error(err.stack);
       reject(err);
     });
 
@@ -340,12 +398,23 @@ function createZip(config: DeployConfig): Promise<string> {
 
 // ─── 上传 COS ────────────────────────────────────────────
 
-/** 上传 zip 到腾讯云 COS，返回对象 Key */
+/**
+ * 上传 zip 到腾讯云 COS
+ *
+ * 通过 cos-nodejs-sdk-v5 以流式上传部署包到指定 Bucket。
+ * 上传成功后在 COS 控制台可直接下载 zip。
+ *
+ * @param config - 含 COS 密钥和 Bucket 的部署配置
+ * @param zipPath - 本地 zip 文件路径
+ * @returns COS 对象 Key（用于 SCF 部署引用）
+ */
 function uploadToCos(config: DeployConfig, zipPath: string): Promise<string> {
   const filename = basename(zipPath);
   const objectKey = `deploy/${filename}`;
+  const fileSizeMB = (statSync(zipPath).size / (1024 * 1024)).toFixed(2);
 
-  console.log(`☁️  正在上传到 COS → ${config.cosBucket}/${objectKey}`);
+  console.log(`☁️  正在上传到 COS → ${config.cosBucket}/${objectKey} (${fileSizeMB} MB)`);
+  const uploadStart = Date.now();
 
   const cos = new COS({
     SecretId: config.cosSecretId,
@@ -363,11 +432,14 @@ function uploadToCos(config: DeployConfig, zipPath: string): Promise<string> {
       },
       (err, data) => {
         if (err) {
-          console.error("❌ COS 上传失败:", err.message || err);
+          // SDK 回调错误为 CosSdkError 对象（非 Error 实例），打印完整 JSON 以获取上下文
+          console.error(`❌ COS 上传失败 (${config.cosRegion}/${config.cosBucket}/${objectKey}):`, err.message || err);
+          try { console.error(JSON.stringify(err)); } catch { /* 序列化失败不阻断流程 */ }
           reject(err);
           return;
         }
-        console.log(`✅ COS 上传完成 (${data.statusCode})`);
+        const elapsed = ((Date.now() - uploadStart) / 1000).toFixed(1);
+        console.log(`✅ COS 上传完成 (${elapsed}s, statusCode=${data.statusCode})`);
         resolvePromise(objectKey);
       }
     );
@@ -376,9 +448,16 @@ function uploadToCos(config: DeployConfig, zipPath: string): Promise<string> {
 
 // ─── 部署 SCF ────────────────────────────────────────────
 
-/** 调用 SCF API 更新函数代码 */
+/**
+ * 调用 SCF API 更新函数代码
+ *
+ * 通过 tencentcloud-sdk-nodejs 的 UpdateFunctionCode 接口，
+ * 将 COS 上的 zip 包部署到指定云函数。
+ * InstallDependency=TRUE 表示 SCF 在部署时自动 npm install。
+ */
 async function deployToScf(config: DeployConfig, objectKey: string): Promise<void> {
   console.log(`🚀 正在部署到 SCF → ${config.scfFunction}`);
+  const deployStart = Date.now();
 
   const ScfClient = scf.v20180416.Client;
   const client = new ScfClient({
@@ -397,10 +476,13 @@ async function deployToScf(config: DeployConfig, objectKey: string): Promise<voi
       CosObjectName: objectKey,
       InstallDependency: "TRUE",
     });
-    console.log("✅ 部署成功");
+    const elapsed = ((Date.now() - deployStart) / 1000).toFixed(1);
+    console.log(`✅ 部署成功 (${elapsed}s)`);
     console.log(`   RequestId: ${result.RequestId}`);
   } catch (err: any) {
-    console.error("❌ SCF 部署失败:", err.message || err);
+    // 打印异常上下文：函数名、地域、COS 对象，方便在 SCF 控制台追溯
+    console.error(`❌ SCF 部署失败 (函数=${config.scfFunction}, 地域=${config.scfRegion}, COS=${objectKey}):`, err.message || err);
+    if (err.stack) console.error(err.stack);
     if (err.requestId) {
       console.error(`   RequestId: ${err.requestId}`);
     }
@@ -410,10 +492,19 @@ async function deployToScf(config: DeployConfig, objectKey: string): Promise<voi
 
 // ─── 主流程 ──────────────────────────────────────────────
 
+/**
+ * 部署流水线入口
+ *
+ * 按顺序执行：配置加载 → 构建 → 清理 → 修复符号链接 → 复制静态资源
+ *            → 打包 → COS 上传 → SCF 部署 → 清理临时文件
+ *
+ * 任一步骤失败均会直接退出（process.exit(1)），不继续后续步骤。
+ */
 async function main() {
   console.log("═══════════════════════════════════════");
   console.log("   Next.js SCF 自动化部署");
   console.log("═══════════════════════════════════════");
+  const totalStart = Date.now();
 
   // 1. 加载配置
   loadEnv();
@@ -459,12 +550,14 @@ async function main() {
     // 清理失败不影响整体结果
   }
 
+  const totalElapsed = ((Date.now() - totalStart) / 1000).toFixed(1);
   console.log("═══════════════════════════════════════");
-  console.log("   🎉 部署完成！");
+  console.log(`   🎉 部署完成！总耗时 ${totalElapsed}s`);
   console.log("═══════════════════════════════════════");
 }
 
 main().catch((err) => {
-  console.error("❌ 部署异常:", err.message || err);
+  console.error("❌ 部署异常（未在子步骤中捕获）:", err.message || err);
+  if (err.stack) console.error(err.stack);
   process.exit(1);
 });

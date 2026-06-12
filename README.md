@@ -6,7 +6,7 @@
 
 ### 浇花帮手
 
-IoT 设备管理平台，远程控制浇花：
+远程管理、控制浇花 IoT 设备：
 
 - 设备注册与配置（流程编排、定时任务、电压阈值）
 - 设备状态实时监控（开关、传感器、负载、在线状态）
@@ -43,49 +43,38 @@ IoT 设备管理平台，远程控制浇花：
 | 运行时   | React 19                                    |
 | 语言     | TypeScript                                  |
 | UI       | antd 6 + antd-mobile 5                      |
-| 样式     | Tailwind CSS 4                              |
-| 数据库   | SQLite（sql.js / better-sqlite3）           |
+| 样式     | CSS（`normalize.css` + antd 内置样式）       |
+| 数据库   | SQLite（node-sqlite3-wasm，WASM）           |
 | 对象存储 | 腾讯云 COS                                  |
 | 地图     | 高德地图 API                                |
 | 测试     | Vitest                                      |
-| 包管理   | pnpm                                        |
+| 包管理   | npm                                         |
 
 ## 快速开始
 
 ### 环境要求
 
 - Node.js 20+
-- pnpm
+- npm
 
 ### 安装依赖
 
 ```bash
-pnpm install
+npm install
 ```
 
 ### 环境变量
 
-复制 `.env.example` 为 `.env.local` 并按需填写：
+复制 `.env.example` 为 `.env.local` 并按需填写，各变量说明见 `.env.example` 文件中的注释。
 
 ```bash
 cp .env.example .env.local
 ```
 
-| 变量                        | 说明                             | 必填 |
-| --------------------------- | -------------------------------- | ---- |
-| `DB_PATH`                   | SQLite 数据库路径，默认 `./data/app.db` | 否   |
-| `OSS_ENDPOINT`              | 腾讯云 COS 地域端点              | 否   |
-| `OSS_SECRET_ID`             | 腾讯云 COS SecretId              | 否   |
-| `OSS_SECRET_KEY`            | 腾讯云 COS SecretKey             | 否   |
-| `OSS_BUCKET`                | 腾讯云 COS 存储桶名称            | 否   |
-| `OSS_TRAVEL_LOCATIONS_KEY`  | 旅行地点数据 OSS 路径            | 否   |
-| `OSS_TRAVEL_POSTERS_PREFIX` | 旅行图片 OSS 前缀                | 否   |
-| `NEXT_PUBLIC_AMAP_KEY`      | 高德地图 JS API Key              | 否   |
-
 ### 启动开发服务器
 
 ```bash
-pnpm dev
+npm run dev
 ```
 
 打开 [http://localhost:3000](http://localhost:3000) 查看应用。
@@ -94,59 +83,51 @@ pnpm dev
 
 | 命令              | 说明           |
 | ----------------- | -------------- |
-| `pnpm build`      | 生产环境构建   |
-| `pnpm start`      | 启动生产服务器 |
-| `pnpm lint`       | 代码检查       |
-| `pnpm test`       | 运行测试       |
-| `pnpm test:watch` | 监视模式测试   |
+| `npm run dev`      | 启动开发服务器 |
+| `npm run build`    | 生产环境构建   |
+| `npm start`        | 启动生产服务器 |
+| `npm run deploy`   | 部署到腾讯云   |
+| `npm run lint`     | ESLint 检查    |
+| `npm run test`     | 运行测试       |
+| `npm run test:watch` | 监视模式测试 |
 
 ## 项目结构
 
 ```
 ├── app/                    # Next.js App Router
-│   ├── layout.tsx          # 根布局（antd 配置、主题）
 │   ├── page.tsx            # 首页（模块导航）
 │   ├── globals.css         # 全局样式
 │   ├── watering/           # 浇花帮手模块
-│   │   ├── page.tsx        # 设备列表页
-│   │   ├── layout.tsx      # 浇花模块布局
-│   │   ├── types.ts        # 类型定义
 │   │   ├── actions.ts      # Server Actions
-│   │   ├── devices/[chipId]/ # 设备详情/编辑页
-│   │   ├── logs/[chipId]/  # 设备日志页
-│   │   ├── debug/          # IoT 调试页
-│   │   ├── api/            # API 路由（状态推送/拉取）
+│   │   ├── api/            # API 路由（get-state / push-state）
 │   │   ├── components/     # UI 组件
+│   │   ├── debug/          # IoT 调试页
+│   │   ├── devices/        # 设备详情/编辑页（动态路由）
 │   │   ├── hooks/          # 自定义 Hooks
-│   │   ├── services/       # 数据库、IoT 协议
-│   │   └── rom-v2/         # ESP32 固件（Arduino C++）
+│   │   ├── logs/           # 设备日志页（动态路由）
+│   │   ├── rom-v2/         # ESP32 固件（Arduino C++）
+│   │   ├── services/       # 数据库操作、IoT 协议实现
+│   │   └── types.ts        # 类型定义
 │   └── travel/             # 旅行计划模块
-│       ├── page.tsx        # 旅行首页
-│       ├── list/page.tsx   # 地点列表页
-│       ├── layout.tsx      # 旅行模块布局
-│       ├── types.ts        # 类型定义
 │       ├── actions.ts      # Server Actions
 │       ├── api/            # API 路由（图片下载）
 │       ├── components/     # UI 组件
 │       ├── hooks/          # 自定义 Hooks
 │       ├── lib/            # 工具函数
-│       └── services/       # 高德地图、OSS
-├── components/             # 共享组件
-│   ├── antd-mobile-compat.tsx # antd-mobile 兼容层
-│   └── ui/                 # 通用 UI 组件
-├── lib/                    # 共享库
-│   ├── db.ts               # 数据库连接
-│   ├── oss.ts              # COS 客户端
-│   └── sqljs-wrapper.ts    # sql.js 封装
-├── data/                   # 本地数据（SQLite 数据库文件）
-├── types/                  # 第三方类型声明
+│       ├── services/       # 高德地图、OSS
+│       └── types.ts        # 类型定义
+├── components/             # 共享组件（SSR 兼容层等）
+├── lib/                    # 共享库（数据库连接、COS 客户端、工具函数）
+├── __tests__/              # 测试文件
+├── types/                  # 第三方 .d.ts 类型声明
+├── instrumentation.ts      # 数据库初始化（启动时自动执行）
 ├── docs/                   # 设计文档与计划
 └── public/                 # 静态资源
 ```
 
 ## 数据库
 
-应用启动时自动初始化 SQLite 数据库表，无需手动建表。数据库文件默认位于 `data/app.db`，可通过 `DB_PATH` 环境变量自定义路径。
+应用启动时通过 `instrumentation.ts` 自动初始化 SQLite 数据库表，无需手动建表。数据库文件默认位于 `data/app.db`，可通过 `DB_PATH` 环境变量自定义路径。数据库驱动为 `node-sqlite3-wasm`（WASM 模式运行）。
 
 ### 浇花模块表
 

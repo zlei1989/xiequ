@@ -1,7 +1,8 @@
-import { getOssAdapter, isOssConfigured } from "@/lib/oss";
-import type { OssPutOptions } from "@/lib/oss";
-import type { Location, Moment } from "../types";
-import { newId, formatDateTime } from "@/lib/utils";
+import { getOssAdapter, isOssConfigured } from '@/lib/oss';
+import type { OssPutOptions } from '@/lib/oss';
+import { newId, formatDateTime } from '@/lib/utils';
+
+import type { Location, Moment } from '../types';
 
 /**
  * 旅行模块 OSS 存储路径约定
@@ -13,8 +14,8 @@ import { newId, formatDateTime } from "@/lib/utils";
  * - stylename: cover | icon
  */
 
-const LOCATIONS_KEY = process.env.OSS_TRAVEL_LOCATIONS_KEY || "apps/travel/locations.json";
-const POSTERS_PREFIX = process.env.OSS_TRAVEL_POSTERS_PREFIX || "apps/travel/posters";
+const LOCATIONS_KEY = process.env.OSS_TRAVEL_LOCATIONS_KEY || 'apps/travel/locations.json';
+const POSTERS_PREFIX = process.env.OSS_TRAVEL_POSTERS_PREFIX || 'apps/travel/posters';
 
 
 /**
@@ -119,7 +120,7 @@ export async function getLocations(): Promise<Location[]> {
  */
 async function saveLocations(locations: Location[]): Promise<void> {
   await ossPutString(LOCATIONS_KEY, JSON.stringify(locations), {
-    headers: { "Content-Type": "application/json" },
+    headers: { 'Content-Type': 'application/json' },
   });
 }
 
@@ -141,7 +142,7 @@ export async function addLocation(data: {
     longitude: data.longitude,
     latitude: data.latitude,
     checked: false,
-    comments: data.comments || "",
+    comments: data.comments || '',
     deleted: false,
     createdTime: formatDateTime(new Date()),
   };
@@ -155,7 +156,7 @@ export async function addLocation(data: {
  */
 export async function updateLocation(
   id: string,
-  data: Partial<Location>
+  data: Partial<Location>,
 ): Promise<Location> {
   const locations = await getLocations();
   const location = locations.find((l) => l.id === id);
@@ -200,7 +201,7 @@ export async function deleteLocation(id: string): Promise<void> {
  */
 export async function addMoment(
   locationId: string,
-  data: { date: string; text: string }
+  data: { date: string; text: string },
 ): Promise<Location> {
   const locations = await getLocations();
   const location = locations.find((l) => l.id === locationId);
@@ -222,7 +223,7 @@ export async function addMoment(
 export async function updateMoment(
   locationId: string,
   momentId: string,
-  data: { date?: string; text?: string }
+  data: { date?: string; text?: string },
 ): Promise<Location> {
   const locations = await getLocations();
   const location = locations.find((l) => l.id === locationId);
@@ -245,7 +246,7 @@ export async function updateMoment(
  */
 export async function deleteMoment(
   locationId: string,
-  momentId: string
+  momentId: string,
 ): Promise<Location> {
   const locations = await getLocations();
   const location = locations.find((l) => l.id === locationId);
@@ -281,6 +282,6 @@ export async function getPosterUploadUrl(id: string): Promise<string> {
  * @param id - 图片标识
  * @param stylename - 样式名：cover | icon
  */
-export function getPosterStyledUrl(id: string, stylename: "cover" | "icon"): string {
+export function getPosterStyledUrl(id: string, stylename: 'cover' | 'icon'): string {
   return `${getOssBaseUrl()}/${POSTERS_PREFIX}/${id}.jpg/${stylename}`;
 }

@@ -1,4 +1,4 @@
-# 浇花助手移动端布局改造 Implementation Plan
+# 浇花帮手移动端布局改造 Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -71,7 +71,7 @@ export default function WateringLayout({ children }: { children: ReactNode }) {
           onClick={() => router.push("/")}
           size="small"
         />
-        <span style={{ fontSize: 16, fontWeight: 500, flex: 1 }}>浇花助手</span>
+        <span style={{ fontSize: 16, fontWeight: 500, flex: 1 }}>浇花帮手</span>
         {isDev && (
           <Button
             type={pathname.startsWith("/watering/debug") ? "primary" : "text"}

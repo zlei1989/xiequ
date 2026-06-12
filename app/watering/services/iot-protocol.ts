@@ -9,13 +9,13 @@
  * 具体协议细节待后续实现时补充
  */
 
-export type DeviceEvent = "bootstrap" | "finish" | "heartbeat";
+export type DeviceEvent = 'bootstrap' | 'finish' | 'heartbeat';
 
 export type PushStatePayload = {
   chipId: string;
   macAddress: string;
   event: DeviceEvent;
-  switch?: "on" | "off";
+  switch?: 'on' | 'off';
   cause?: string;
   [key: string]: unknown;
 };

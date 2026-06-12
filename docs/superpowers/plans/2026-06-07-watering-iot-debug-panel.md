@@ -757,7 +757,7 @@ export default function WateringLayout({ children }: { children: ReactNode }) {
     <Layout style={{ minHeight: "100vh" }}>
       <Header style={{ background: "#fff", padding: "0 16px", display: "flex", alignItems: "center", gap: 12, borderBottom: "1px solid #f0f0f0" }}>
         <Button type="text" icon={<HomeOutlined />} onClick={() => router.push("/")} />
-        <span style={{ fontSize: 16, fontWeight: 500 }}>浇花助手</span>
+        <span style={{ fontSize: 16, fontWeight: 500 }}>浇花帮手</span>
       </Header>
       <Layout>
         <Sider width={200} theme="light" style={{ borderRight: "1px solid #f0f0f0" }}>
