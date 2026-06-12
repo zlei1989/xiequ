@@ -3,14 +3,17 @@
  *
  * 使用 forwardRef + useImperativeHandle 暴露 setCenter 方法供父组件调用。
  * 异步加载 AMap SDK，通过 aborted 标记防止卸载后内存泄漏。
- * 中心点/缩放级别持久化到 localStorage，locations 变化时增量更新 Marker。
+ * 通过 mapReady 状态串行化地图初始化与标注重建时序，防止竞态导致标注消失。
+ * 集成 MarkerEngine（增量 diff + 聚类）和 useMapTheme（系统主题跟随）。
  */
 
 'use client';
 
-import { forwardRef, useImperativeHandle, useEffect, useRef } from 'react';
+import { forwardRef, useImperativeHandle, useEffect, useRef, useState } from 'react';
 
+import { useMapTheme } from '../hooks/use-map-theme';
 import { loadAmap } from '../services/amap';
+import { createMarkerEngine } from '../services/marker-engine';
 
 import type { Location } from '../types';
 import type { CSSProperties } from 'react';
@@ -26,7 +29,17 @@ export const TripMap = forwardRef<
 >(function TripMap({ locations, onMarkerClick, className, style }, ref) {
       const containerRef = useRef<HTMLDivElement>(null);
       const mapRef = useRef<AMap.Map | null>(null);
-      const markersRef = useRef<AMap.Marker[]>([]);
+      const engineRef = useRef<ReturnType<typeof createMarkerEngine> | null>(null);
+
+      /** 地图实例是否就绪 */
+      const [mapReady, setMapReady] = useState(false);
+      /** SDK 加载错误 */
+      const [loadError, setLoadError] = useState<string | null>(null);
+      /** 重试计数 */
+      const retryRef = useRef(0);
+
+      // 主题跟随（mapReady 后再传实例）
+      useMapTheme(mapReady ? mapRef.current : null);
 
       useImperativeHandle(ref, () => ({
         setCenter(pos: [number, number]) {
@@ -37,13 +50,10 @@ export const TripMap = forwardRef<
         },
       }));
 
+      /** 地图初始化 effect */
       useEffect(() => {
         let aborted = false;
 
-        /**
-     * 异步初始化高德地图实例 —— 加载 SDK、从 localStorage 恢复视口、
-     * 绑定持久化事件，并在组件卸载时通过 aborted 标记安全销毁。
-     */
         async function createMap() {
           if (!containerRef.current) return;
 
@@ -54,6 +64,7 @@ export const TripMap = forwardRef<
           } catch (err: unknown) {
             console.error('[Travel] 高德地图 SDK 加载失败:', err);
             if (err instanceof Error && err.stack) console.error(err.stack);
+            if (!aborted) setLoadError('地图加载失败，请检查网络后重试');
             return;
           }
           const loadElapsed = Date.now() - startTime;
@@ -61,19 +72,16 @@ export const TripMap = forwardRef<
             console.info(`[Travel] 高德地图 SDK 加载耗时 ${String(loadElapsed)}ms`);
           }
 
-          // 组件可能在异步加载期间被卸载（aborted 由 cleanup 设置），需重新检查
-          if (aborted || mapRef.current) return;
-          // aborted 覆盖了组件卸载场景，ref 在 mount 阶段已校验为非 null
+          if (aborted) return;
+
           const container = containerRef.current;
 
           const centerStr = localStorage.getItem('TRAVEL_MAP_CENTER');
           const zoomStr = localStorage.getItem('TRAVEL_MAP_ZOOM');
           const center: [number, number] = centerStr
-            ? JSON.parse(centerStr) as [number, number]
+            ? (JSON.parse(centerStr) as [number, number])
             : [116.397477, 39.908692];
-          /** localStorage 中 zoom 为数字，JSON.parse 返回 number |
-           *  此处断言后传给 AMap.Map */
-          const zoom: number = zoomStr ? JSON.parse(zoomStr) as number : 13;
+          const zoom: number = zoomStr ? (JSON.parse(zoomStr) as number) : 13;
 
           const map = new AMap.Map(container, {
             zoom,
@@ -89,11 +97,11 @@ export const TripMap = forwardRef<
             localStorage.setItem('TRAVEL_MAP_ZOOM', JSON.stringify(map.getZoom()));
           });
 
-          // 二次确认：设置 mapRef 前检查组件是否仍在挂载状态
           // aborted 由 cleanup 跨异步设置，TypeScript 无法追踪此突变
           // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
           if (!aborted) {
             mapRef.current = map;
+            setMapReady(true);
           } else {
             map.destroy();
           }
@@ -103,41 +111,95 @@ export const TripMap = forwardRef<
 
         return () => {
           aborted = true;
+          // 清理标注引擎
+          if (engineRef.current) {
+            engineRef.current.destroy();
+            engineRef.current = null;
+          }
           if (mapRef.current) {
             mapRef.current.destroy();
             mapRef.current = null;
           }
+          setMapReady(false);
         };
       }, []);
 
+      /** 标注重建 effect —— 依赖 mapReady + locations */
       useEffect(() => {
-        if (!mapRef.current) return;
-        /**
-         * window.AMap 由 loadAmap() 在首个 effect 中异步注入，
-         * 类型系统无法追踪此注入时机，此处为运行时防护
-         */
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-        if (!window.AMap) return;
-        const AMap = window.AMap;
+        if (!mapReady || !mapRef.current) return;
 
-        const map = mapRef.current;
-        markersRef.current.forEach((m) => { map.remove(m); });
-        markersRef.current = [];
-
-        for (const loc of locations) {
-          const marker = new AMap.Marker({
-            position: [loc.longitude, loc.latitude],
-            title: loc.name,
-            label: {
-              content: loc.name,
-              offset: new AMap.Pixel(0, -30),
-            },
-          });
-          marker.on('click', () => { onMarkerClick(loc); });
-          mapRef.current.add(marker);
-          markersRef.current.push(marker);
+        // 首次运行时创建引擎
+        if (!engineRef.current) {
+          engineRef.current = createMarkerEngine(mapRef.current, onMarkerClick);
         }
-      }, [locations, onMarkerClick]);
+
+        engineRef.current.update(locations);
+      }, [locations, mapReady, onMarkerClick]);
+
+      /** 重试加载 */
+      function handleRetry() {
+        retryRef.current += 1;
+        setLoadError(null);
+        // 触发 effect 重新执行：卸载清理 → 重挂载
+        if (mapRef.current) {
+          mapRef.current.destroy();
+          mapRef.current = null;
+        }
+        setMapReady(false);
+      }
+
+      // 加载失败降级 UI（重试 3 次后放弃）
+      if (loadError && retryRef.current >= 3) {
+        return (
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              height: '100%',
+              color: '#999',
+              fontSize: 14,
+              gap: 12,
+            }}
+          >
+            <span>地图加载失败</span>
+            <span style={{ fontSize: 12 }}>请检查网络连接后刷新页面</span>
+          </div>
+        );
+      }
+
+      if (loadError) {
+        return (
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              height: '100%',
+              color: '#999',
+              fontSize: 14,
+              gap: 12,
+            }}
+          >
+            <span>{loadError}</span>
+            <button
+              onClick={handleRetry}
+              style={{
+                padding: '8px 16px',
+                borderRadius: 4,
+                border: '1px solid #1677ff',
+                background: 'white',
+                color: '#1677ff',
+                cursor: 'pointer',
+              }}
+            >
+              重试
+            </button>
+          </div>
+        );
+      }
 
       return (
         <div
