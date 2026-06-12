@@ -17,9 +17,9 @@ export default function WateringPage() {
   const { devices, loading, refresh } = useDevices(15000);
 
   return (
-    <div className="py-3 px-4">
+    <div className="px-4 py-3">
       {/* 操作栏 — 匹配 iot-wfm 的 #extra 插槽 */}
-      <div className="flex justify-between items-center mb-3">
+      <div className="mb-3 flex items-center justify-between">
         <h2 className="m-0 text-lg font-semibold">设备列表</h2>
         <Button
           icon={<ReloadOutlined />}
@@ -33,7 +33,7 @@ export default function WateringPage() {
 
       {/* 设备卡片列表 */}
       {loading && devices.length === 0 ? (
-        <div className="text-center py-12">
+        <div className="py-12 text-center">
           <Spin />
         </div>
       ) : devices.length === 0 ? (

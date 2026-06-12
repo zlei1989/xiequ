@@ -132,7 +132,7 @@ export function DeviceCard({
       size="small"
       title={device.name || `设备-${device.chipId}`}
       extra={
-        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+        <div className="flex items-center gap-1">
           <Button
             type="text"
             size="small"
@@ -169,22 +169,22 @@ export function DeviceCard({
           {/* eslint-enable @typescript-eslint/no-misused-promises */}
         </div>
       }
-      style={{ marginBottom: 12 }}
+      className="mb-3"
     >
       {/* 设备信息 — 1 行 2 列 */}
-      <Row gutter={[8, 4]} style={{ marginBottom: 8 }}>
+      <Row gutter={[8, 4]} className="mb-2">
         <Col span={12}>
-          <span style={{ color: '#999', fontSize: 12 }}>芯片: </span>
-          <span style={{ fontSize: 13 }}>{device.chipId}</span>
+          <span className="text-xs text-gray-400">芯片: </span>
+          <span className="text-[13px]">{device.chipId}</span>
         </Col>
         {voltage !== undefined ? (
           <Col span={12}>
-            <span style={{ color: '#999', fontSize: 12 }}>电压: </span>
-            <span style={{ fontSize: 13, fontWeight: 500 }}>
+            <span className="text-xs text-gray-400">电压: </span>
+            <span className="text-[13px] font-medium">
               {voltage.toFixed(2)}V
             </span>
             {device.voltage && (
-              <span style={{ fontSize: 10, color: '#bbb', marginLeft: 2 }}>
+              <span className="ml-0.5 text-[10px] text-gray-300">
                 (计算)
               </span>
             )}
@@ -193,17 +193,17 @@ export function DeviceCard({
           <Col span={12} />
         )}
         <Col span={12}>
-          <span style={{ color: '#999', fontSize: 12 }}>网卡: </span>
-          <span style={{ fontSize: 12 }}>{device.macAddress}</span>
+          <span className="text-xs text-gray-400">网卡: </span>
+          <span className="text-xs">{device.macAddress}</span>
         </Col>
         <Col span={12}>
-          <span style={{ color: '#999', fontSize: 12 }}>状态: </span>
+          <span className="text-xs text-gray-400">状态: </span>
           {device.isOnline ? (
-            <Tag color="green" style={{ margin: 0 }}>
+            <Tag color="green" className="m-0">
               在线
             </Tag>
           ) : (
-            <Tag color="default" style={{ margin: 0 }}>
+            <Tag color="default" className="m-0">
               离线
             </Tag>
           )}
@@ -222,7 +222,7 @@ export function DeviceCard({
          * 2. 设备开启了 idleSleep 且该流程未在执行 → 设备待机省电，不接受实时控制
          */}
       {processes.length > 0 && (
-        <div style={{ marginTop: 8 }}>
+        <div className="mt-2">
           {(() => {
             // 计算每个按钮的栅格宽度
             const items: { idx: number; span: number }[] = [];
@@ -251,7 +251,7 @@ export function DeviceCard({
               }
             }
             return rows.map((row, rowIdx) => (
-              <Row gutter={8} key={rowIdx} style={{ marginBottom: 4 }}>
+              <Row gutter={8} key={rowIdx} className="mb-1">
                 {row.map(({ idx, span }) => {
                   const exec = isExec(idx);
                   // idleSleep 模式下仅允许终止正在执行的流程

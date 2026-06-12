@@ -6,7 +6,7 @@
 
 import { Image } from 'antd-mobile';
 
-import type { CSSProperties, ReactNode } from 'react';
+import type { ReactNode } from 'react';
 
 /**
  * 封装 antd-mobile Image，统一处理圆角、懒加载等样式约定
@@ -35,11 +35,6 @@ export function CoverImage({
   /** 加载失败时的占位内容 */
   fallback?: ReactNode;
 }) {
-  /** 圆形时强制 50% 圆角；圆角形状由 antd-mobile Image 默认处理 */
-  const style: CSSProperties = {
-    borderRadius: shape === 'circle' ? '50%' : undefined,
-  };
-
   return (
     <Image
       src={src}
@@ -47,7 +42,7 @@ export function CoverImage({
       width={width}
       height={height}
       fit={fit}
-      style={style}
+      className={shape === 'circle' ? 'rounded-full' : ''}
       fallback={fallback}
       lazy
     />

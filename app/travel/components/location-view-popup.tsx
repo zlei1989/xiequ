@@ -105,9 +105,9 @@ export function LocationViewPopup({
         overflow: 'auto',
       }}
     >
-      <div style={{ position: 'relative' }}>
+      <div className="relative">
         <CoverImage src={coverUrl} alt={loc.name} height={240} />
-        <div style={{ position: 'absolute', right: 8, bottom: 8 }}>
+        <div className="absolute bottom-2 right-2">
           <UploadImage
             locationId={loc.id}
             type="cover"
@@ -144,7 +144,7 @@ export function LocationViewPopup({
         {moments.length === 0 ? (
           <ErrorBlock status="empty" title="暂无记录" />
         ) : (
-          <Space direction="vertical" style={{ width: '100%' }}>
+          <Space direction="vertical" className="w-full">
             {moments.map((moment) => (
               <Card
                 key={moment.id}

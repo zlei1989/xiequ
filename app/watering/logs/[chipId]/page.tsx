@@ -46,20 +46,12 @@ export default function DeviceLogsPage({
     <div>
       {/* 页面内顶栏 — 匹配 iot-wfm LogsView header extra */}
       <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          padding: '12px 16px',
-          background: '#fff',
-          borderBottom: '1px solid #f0f0f0',
-          marginBottom: 16,
-        }}
+        className="mb-4 flex items-center justify-between border-0 border-b border-solid border-gray-100 bg-white px-4 py-3"
       >
         <Button icon={<ArrowLeftOutlined />} onClick={() => { router.back(); }}>
           返回
         </Button>
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div className="flex gap-2">
           <Button icon={<ReloadOutlined />} onClick={() => { void load(); }} loading={loading}>
             刷新
           </Button>
@@ -73,14 +65,14 @@ export default function DeviceLogsPage({
       </div>
 
       {/* 设备名 — 匹配 LogsView 的 device-name */}
-      <div style={{ padding: '0 16px', marginBottom: 16 }}>
-        <h3 style={{ margin: 0, fontSize: 16 }}>设备: {chipId}</h3>
+      <div className="mb-4 px-4">
+        <h3 className="m-0 text-base">设备: {chipId}</h3>
       </div>
 
       {/* 日志内容 */}
-      <div style={{ padding: '0 16px' }}>
+      <div className="px-4">
         {loading && logs.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: 48 }}>
+          <div className="py-12 text-center">
             <Spin />
           </div>
         ) : (

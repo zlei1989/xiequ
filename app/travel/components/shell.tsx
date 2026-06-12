@@ -63,13 +63,13 @@ export function Shell({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
+    <div className="flex h-screen flex-col">
       <SafeArea position="top" />
       <NavBar
         backIcon={<AppstoreOutline />}
         onBack={() => { router.push('/'); }}
         right={
-          <span style={{ fontSize: 24, display: 'flex', justifyContent: 'flex-end' }}>
+          <span className="flex justify-end text-2xl">
             <MoreOutline onClick={() => { setActionVisible(true); }} />
           </span>
         }
@@ -77,7 +77,7 @@ export function Shell({ children }: { children: ReactNode }) {
         旅行计划
       </NavBar>
 
-      <div style={{ flex: 1, overflow: 'auto' }}>{children}</div>
+      <div className="flex-1 overflow-auto">{children}</div>
 
       <TabBar activeKey={pathname} onChange={(key) => { router.push(key); }} safeArea>
         <TabBar.Item key="/travel" icon={<EnvironmentOutline />} title="地图" />

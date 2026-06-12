@@ -45,9 +45,9 @@ export function ScheduleEditor({
     .add(schedule.value || 0, 'millisecond');
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+    <div className="flex flex-col gap-3">
       <div>
-        <label style={{ fontSize: 13, color: '#666', marginBottom: 4, display: 'block' }}>
+        <label className="mb-1 block text-[13px] text-gray-500">
           类型
         </label>
         <Select
@@ -59,12 +59,12 @@ export function ScheduleEditor({
             { value: 'week', label: '每周' },
             { value: 'month', label: '每月' },
           ]}
-          style={{ width: '100%' }}
+          className="w-full"
         />
       </div>
 
       <div>
-        <label style={{ fontSize: 13, color: '#666', marginBottom: 4, display: 'block' }}>
+        <label className="mb-1 block text-[13px] text-gray-500">
           间隔（天）
         </label>
         <InputNumber
@@ -72,12 +72,12 @@ export function ScheduleEditor({
           onChange={(v) => { update({ ...schedule, interval: v ?? 1 }); }}
           step={1}
           min={1}
-          style={{ width: '100%' }}
+          className="w-full"
         />
       </div>
 
       <div>
-        <label style={{ fontSize: 13, color: '#666', marginBottom: 4, display: 'block' }}>
+        <label className="mb-1 block text-[13px] text-gray-500">
           时间
         </label>
         <TimePicker
@@ -90,12 +90,12 @@ export function ScheduleEditor({
             }
           }}
           format="HH:mm"
-          style={{ width: '100%' }}
+          className="w-full"
         />
       </div>
 
       <div>
-        <label style={{ fontSize: 13, color: '#666', marginBottom: 4, display: 'block' }}>
+        <label className="mb-1 block text-[13px] text-gray-500">
           执行流程
         </label>
         <Select
@@ -105,12 +105,12 @@ export function ScheduleEditor({
             value: i,
             label: p.name || `流程 ${String(i)}`,
           }))}
-          style={{ width: '100%' }}
+          className="w-full"
         />
       </div>
 
       <div>
-        <label style={{ fontSize: 13, color: '#666', marginBottom: 4, display: 'block' }}>
+        <label className="mb-1 block text-[13px] text-gray-500">
           禁用
         </label>
         <Switch

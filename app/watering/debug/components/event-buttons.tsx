@@ -41,7 +41,7 @@ export function EventButtons({
 
   return (
     <Card title="模拟事件" size="small">
-      <Space wrap orientation="vertical" style={{ width: '100%' }}>
+      <Space wrap orientation="vertical" className="w-full">
         <Space wrap>
           <Button
             type="primary"
@@ -62,7 +62,7 @@ export function EventButtons({
             value={bootstrapCause}
             onChange={setBootstrapCause}
             options={CAUSE_OPTIONS}
-            style={{ width: 160 }}
+            className="w-40"
           />
         </Space>
 
@@ -78,13 +78,13 @@ export function EventButtons({
             value={changeType}
             onChange={setChangeType}
             options={CHANGE_TYPES}
-            style={{ width: 220 }}
+            className="w-[220px]"
           />
           <Input
             placeholder="message (可选)"
             value={changeMessage}
             onChange={(e) => { setChangeMessage(e.target.value); }}
-            style={{ width: 200 }}
+            className="w-[200px]"
           />
         </Space>
 

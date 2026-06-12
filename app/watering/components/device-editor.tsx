@@ -316,11 +316,11 @@ export function DeviceEditor({
   ];
 
   return (
-    <div style={{ padding: '0 16px' }}>
+    <div className="px-4">
       {/* ---- 基本设置表单（匹配 IeForm）---- */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 16 }}>
+      <div className="mb-4 flex flex-col gap-3">
         <div>
-          <label style={{ fontSize: 13, color: '#666', marginBottom: 4, display: 'block' }}>
+          <label className="mb-1 block text-[13px] text-gray-500">
             设备名称
           </label>
           <Input
@@ -331,15 +331,15 @@ export function DeviceEditor({
         </div>
 
         <div>
-          <label style={{ fontSize: 13, color: '#666', marginBottom: 4, display: 'block' }}>
+          <label className="mb-1 block text-[13px] text-gray-500">
             空闲睡眠
           </label>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div className="flex items-center gap-2">
             <Switch
               checked={form.idleSleep}
               onChange={(v) => { setForm({ ...form, idleSleep: v }); }}
             />
-            <span style={{ fontSize: 12, color: '#999' }}>
+            <span className="text-xs text-gray-400">
               {form.idleSleep ? '设备将不接受实时控制，仅执行计划任务，达到省电目的' : ''}
             </span>
           </div>
@@ -347,7 +347,7 @@ export function DeviceEditor({
 
         {form.idleSleep && (
           <div>
-            <label style={{ fontSize: 13, color: '#666', marginBottom: 4, display: 'block' }}>
+            <label className="mb-1 block text-[13px] text-gray-500">
               空闲超时（毫秒）
             </label>
             <InputNumber
@@ -355,13 +355,13 @@ export function DeviceEditor({
               onChange={(v) => { setForm({ ...form, idleTimeout: v ?? 30000 }); }}
               step={1000}
               min={0}
-              style={{ width: '100%' }}
+              className="w-full"
             />
           </div>
         )}
 
         <div>
-          <label style={{ fontSize: 13, color: '#666', marginBottom: 4, display: 'block' }}>
+          <label className="mb-1 block text-[13px] text-gray-500">
             开机执行
           </label>
           <select
@@ -369,7 +369,7 @@ export function DeviceEditor({
             onChange={(e) =>
             { setForm({ ...form, bootExec: Number(e.target.value) }); }
             }
-            style={{ width: '100%', padding: '4px 8px', fontSize: 14, borderRadius: 6, border: '1px solid #d9d9d9' }}
+            className="w-full rounded-md border border-solid border-gray-300 px-2 py-1 text-sm"
           >
             <option value={-1}>无</option>
             {form.processes.map((p, i) => (
@@ -381,7 +381,7 @@ export function DeviceEditor({
         </div>
 
         <div>
-          <label style={{ fontSize: 13, color: '#666', marginBottom: 4, display: 'block' }}>
+          <label className="mb-1 block text-[13px] text-gray-500">
             延迟执行（毫秒）
           </label>
           <InputNumber
@@ -390,32 +390,23 @@ export function DeviceEditor({
             step={1000}
             min={0}
             disabled={form.bootExec < 0}
-            style={{ width: '100%' }}
+            className="w-full"
           />
         </div>
       </div>
 
       {/* ---- 电压检测配置 ---- */}
       <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: 16,
-          padding: '8px 12px',
-          background: '#fafafa',
-          borderRadius: 6,
-          border: '1px solid #f0f0f0',
-        }}
+        className="mb-4 flex items-center justify-between rounded-md border border-solid border-gray-100 bg-gray-50 px-3 py-2"
       >
         <div>
-          <span style={{ fontSize: 13, fontWeight: 500 }}>电压检测配置</span>
+          <span className="text-[13px] font-medium">电压检测配置</span>
           {form.voltage ? (
-            <span style={{ fontSize: 12, color: '#999', marginLeft: 8 }}>
+            <span className="ml-2 text-xs text-gray-400">
               {form.voltage.sensor} · R1={form.voltage.r1}Ω · R2={form.voltage.r2}Ω
             </span>
           ) : (
-            <span style={{ fontSize: 12, color: '#ccc', marginLeft: 8 }}>
+            <span className="ml-2 text-xs text-gray-300">
               未配置
             </span>
           )}
@@ -431,8 +422,8 @@ export function DeviceEditor({
       </div>
 
       {/* ---- 流程表格（匹配 IeForm 的流程 el-table）---- */}
-      <div style={{ marginBottom: 16 }}>
-        <h4 style={{ margin: '0 0 8px', fontSize: 14 }}>功能</h4>
+      <div className="mb-4">
+        <h4 className="m-0 mb-2 text-sm">功能</h4>
         <Table
           dataSource={form.processes}
           columns={processColumns}
@@ -446,15 +437,15 @@ export function DeviceEditor({
           icon={<PlusOutlined />}
           onClick={addProcess}
           block
-          style={{ marginTop: 8 }}
+          className="mt-2"
         >
           添加
         </Button>
       </div>
 
       {/* ---- 定时表格（匹配 IeForm 的定时 el-table）---- */}
-      <div style={{ marginBottom: 16 }}>
-        <h4 style={{ margin: '0 0 8px', fontSize: 14 }}>计划任务</h4>
+      <div className="mb-4">
+        <h4 className="m-0 mb-2 text-sm">计划任务</h4>
         <Table
           dataSource={form.schedules}
           columns={scheduleColumns}
@@ -468,7 +459,7 @@ export function DeviceEditor({
           icon={<PlusOutlined />}
           onClick={addSchedule}
           block
-          style={{ marginTop: 8 }}
+          className="mt-2"
         >
           添加
         </Button>

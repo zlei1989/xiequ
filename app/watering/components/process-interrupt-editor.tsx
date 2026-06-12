@@ -35,9 +35,9 @@ export function ProcessInterruptEditor({
   const threshold = interrupt.threshold ?? 0;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+    <div className="flex flex-col gap-3">
       <div>
-        <label style={{ fontSize: 13, color: '#666', marginBottom: 4, display: 'block' }}>
+        <label className="mb-1 block text-[13px] text-gray-500">
           中断名称
         </label>
         <Input
@@ -48,7 +48,7 @@ export function ProcessInterruptEditor({
       </div>
 
       <div>
-        <label style={{ fontSize: 13, color: '#666', marginBottom: 4, display: 'block' }}>
+        <label className="mb-1 block text-[13px] text-gray-500">
           传感器
         </label>
         {sensorOptions.length > 0 ? (
@@ -56,19 +56,19 @@ export function ProcessInterruptEditor({
             value={interrupt.component}
             onChange={(v) => { onChange({ ...interrupt, component: v }); }}
             options={sensorOptions}
-            style={{ width: '100%' }}
+            className="w-full"
           />
         ) : (
           <Empty
             image={Empty.PRESENTED_IMAGE_SIMPLE}
             description="设备无可用传感器（sensors），请等待设备上报 GPIO 状态"
-            style={{ margin: '8px 0' }}
+            className="my-2"
           />
         )}
       </div>
 
       <div>
-        <label style={{ fontSize: 13, color: '#666', marginBottom: 4, display: 'block' }}>
+        <label className="mb-1 block text-[13px] text-gray-500">
           信号类型
         </label>
         <Radio.Group
@@ -90,7 +90,7 @@ export function ProcessInterruptEditor({
       {/* 数字信号：显示触发状态开关 */}
       {signalType === 'digital' && (
         <div>
-          <label style={{ fontSize: 13, color: '#666', marginBottom: 4, display: 'block' }}>
+          <label className="mb-1 block text-[13px] text-gray-500">
             触发状态
           </label>
           <Switch
@@ -108,7 +108,7 @@ export function ProcessInterruptEditor({
       {signalType === 'analog' && (
         <>
           <div>
-            <label style={{ fontSize: 13, color: '#666', marginBottom: 4, display: 'block' }}>
+            <label className="mb-1 block text-[13px] text-gray-500">
               逻辑
             </label>
             <Radio.Group
@@ -128,7 +128,7 @@ export function ProcessInterruptEditor({
           </div>
 
           <div>
-            <label style={{ fontSize: 13, color: '#666', marginBottom: 4, display: 'block' }}>
+            <label className="mb-1 block text-[13px] text-gray-500">
               触发阈值
             </label>
             <InputNumber
@@ -138,10 +138,10 @@ export function ProcessInterruptEditor({
               }
               min={0}
               step={1}
-              style={{ width: '100%' }}
+              className="w-full"
               placeholder="输入模拟信号触发阈值"
             />
-            <div style={{ fontSize: 11, color: '#999', marginTop: 4 }}>
+            <div className="mt-1 text-[11px] text-gray-400">
               当传感器值{logic === '>' ? '大于' : '小于'}阈值时触发中断
             </div>
           </div>
@@ -149,7 +149,7 @@ export function ProcessInterruptEditor({
       )}
 
       <div>
-        <label style={{ fontSize: 13, color: '#666', marginBottom: 4, display: 'block' }}>
+        <label className="mb-1 block text-[13px] text-gray-500">
           屏蔽抖动间隔（毫秒）
         </label>
         <InputNumber
@@ -157,7 +157,7 @@ export function ProcessInterruptEditor({
           onChange={(v) => { onChange({ ...interrupt, intercept: v ?? 0 }); }}
           step={100}
           min={0}
-          style={{ width: '100%' }}
+          className="w-full"
         />
         {/*
          * intercept 用于防抖：在首次触发中断后，该时间段内忽略同一传感器的重复触发。
@@ -166,7 +166,7 @@ export function ProcessInterruptEditor({
       </div>
 
       <div>
-        <label style={{ fontSize: 13, color: '#666', marginBottom: 4, display: 'block' }}>
+        <label className="mb-1 block text-[13px] text-gray-500">
           延迟检测（毫秒）
         </label>
         <InputNumber
@@ -174,12 +174,12 @@ export function ProcessInterruptEditor({
           onChange={(v) => { onChange({ ...interrupt, delay: v ?? 0 }); }}
           step={1000}
           min={0}
-          style={{ width: '100%' }}
+          className="w-full"
         />
       </div>
 
       <div>
-        <label style={{ fontSize: 13, color: '#666', marginBottom: 4, display: 'block' }}>
+        <label className="mb-1 block text-[13px] text-gray-500">
           持续时间（毫秒）
         </label>
         <InputNumber
@@ -187,12 +187,12 @@ export function ProcessInterruptEditor({
           onChange={(v) => { onChange({ ...interrupt, duration: v ?? 0 }); }}
           step={1000}
           min={0}
-          style={{ width: '100%' }}
+          className="w-full"
         />
       </div>
 
       <div>
-        <label style={{ fontSize: 13, color: '#666', marginBottom: 4, display: 'block' }}>
+        <label className="mb-1 block text-[13px] text-gray-500">
           禁用
         </label>
         <Switch

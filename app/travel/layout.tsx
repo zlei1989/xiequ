@@ -23,14 +23,7 @@ import type { ReactNode } from 'react';
 /** 全屏加载占位 */
 function LoadingScreen() {
   return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        height: '100vh',
-      }}
-    >
+    <div className="flex h-screen items-center justify-center">
       <DotLoading />
     </div>
   );

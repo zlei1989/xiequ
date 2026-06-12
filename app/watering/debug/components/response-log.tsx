@@ -32,33 +32,21 @@ export function ResponseLog({
       }
     >
       <div
-        style={{
-          maxHeight: 400,
-          overflowY: 'auto',
-          fontFamily: 'monospace',
-          fontSize: 12,
-          background: '#fafafa',
-          padding: 8,
-          borderRadius: 4,
-        }}
+        className="max-h-[400px] overflow-y-auto rounded bg-gray-50 p-2 font-mono text-xs"
       >
-        {logs.length === 0 && <div style={{ color: '#999' }}>暂无请求</div>}
+        {logs.length === 0 && <div className="text-gray-400">暂无请求</div>}
         {logs.map((log) => {
           const tag = directionTag[log.direction];
           return (
             <div
               key={log.id}
-              style={{
-                marginBottom: 8,
-                paddingBottom: 8,
-                borderBottom: '1px solid #f0f0f0',
-              }}
+              className="mb-2 border-0 border-b border-solid border-gray-100 pb-2"
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <Tag color={tag.color} style={{ margin: 0 }}>
+              <div className="flex items-center gap-1.5">
+                <Tag color={tag.color} className="m-0">
                   {tag.label}
                 </Tag>
-                <span style={{ color: '#999' }}>{log.timestamp}</span>
+                <span className="text-gray-400">{log.timestamp}</span>
                 {log.status !== undefined && (
                   <Tag color={log.status < 400 ? 'green' : 'red'}>
                     {log.status}
@@ -66,16 +54,16 @@ export function ResponseLog({
                 )}
                 {log.error && <Tag color="red">ERROR</Tag>}
               </div>
-              <div style={{ color: '#666', wordBreak: 'break-all', marginTop: 2 }}>
+              <div className="mt-0.5 break-all text-gray-500">
                 {log.url}
               </div>
               {log.body && (
-                <pre style={{ margin: '4px 0 0', color: '#333', fontSize: 11 }}>
+                <pre className="mb-0 mt-1 text-[11px] text-gray-800">
                   {log.body}
                 </pre>
               )}
               {log.error && (
-                <div style={{ color: '#ff4d4f', marginTop: 2 }}>{log.error}</div>
+                <div className="mt-0.5 text-red-500">{log.error}</div>
               )}
             </div>
           );

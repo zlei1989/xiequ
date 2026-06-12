@@ -42,7 +42,7 @@ export default function DeviceDetailPage({
 
   if (loading || !config) {
     return (
-      <div style={{ textAlign: 'center', padding: 48 }}>
+      <div className="py-12 text-center">
         <Spin />
       </div>
     );
@@ -52,17 +52,10 @@ export default function DeviceDetailPage({
     <div>
       {/* 页面内顶栏操作按钮 — 匹配 iot-wfm EditView header extra */}
       <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          padding: '12px 16px',
-          background: '#fff',
-          borderBottom: '1px solid #f0f0f0',
-        }}
+        className="flex items-center justify-between border-0 border-b border-solid border-gray-100 bg-white px-4 py-3"
       >
-        <h3 style={{ margin: 0, fontSize: 16 }}>{config.name || '设备配置'}</h3>
-        <div style={{ display: 'flex', gap: 8 }}>
+        <h3 className="m-0 text-base">{config.name || '设备配置'}</h3>
+        <div className="flex gap-2">
           <Button
             type="primary"
             icon={<SaveOutlined />}

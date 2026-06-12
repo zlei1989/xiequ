@@ -116,7 +116,7 @@ export function UploadImage({
         ref={fileInputRef}
         type="file"
         accept=".jpg,.jpeg"
-        style={{ display: 'none' }}
+        className="hidden"
         onChange={handleFileChange}
       />
       <Button

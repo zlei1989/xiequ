@@ -109,12 +109,12 @@ export default function TravelPage() {
   }
 
   return (
-    <div style={{ position: 'relative', height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <div className="relative flex h-full flex-col">
       <TripMap
         ref={mapRef}
         locations={sortedLocations}
         onMarkerClick={onMarkerClick}
-        style={{ flex: 1 }}
+        className="flex-1"
       />
 
       <LocationViewPopup

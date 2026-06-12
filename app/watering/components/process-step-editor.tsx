@@ -56,9 +56,9 @@ export function ProcessStepEditor({
   const hasLoad = !!step.component;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+    <div className="flex flex-col gap-3">
       <div>
-        <label style={{ fontSize: 13, color: '#666', marginBottom: 4, display: 'block' }}>
+        <label className="mb-1 block text-[13px] text-gray-500">
           步骤名称
         </label>
         <Input
@@ -69,7 +69,7 @@ export function ProcessStepEditor({
       </div>
 
       <div>
-        <label style={{ fontSize: 13, color: '#666', marginBottom: 4, display: 'block' }}>
+        <label className="mb-1 block text-[13px] text-gray-500">
           负载
         </label>
         {loadOptions.length > 0 ? (
@@ -79,19 +79,19 @@ export function ProcessStepEditor({
             options={loadOptions}
             allowClear
             placeholder="选择负载（可选）"
-            style={{ width: '100%' }}
+            className="w-full"
           />
         ) : (
           <Empty
             image={Empty.PRESENTED_IMAGE_SIMPLE}
             description="设备无可用负载（loads），请等待设备上报 GPIO 状态"
-            style={{ margin: '8px 0' }}
+            className="my-2"
           />
         )}
       </div>
 
       <div>
-        <label style={{ fontSize: 13, color: '#666', marginBottom: 4, display: 'block' }}>
+        <label className="mb-1 block text-[13px] text-gray-500">
           启动参数
         </label>
         {/*
@@ -105,12 +105,12 @@ export function ProcessStepEditor({
           { onChange({ ...step, value: { ...step.value, begin: v ?? 0 } }); }
           }
           disabled={!hasLoad}
-          style={{ width: '100%' }}
+          className="w-full"
         />
       </div>
 
       <div>
-        <label style={{ fontSize: 13, color: '#666', marginBottom: 4, display: 'block' }}>
+        <label className="mb-1 block text-[13px] text-gray-500">
           停止参数
         </label>
         <InputNumber
@@ -119,12 +119,12 @@ export function ProcessStepEditor({
           { onChange({ ...step, value: { ...step.value, end: v ?? 0 } }); }
           }
           disabled={!hasLoad}
-          style={{ width: '100%' }}
+          className="w-full"
         />
       </div>
 
       <div>
-        <label style={{ fontSize: 13, color: '#666', marginBottom: 4, display: 'block' }}>
+        <label className="mb-1 block text-[13px] text-gray-500">
           超时限制（毫秒）
         </label>
         <InputNumber
@@ -132,12 +132,12 @@ export function ProcessStepEditor({
           onChange={(v) => { onChange({ ...step, timeout: v ?? 600000 }); }}
           step={1000}
           min={0}
-          style={{ width: '100%' }}
+          className="w-full"
         />
       </div>
 
       <div>
-        <label style={{ fontSize: 13, color: '#666', marginBottom: 4, display: 'block' }}>
+        <label className="mb-1 block text-[13px] text-gray-500">
           禁用
         </label>
         <Switch
@@ -149,7 +149,7 @@ export function ProcessStepEditor({
       </div>
 
       <div>
-        <label style={{ fontSize: 13, color: '#666', marginBottom: 4, display: 'block' }}>
+        <label className="mb-1 block text-[13px] text-gray-500">
           中断方式
         </label>
         <Table
@@ -165,7 +165,7 @@ export function ProcessStepEditor({
           icon={<PlusOutlined />}
           onClick={onAddInterrupt}
           block
-          style={{ marginTop: 8 }}
+          className="mt-2"
         >
           添加
         </Button>

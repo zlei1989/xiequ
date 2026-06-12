@@ -20,9 +20,10 @@ export const TripMap = forwardRef<
   {
     locations: Location[];
     onMarkerClick: (location: Location) => void;
+    className?: string;
     style?: CSSProperties;
   }
->(function TripMap({ locations, onMarkerClick, style }, ref) {
+>(function TripMap({ locations, onMarkerClick, className, style }, ref) {
       const containerRef = useRef<HTMLDivElement>(null);
       const mapRef = useRef<AMap.Map | null>(null);
       const markersRef = useRef<AMap.Marker[]>([]);
@@ -141,6 +142,7 @@ export const TripMap = forwardRef<
       return (
         <div
           ref={containerRef}
+          className={className}
           style={{ width: '100%', height: 'calc(100vh - 64px)', ...style }}
         />
       );

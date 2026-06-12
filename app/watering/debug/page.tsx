@@ -32,12 +32,12 @@ export default function DebugPage() {
   } = useIotSimulator();
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+    <div className="flex flex-col gap-4">
       <div>
-        <Title level={4} style={{ margin: 0 }}>
+        <Title level={4} className="m-0">
           IoT 设备模拟器
         </Title>
-        <Paragraph type="secondary" style={{ margin: '4px 0 0' }}>
+        <Paragraph type="secondary" className="mb-0 mt-1">
           模拟 ESP32 设备发起 getState / pushState 请求，用于调试服务端设备协议
         </Paragraph>
       </div>

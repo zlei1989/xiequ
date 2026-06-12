@@ -55,9 +55,9 @@ export function ProcessEditor({
   const buttonOptions = toOptions(gpio.buttons);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+    <div className="flex flex-col gap-3">
       <div>
-        <label style={{ fontSize: 13, color: '#666', marginBottom: 4, display: 'block' }}>
+        <label className="mb-1 block text-[13px] text-gray-500">
           功能名称
         </label>
         <Input
@@ -68,7 +68,7 @@ export function ProcessEditor({
       </div>
 
       <div>
-        <label style={{ fontSize: 13, color: '#666', marginBottom: 4, display: 'block' }}>
+        <label className="mb-1 block text-[13px] text-gray-500">
           触发按钮
         </label>
         {buttonOptions.length > 0 ? (
@@ -78,19 +78,19 @@ export function ProcessEditor({
             options={buttonOptions}
             allowClear
             placeholder="选择触发按钮（可选）"
-            style={{ width: '100%' }}
+            className="w-full"
           />
         ) : (
           <Empty
             image={Empty.PRESENTED_IMAGE_SIMPLE}
             description="设备无可用按钮（buttons），请等待设备上报 GPIO 状态"
-            style={{ margin: '8px 0' }}
+            className="my-2"
           />
         )}
       </div>
 
       <div>
-        <label style={{ fontSize: 13, color: '#666', marginBottom: 4, display: 'block' }}>
+        <label className="mb-1 block text-[13px] text-gray-500">
           步骤
         </label>
         <Table
@@ -106,7 +106,7 @@ export function ProcessEditor({
           icon={<PlusOutlined />}
           onClick={onAddStep}
           block
-          style={{ marginTop: 8 }}
+          className="mt-2"
         >
           添加
         </Button>

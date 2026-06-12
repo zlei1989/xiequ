@@ -20,7 +20,7 @@ export function DeviceForm({
   onGpioChange: (gpio: GpioState) => void;
 }) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+    <div className="flex flex-col gap-4">
       {/* Device Identity */}
       <Card title="设备标识" size="small">
         <Row gutter={[12, 8]}>
@@ -71,7 +71,7 @@ export function DeviceForm({
                     buttons: { ...gpio.buttons, [key]: v ?? 0 },
                   }); }
                   }
-                  style={{ flex: 1 }}
+                  className="flex-1"
                 />
               </Space.Compact>
             </Col>
@@ -96,7 +96,7 @@ export function DeviceForm({
                     sensors: { ...gpio.sensors, [key]: v ?? 0 },
                   }); }
                   }
-                  style={{ flex: 1 }}
+                  className="flex-1"
                 />
               </Space.Compact>
             </Col>
@@ -121,7 +121,7 @@ export function DeviceForm({
                     loads: { ...gpio.loads, [key]: v ?? 0 },
                   }); }
                   }
-                  style={{ flex: 1 }}
+                  className="flex-1"
                 />
               </Space.Compact>
             </Col>

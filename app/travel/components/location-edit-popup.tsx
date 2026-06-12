@@ -87,7 +87,7 @@ export function LocationEditPopup({
       >
         编辑位置
       </NavBar>
-      <Form layout="vertical" style={{ padding: '0 16px' }}>
+      <Form layout="vertical" className="px-4">
         <Form.Item label="名称">
           <Input value={name} onChange={setName} placeholder="位置名称" />
         </Form.Item>

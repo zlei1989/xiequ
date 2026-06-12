@@ -111,7 +111,7 @@ function formatMessage(item: LogItem): string {
 export function LogViewer({ logs }: { logs: LogItem[] }) {
   if (logs.length === 0) {
     return (
-      <div style={{ color: '#999', textAlign: 'center', padding: 32 }}>
+      <div className="py-8 text-center text-gray-400">
         暂无日志
       </div>
     );
@@ -123,24 +123,19 @@ export function LogViewer({ logs }: { logs: LogItem[] }) {
     <div>
       {groups.map((group, gi) => (
         <div key={group.stateId}>
-          {gi > 0 && <Divider style={{ margin: '12px 0' }} />}
+          {gi > 0 && <Divider className="my-3" />}
           <Timeline
             items={group.items.map((item, _idx) => ({
               color: eventColors[item.event] || 'gray',
               content: (
-                <div style={{ fontSize: 14 }}>
+                <div className="text-sm">
                   <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 6,
-                      marginBottom: 2,
-                    }}
+                    className="mb-0.5 flex items-center gap-1.5"
                   >
                     <Tag color={eventColors[item.event]}>
                       {eventLabels[item.event] || item.event}
                     </Tag>
-                    <span style={{ color: '#999', fontSize: 12 }}>
+                    <span className="text-xs text-gray-400">
                       {new Date(item.createdTime).toLocaleString('zh-CN', {
                         hour: '2-digit',
                         minute: '2-digit',
@@ -148,7 +143,7 @@ export function LogViewer({ logs }: { logs: LogItem[] }) {
                       })}
                     </span>
                   </div>
-                  <div style={{ fontSize: 13, color: '#333' }}>
+                  <div className="text-[13px] text-gray-800">
                     {formatMessage(item)}
                   </div>
                 </div>
@@ -157,12 +152,7 @@ export function LogViewer({ logs }: { logs: LogItem[] }) {
           />
           {hasExecute(group.items) && (
             <div
-              style={{
-                color: '#999',
-                fontSize: 12,
-                marginTop: 4,
-                marginLeft: 24,
-              }}
+              className="ml-6 mt-1 text-xs text-gray-400"
             >
               用时 {formatDuration(group.items)}
             </div>
