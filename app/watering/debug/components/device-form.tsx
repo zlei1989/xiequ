@@ -132,9 +132,7 @@ export function DeviceForm({
         <Form.Item label="stateId">
           <Input
             value={identity.stateId}
-            onChange={(v) => {
-              onIdentityChange({ ...identity, stateId: v });
-            }}
+            readOnly
           />
         </Form.Item>
       </Form>
