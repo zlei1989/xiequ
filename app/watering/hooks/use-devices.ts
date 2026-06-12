@@ -32,12 +32,15 @@ export function useDevices(intervalMs = 15000) {
     }
   }, []);
 
+  // 挂载时首次加载 + 定时轮询（标准轮询模式）
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
-    refresh();
+    void refresh();
     // 定时轮询：固件心跳 + 状态由服务端写入，前端定时拉取最新数据
-    const timer = setInterval(refresh, intervalMs);
+    const timer = setInterval(() => { void refresh(); }, intervalMs);
     return () => { clearInterval(timer); };
   }, [refresh, intervalMs]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   return { devices, loading, refresh };
 }

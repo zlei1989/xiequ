@@ -24,6 +24,8 @@ export type Location = {
   /** 软删除标记 */
   deleted: boolean;
   createdTime: string;
+  /** 关联的瞬间记录（按 momentId 索引），从 OSS 数据中解析 */
+  moments?: Record<string, { date: string; text: string }>;
 };
 
 /** 精彩瞬间 — 关联到某个位置的回忆记录 */

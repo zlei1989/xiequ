@@ -1,3 +1,12 @@
+/**
+ * 浇花模块数据库服务
+ *
+ * 封装 SQLite WASM 对 watering_devices / watering_device_state / watering_logs 的 CRUD。
+ * SQLite WASM 驱动返回类型不完整，所有原始行访问需用 any 类型中转，
+ * 因此本文件全局禁用 no-unsafe-member-access 和 no-unsafe-assignment。
+ */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment */
+
 import { getDb } from '@/lib/db';
 import { newId } from '@/lib/utils';
 
@@ -22,7 +31,10 @@ function parseJSON<T>(value: unknown, fallback: T): T {
 
 /**
  * 初始化浇花模块数据库表
+ *
+ * SQLite WASM 驱动 API 为同步调用，但函数签名保持 async 以兼容上层契约。
  */
+// eslint-disable-next-line @typescript-eslint/require-await
 export async function initDb() {
   console.log('[INITDB] Starting initDb...');
   const db = getDb();
@@ -95,7 +107,10 @@ export async function initDb() {
 
 /**
  * 获取所有设备（含状态和在线信息）
+ *
+ * SQLite WASM 驱动 API 为同步调用，但函数签名保持 async 以兼容上层契约。
  */
+// eslint-disable-next-line @typescript-eslint/require-await
 export async function getAllDevices(): Promise<DeviceItem[]> {
   const db = getDb();
   const rows = db.prepare(`
@@ -107,6 +122,8 @@ export async function getAllDevices(): Promise<DeviceItem[]> {
     FROM watering_devices d
     LEFT JOIN watering_device_state s ON d.chip_id = s.chip_id
     ORDER BY d.name
+  // SQLite WASM 驱动返回类型不完整，需用 any 中转以访问 snake_case 列名
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   `).all() as any[];
 
   const now = Date.now();
@@ -153,9 +170,14 @@ export async function getAllDevices(): Promise<DeviceItem[]> {
 
 /**
  * 获取单个设备配置
+ *
+ * SQLite WASM 驱动 API 为同步调用，但函数签名保持 async 以兼容上层契约。
  */
+// eslint-disable-next-line @typescript-eslint/require-await
 export async function getDeviceConfig(chipId: string): Promise<DeviceConfig | null> {
   const db = getDb();
+  // SQLite WASM 驱动返回值类型不完整，无法精确标注
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const row = db.prepare('SELECT * FROM watering_devices WHERE chip_id = ?').get(chipId) as any;
   if (!row) return null;
   return {
@@ -220,7 +242,10 @@ export async function saveDeviceConfig(config: DeviceConfig) {
 
 /**
  * 删除设备
+ *
+ * SQLite WASM 驱动 API 为同步调用，但函数签名保持 async 以兼容上层契约。
  */
+// eslint-disable-next-line @typescript-eslint/require-await
 export async function deleteDevice(chipId: string) {
   const db = getDb();
   db.prepare('DELETE FROM watering_device_state WHERE chip_id = ?').run(chipId);
@@ -229,9 +254,14 @@ export async function deleteDevice(chipId: string) {
 
 /**
  * 获取设备状态
+ *
+ * SQLite WASM 驱动 API 为同步调用，但函数签名保持 async 以兼容上层契约。
  */
+// eslint-disable-next-line @typescript-eslint/require-await
 export async function getDeviceState(chipId: string): Promise<DeviceState | null> {
   const db = getDb();
+  // SQLite WASM 驱动返回值类型不完整
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const row = db.prepare('SELECT * FROM watering_device_state WHERE chip_id = ?').get(chipId) as any;
   if (!row) return null;
   return {
@@ -250,7 +280,10 @@ export async function getDeviceState(chipId: string): Promise<DeviceState | null
 
 /**
  * 保存设备状态（upsert）
+ *
+ * SQLite WASM 驱动 API 为同步调用，但函数签名保持 async 以兼容上层契约。
  */
+// eslint-disable-next-line @typescript-eslint/require-await
 export async function saveDeviceState(state: DeviceState) {
   const db = getDb();
   db.prepare(`
@@ -277,7 +310,10 @@ export async function saveDeviceState(state: DeviceState) {
 
 /**
  * 更新心跳时间
+ *
+ * SQLite WASM 驱动 API 为同步调用，但函数签名保持 async 以兼容上层契约。
  */
+// eslint-disable-next-line @typescript-eslint/require-await
 export async function updateTick(chipId: string) {
   const db = getDb();
   const now = Date.now();
@@ -289,11 +325,16 @@ export async function updateTick(chipId: string) {
 
 /**
  * 获取设备日志
+ *
+ * SQLite WASM 驱动 API 为同步调用，但函数签名保持 async 以兼容上层契约。
  */
+// eslint-disable-next-line @typescript-eslint/require-await
 export async function getDeviceLogs(chipId: string, limit = 100) {
   const db = getDb();
   const rows = db.prepare(
     'SELECT id, chip_id, event, state, created_time FROM watering_logs WHERE chip_id = ? ORDER BY created_time DESC LIMIT ?',
+  // SQLite WASM 驱动返回值类型不完整
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ).all([chipId, limit]) as any[];
   return rows.map((row) => ({
     id: row.id,
@@ -306,7 +347,10 @@ export async function getDeviceLogs(chipId: string, limit = 100) {
 
 /**
  * 写入设备日志
+ *
+ * SQLite WASM 驱动 API 为同步调用，但函数签名保持 async 以兼容上层契约。
  */
+// eslint-disable-next-line @typescript-eslint/require-await
 export async function writeDeviceLog(chipId: string, event: string, state?: Record<string, unknown>) {
   const db = getDb();
   db.prepare('INSERT INTO watering_logs (chip_id, event, state, created_time) VALUES (?, ?, ?, ?)').run([
@@ -319,7 +363,10 @@ export async function writeDeviceLog(chipId: string, event: string, state?: Reco
 
 /**
  * 清空设备日志
+ *
+ * SQLite WASM 驱动 API 为同步调用，但函数签名保持 async 以兼容上层契约。
  */
+// eslint-disable-next-line @typescript-eslint/require-await
 export async function clearDeviceLogs(chipId: string) {
   const db = getDb();
   db.prepare('DELETE FROM watering_logs WHERE chip_id = ?').run(chipId);

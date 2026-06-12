@@ -54,11 +54,11 @@ export async function GET(request: NextRequest) {
     const region = adapter.getEndpoint();
     const styledUrl = `https://${bucket}.cos.${region}.myqcloud.com/${POSTERS_PREFIX}/${id}.jpg/${type}`;
     return NextResponse.redirect(styledUrl);
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('[Travel] 图片访问失败:', err);
     if (err instanceof Error && err.stack) console.error(err.stack);
     return NextResponse.json(
-      { error: '访问失败', message: err.message },
+      { error: '访问失败', message: err instanceof Error ? err.message : String(err) },
       { status: 500 },
     );
   }

@@ -15,7 +15,6 @@ import {
   EditOutlined,
   DeleteOutlined,
   CloseOutlined,
-  SaveOutlined,
 } from '@ant-design/icons';
 import {
   Input,
@@ -43,17 +42,46 @@ export function DeviceEditor({
   config,
   gpio,
   onSave,
-  onRemove,
+  onRemove: _onRemove,
   saveRef,
 }: {
   config: DeviceConfig;
   gpio: GpioInfo;
   onSave: (data: Partial<DeviceConfig>) => Promise<void>;
   onRemove: () => Promise<void>;
-  saveRef: React.MutableRefObject<() => Promise<void>>;
+  saveRef: React.RefObject<() => Promise<void>>;
 }) {
   const [form, setForm] = useState<DeviceConfig>(config);
-  const [saving, setSaving] = useState(false);
+
+  // ---- 保存 ----
+  /**
+   * 提交设备配置变更
+   *
+   * 仅提交表单中可编辑的字段（name/idleSleep/processes/schedules/voltage 等），
+   * 芯片ID/macAddress 等不可变字段由父组件在 onSave 中合并。
+   */
+  async function handleSave() {
+    try {
+      await onSave({
+        name: form.name,
+        idleSleep: form.idleSleep,
+        idleTimeout: form.idleTimeout,
+        bootExec: form.bootExec,
+        execDelay: form.execDelay,
+        processes: form.processes,
+        schedules: form.schedules,
+        voltage: form.voltage,
+      });
+      message.success('保存成功');
+    } catch (err: unknown) {
+      console.error(
+        `[DeviceEditor] 保存设备配置失败 chipId=${form.chipId}`,
+        err,
+      );
+      message.error(err instanceof Error ? err.message : String(err) || '保存失败');
+    } finally {
+    }
+  }
 
   // 将 handleSave 暴露给父组件 Header 的保存按钮
   useEffect(() => {
@@ -74,38 +102,6 @@ export function DeviceEditor({
   const [scheduleIndex, setScheduleIndex] = useState(-1);
 
   const [voltageVisible, setVoltageConfigVisible] = useState(false);
-
-  // ---- 保存 ----
-  /**
-   * 提交设备配置变更
-   *
-   * 仅提交表单中可编辑的字段（name/idleSleep/processes/schedules/voltage 等），
-   * 芯片ID/macAddress 等不可变字段由父组件在 onSave 中合并。
-   */
-  async function handleSave() {
-    setSaving(true);
-    try {
-      await onSave({
-        name: form.name,
-        idleSleep: form.idleSleep,
-        idleTimeout: form.idleTimeout,
-        bootExec: form.bootExec,
-        execDelay: form.execDelay,
-        processes: form.processes,
-        schedules: form.schedules,
-        voltage: form.voltage,
-      });
-      message.success('保存成功');
-    } catch (err: any) {
-      console.error(
-        `[DeviceEditor] 保存设备配置失败 chipId=${form.chipId}`,
-        err,
-      );
-      message.error(err.message || '保存失败');
-    } finally {
-      setSaving(false);
-    }
-  }
 
   // ---- 流程操作 ----
   function addProcess() {
@@ -145,7 +141,8 @@ export function DeviceEditor({
 
   // ---- 步骤操作 ----
   function addStep() {
-    const proc = { ...form.processes[processIndex] };
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- processIndex 由调用方（仅 processIndex > -1 时可触发）保证有效
+    const proc = { ...form.processes[processIndex]! };
     const item: Step = {
       key: crypto.randomUUID(),
       name: '新步骤',
@@ -161,7 +158,8 @@ export function DeviceEditor({
   }
 
   function updateStep(index: number, updated: Step) {
-    const proc = { ...form.processes[processIndex] };
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- processIndex 由调用方（步骤编辑器打开时）保证有效
+    const proc = { ...form.processes[processIndex]! };
     const newSteps = [...proc.steps];
     newSteps[index] = updated;
     proc.steps = newSteps;
@@ -169,7 +167,8 @@ export function DeviceEditor({
   }
 
   function deleteStep() {
-    const proc = { ...form.processes[processIndex] };
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- processIndex 由调用方（删除按钮仅在步骤编辑器打开时显示）保证有效
+    const proc = { ...form.processes[processIndex]! };
     proc.steps = proc.steps.filter((_, i) => i !== stepIndex);
     updateProcess(processIndex, proc);
     setStepVisible(false);
@@ -196,8 +195,10 @@ export function DeviceEditor({
       delay: 0,
       duration: 0,
     };
-    const proc = { ...form.processes[processIndex] };
-    const step = { ...proc.steps[stepIndex] };
+    /* eslint-disable @typescript-eslint/no-non-null-assertion -- addInterrupt/updateInterrupt/deleteInterrupt 仅在中 断编辑器打开时调用，此时 processIndex 和 stepIndex 均有效 */
+    const proc = { ...form.processes[processIndex]! };
+    const step = { ...proc.steps[stepIndex]! };
+    /* eslint-enable @typescript-eslint/no-non-null-assertion */
     step.interrupts = [...(step.interrupts || []), item];
     proc.steps[stepIndex] = step;
     updateProcess(processIndex, proc);
@@ -206,8 +207,10 @@ export function DeviceEditor({
   }
 
   function updateInterrupt(index: number, updated: Interrupt) {
-    const proc = { ...form.processes[processIndex] };
-    const step = { ...proc.steps[stepIndex] };
+    /* eslint-disable @typescript-eslint/no-non-null-assertion -- 中断编辑器打开时 processIndex 和 stepIndex 均有效 */
+    const proc = { ...form.processes[processIndex]! };
+    const step = { ...proc.steps[stepIndex]! };
+    /* eslint-enable @typescript-eslint/no-non-null-assertion */
     const newInterrupts = [...(step.interrupts || [])];
     newInterrupts[index] = updated;
     step.interrupts = newInterrupts;
@@ -216,8 +219,10 @@ export function DeviceEditor({
   }
 
   function deleteInterrupt() {
-    const proc = { ...form.processes[processIndex] };
-    const step = { ...proc.steps[stepIndex] };
+    /* eslint-disable @typescript-eslint/no-non-null-assertion -- 中断编辑器打开时 processIndex 和 stepIndex 均有效 */
+    const proc = { ...form.processes[processIndex]! };
+    const step = { ...proc.steps[stepIndex]! };
+    /* eslint-enable @typescript-eslint/no-non-null-assertion */
     step.interrupts = (step.interrupts || []).filter((_, i) => i !== interruptIndex);
     proc.steps[stepIndex] = step;
     updateProcess(processIndex, proc);
@@ -255,13 +260,13 @@ export function DeviceEditor({
 
   // ---- 流程表格列 ----
   const processColumns = [
-    { title: '#', dataIndex: '_idx', width: 40, render: (_: any, __: any, index: number) => index + 1 },
+    { title: '#', dataIndex: '_idx', width: 40, render: (_: unknown, __: unknown, index: number) => index + 1 },
     { title: '名称', dataIndex: 'name', key: 'name' },
     {
       title: '',
       key: 'actions',
       width: 60,
-      render: (_: any, record: Process, index: number) => (
+      render: (_: unknown, _record: Process, index: number) => (
         <Button
           type="text"
           size="small"
@@ -277,18 +282,18 @@ export function DeviceEditor({
 
   // ---- 定时表格列 ----
   const scheduleColumns = [
-    { title: '#', dataIndex: '_idx', width: 40, render: (_: any, __: any, index: number) => index + 1 },
+    { title: '#', dataIndex: '_idx', width: 40, render: (_: unknown, __: unknown, index: number) => index + 1 },
     {
       title: '时间',
       key: 'time',
-      render: (_: any, record: Schedule) => {
+      render: (_: unknown, record: Schedule) => {
         if (record.type === 'day') {
           // value 存的是距 00:00 的毫秒数，转为 HH:mm 显示
           const h = Math.floor(record.value / 3600000);
           const m = Math.floor((record.value % 3600000) / 60000);
           return `每天 ${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
         }
-        return `${record.type} ${record.value}`;
+        return `${record.type} ${String(record.value)}`;
       },
     },
     { title: '间隔', dataIndex: 'interval', key: 'interval' },
@@ -296,7 +301,7 @@ export function DeviceEditor({
       title: '',
       key: 'actions',
       width: 60,
-      render: (_: any, record: Schedule, index: number) => (
+      render: (_: unknown, _record: Schedule, index: number) => (
         <Button
           type="text"
           size="small"
@@ -480,7 +485,7 @@ export function DeviceEditor({
         size="80%"
         open={processVisible}
         onClose={() => { setProcessVisible(false); }}
-        destroyOnClose
+        destroyOnHidden
         extra={
           <Space>
             <Popconfirm title="确认删除此流程？" onConfirm={deleteProcess}>
@@ -498,9 +503,10 @@ export function DeviceEditor({
           </Space>
         }
       >
+        {/* eslint-disable @typescript-eslint/no-non-null-assertion -- processIndex > -1 条件已保证 */}
         {processIndex > -1 && (
           <ProcessEditor
-            process={form.processes[processIndex]}
+            process={form.processes[processIndex]!}
             gpio={gpio}
             onChange={(updated) => { updateProcess(processIndex, updated); }}
             onRemove={deleteProcess}
@@ -511,6 +517,7 @@ export function DeviceEditor({
             onAddStep={addStep}
           />
         )}
+        {/* eslint-enable @typescript-eslint/no-non-null-assertion */}
       </Drawer>
 
       {/* 步骤编辑 Drawer (75%) */}
@@ -520,7 +527,7 @@ export function DeviceEditor({
         size="75%"
         open={stepVisible}
         onClose={() => { setStepVisible(false); }}
-        destroyOnClose
+        destroyOnHidden
         extra={
           <Space>
             <Popconfirm title="确认删除此步骤？" onConfirm={deleteStep}>
@@ -538,9 +545,10 @@ export function DeviceEditor({
           </Space>
         }
       >
+        {/* eslint-disable @typescript-eslint/no-non-null-assertion -- stepIndex > -1 && processIndex > -1 条件已保证 */}
         {stepIndex > -1 && processIndex > -1 && (
           <ProcessStepEditor
-            step={form.processes[processIndex].steps[stepIndex]}
+            step={form.processes[processIndex]!.steps[stepIndex]!}
             gpio={gpio}
             onChange={(updated) => { updateStep(stepIndex, updated); }}
             onRemove={deleteStep}
@@ -551,6 +559,7 @@ export function DeviceEditor({
             onAddInterrupt={addInterrupt}
           />
         )}
+        {/* eslint-enable @typescript-eslint/no-non-null-assertion */}
       </Drawer>
 
       {/* 中断编辑 Drawer (70%) */}
@@ -560,7 +569,7 @@ export function DeviceEditor({
         size="70%"
         open={interruptVisible}
         onClose={() => { setInterruptVisible(false); }}
-        destroyOnClose
+        destroyOnHidden
         extra={
           <Space>
             <Popconfirm title="确认删除此中断？" onConfirm={deleteInterrupt}>
@@ -581,17 +590,19 @@ export function DeviceEditor({
         {interruptIndex > -1 &&
           stepIndex > -1 &&
           processIndex > -1 &&
-          form.processes[processIndex].steps[stepIndex].interrupts && (
+          /* eslint-disable @typescript-eslint/no-non-null-assertion -- interruptIndex/stepIndex/processIndex 三个条件已保证各级索引有效 */
+          form.processes[processIndex]!.steps[stepIndex]!.interrupts && (
           <ProcessInterruptEditor
             interrupt={
-              form.processes[processIndex].steps[stepIndex].interrupts[
+              form.processes[processIndex]!.steps[stepIndex]!.interrupts[
                 interruptIndex
-              ]
+              ]!
             }
             gpio={gpio}
             onChange={(updated) => { updateInterrupt(interruptIndex, updated); }}
             onRemove={deleteInterrupt}
           />
+          /* eslint-enable @typescript-eslint/no-non-null-assertion */
         )}
       </Drawer>
 
@@ -602,7 +613,7 @@ export function DeviceEditor({
         size="70%"
         open={scheduleVisible}
         onClose={() => { setScheduleVisible(false); }}
-        destroyOnClose
+        destroyOnHidden
         extra={
           <Space>
             <Popconfirm title="确认删除此定时任务？" onConfirm={deleteSchedule}>
@@ -620,17 +631,20 @@ export function DeviceEditor({
           </Space>
         }
       >
+        {/* eslint-disable @typescript-eslint/no-non-null-assertion -- scheduleIndex > -1 条件已保证 */}
         {scheduleIndex > -1 && (
           <ScheduleEditor
-            schedules={[form.schedules[scheduleIndex]]}
+            schedules={[form.schedules[scheduleIndex]!]}
             processes={form.processes}
             onChange={(updated) => {
               if (updated.length > 0) {
-                updateSchedule(scheduleIndex, updated[0]);
+                 
+                updateSchedule(scheduleIndex, updated[0]!);
               }
             }}
           />
         )}
+        {/* eslint-enable @typescript-eslint/no-non-null-assertion */}
       </Drawer>
 
       {/* 电压检测配置 Drawer (60%) */}

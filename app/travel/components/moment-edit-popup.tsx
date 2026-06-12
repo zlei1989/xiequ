@@ -48,6 +48,8 @@ export function MomentEditPopup({
 
   const isEdit = !!moment;
 
+  // 弹窗打开时同步 moment 数据或重置为默认值（标准 UI 模式）
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (visible) {
       if (moment) {
@@ -59,6 +61,7 @@ export function MomentEditPopup({
       }
     }
   }, [visible, moment]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   /**
    * 提交瞬间表单 —— 根据 isEdit 判断走 onSave（编辑）或 onAdd（新增）路径，
@@ -71,7 +74,7 @@ export function MomentEditPopup({
     }
     setSaving(true);
     try {
-      if (isEdit && moment) {
+      if (isEdit) {
         await onSave(moment.id, { date, text });
         Toast.show({ icon: 'success', content: '修改成功' });
       } else {
@@ -123,7 +126,7 @@ export function MomentEditPopup({
             onClose={() => { setDatePickerVisible(false); }}
             value={dateStrToDate(date)}
             onConfirm={(val) => {
-              if (val) setDate(dateToStr(val));
+              setDate(dateToStr(val));
             }}
             min={new Date(2000, 0, 1)}
             max={new Date()}

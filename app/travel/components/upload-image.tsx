@@ -30,7 +30,8 @@ export function UploadImage({
   onSuccess?: () => void;
 }) {
   const [uploading, setUploading] = useState(false);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [_previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -43,13 +44,13 @@ export function UploadImage({
         setPreviewUrl(null);
       }
     }
-    loadPreview();
+    void loadPreview();
   }, [locationId, type]);
 
   function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (file) {
-      handleUpload(file);
+      void handleUpload(file);
     }
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
@@ -85,10 +86,10 @@ export function UploadImage({
       const fetchElapsed = Date.now() - fetchStart;
 
       if (!response.ok) {
-        throw new Error(`上传失败: ${response.status} ${response.statusText}`);
+        throw new Error(`上传失败: ${String(response.status)} ${response.statusText}`);
       }
       if (fetchElapsed > 500) {
-        console.info(`[Travel] COS 上传耗时 ${fetchElapsed}ms, locationId=${locationId}, type=${type}, size=${file.size}`);
+        console.info(`[Travel] COS 上传耗时 ${String(fetchElapsed)}ms, locationId=${locationId}, type=${type}, size=${String(file.size)}`);
       }
 
       const downloadUrl = await getImageUrl(locationId, type);
@@ -97,7 +98,7 @@ export function UploadImage({
       Toast.show({ icon: 'success', content: '上传成功' });
       const totalElapsed = Date.now() - startTime;
       if (totalElapsed > 500) {
-        console.info(`[Travel] 图片上传总耗时 ${totalElapsed}ms, locationId=${locationId}, type=${type}`);
+        console.info(`[Travel] 图片上传总耗时 ${String(totalElapsed)}ms, locationId=${locationId}, type=${type}`);
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : '上传失败';

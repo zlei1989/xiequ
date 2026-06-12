@@ -14,14 +14,15 @@ import { getDevices } from '../actions';
 import { removeDevice } from '../actions/delete-device';
 import { updateDeviceConfig } from '../actions/set-config';
 
-import type { DeviceConfig } from '../types';
+import type { DeviceConfig, Process, Schedule } from '../types';
 
 /** 安全解析 JSON 数组 — sql.js/WASM 可能将 JSON 列序列化为字符串 */
-function parseJsonArray(v: unknown): any[] {
+function parseJsonArray(v: unknown): unknown[] {
   if (Array.isArray(v)) return v;
   if (typeof v === 'string') {
     try {
-      const parsed = JSON.parse(v);
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- JSON.parse 返回 any
+      const parsed: unknown = JSON.parse(v) as unknown;
       return Array.isArray(parsed) ? parsed : [];
     } catch {
       return [];
@@ -41,7 +42,8 @@ function parseJsonVoltage(v: unknown): DeviceConfig['voltage'] {
   }
   if (typeof v === 'string') {
     try {
-      const parsed = JSON.parse(v);
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access -- JSON.parse 返回 any
+      const parsed = JSON.parse(v) as Record<string, unknown>;
       if (parsed && typeof parsed.sensor === 'string' && typeof parsed.r1 === 'number' && typeof parsed.r2 === 'number') {
         return { sensor: parsed.sensor, r1: parsed.r1, r2: parsed.r2 };
       }
@@ -72,11 +74,12 @@ export function useDeviceConfig(chipId: string) {
       const found = devices.find((d) => d.chipId === chipId);
       if (found) {
         // sql.js 会把 JSON 列作为字符串返回，需要确保 processes/schedules 是数组
+        // 使用 Record<string, unknown> 绕过类型系统处理 SQLite WASM 的原始返回值
         const safeConfig: DeviceConfig = {
           ...(found as unknown as DeviceConfig),
-          processes: parseJsonArray((found as any).processes),
-          schedules: parseJsonArray((found as any).schedules),
-          voltage: parseJsonVoltage((found as any).voltage),
+          processes: parseJsonArray((found as Record<string, unknown>).processes) as Process[],
+          schedules: parseJsonArray((found as Record<string, unknown>).schedules) as Schedule[],
+          voltage: parseJsonVoltage((found as Record<string, unknown>).voltage),
         };
         setConfig(safeConfig);
         // 从设备 state 中提取 GPIO 键名
@@ -128,10 +131,12 @@ export function useDeviceConfig(chipId: string) {
     }
   }, [chipId]);
 
-  // 组件挂载及 chipId 变化时加载设备配置
+  // 组件挂载及 chipId 变化时加载设备配置（标准数据获取模式）
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
-    load();
+    void load();
   }, [load]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   return { config, gpio, loading, load, save, remove };
 }

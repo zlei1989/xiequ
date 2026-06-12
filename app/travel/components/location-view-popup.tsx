@@ -34,7 +34,7 @@ export function LocationViewPopup({
   moments,
   onEdit,
   onToggle,
-  onDelete,
+  onDelete: _onDelete,
   onAddMoment,
   onEditMoment,
   onDeleteMoment,
@@ -54,8 +54,10 @@ export function LocationViewPopup({
 
   // 在 null 检查后提取为 const，闭包中可安全使用 Location 类型
   const loc = location;
+  // Date.now() 作为缓存破坏参数初始值，仅在组件挂载时调用一次
+  // eslint-disable-next-line react-hooks/purity
   const [coverKey, setCoverKey] = useState(Date.now());
-  const coverUrl = `/travel/api/download?type=cover&id=${loc.id}&_t=${coverKey}`;
+  const coverUrl = `/travel/api/download?type=cover&id=${loc.id}&_t=${String(coverKey)}`;
 
   /**
    * 切换位置状态（已去/待去）—— 调用父组件 onToggle 执行 Server Action，
@@ -72,26 +74,8 @@ export function LocationViewPopup({
     }
   }
 
-  function handleDelete() {
-    Dialog.confirm({
-      content: `确认删除「${loc.name}」及备注等信息？不可恢复。`,
-      confirmText: '确定',
-      cancelText: '取消',
-      onConfirm: async () => {
-        try {
-          await onDelete(loc);
-          onClose();
-        } catch (err: unknown) {
-          console.error('[Travel] 删除位置失败:', err, { locationId: loc.id });
-          if (err instanceof Error && err.stack) console.error(err.stack);
-          Toast.show({ icon: 'fail', content: getErrorMessage(err, '删除失败') });
-        }
-      },
-    });
-  }
-
   function handleDeleteMoment(moment: Moment) {
-    Dialog.confirm({
+    void Dialog.confirm({
       content: `确认删除「${moment.date}」的记录？不可恢复。`,
       confirmText: '确定',
       cancelText: '取消',

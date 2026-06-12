@@ -72,11 +72,13 @@ const eslintConfig = tseslint.config(
       "@typescript-eslint/no-explicit-any": "warn",
       "@typescript-eslint/consistent-type-imports": ["error", { prefer: "type-imports" }],
       "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
+      // allowNumber: 日志中常嵌入数值型 ID、坐标等，强制 String() 包裹反而降低可读性
+      "@typescript-eslint/restrict-template-expressions": ["error", { allowNumber: true }],
     },
   },
   // 忽略目录（与 nextTs 中已有的 ignores 合并）
   {
-    ignores: [".next/", "node_modules/", "scripts/", "*.config.*"],
+    ignores: [".next/", "node_modules/", "scripts/", "public/", "*.config.*"],
   },
 );
 

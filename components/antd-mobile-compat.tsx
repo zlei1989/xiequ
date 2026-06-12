@@ -20,11 +20,13 @@ import { createRoot } from 'react-dom/client';
  */
 export function AntdMobileCompat() {
   useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-deprecated -- React 19 兼容层：antd-mobile 官方推荐方案
     unstableSetRender((node, container) => {
       // 用 React 18+ 的 createRoot API 替代已移除的 render()
       const root = createRoot(container);
       root.render(node);
       // 返回异步清理函数：antd-mobile 关闭弹窗时会调用此函数卸载组件
+      // eslint-disable-next-line @typescript-eslint/require-await -- antd-mobile UnmountType 要求返回 Promise<void>
       return async () => { root.unmount(); };
     });
   }, []);

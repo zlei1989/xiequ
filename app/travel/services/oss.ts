@@ -2,7 +2,7 @@ import { getOssAdapter, isOssConfigured } from '@/lib/oss';
 import type { OssPutOptions } from '@/lib/oss';
 import { newId, formatDateTime } from '@/lib/utils';
 
-import type { Location, Moment } from '../types';
+import type { Location } from '../types';
 
 /**
  * 旅行模块 OSS 存储路径约定
@@ -70,27 +70,6 @@ async function ossDelete(key: string): Promise<void> {
 async function ossGetSignedPutUrl(key: string, options?: OssPutOptions): Promise<string> {
   const adapter = getOssAdapter();
   return adapter.getSignedPutUrl(key, options);
-}
-
-/**
- * 获取下载签名 URL
- *
- * 通过 OssAdapter.getSignedUrl() 获取，参考 TencentOss.getSignedUrl()
- * 用于临时授权访问私有文件。
- */
-async function ossGetSignedUrl(key: string, options?: OssPutOptions): Promise<string> {
-  const adapter = getOssAdapter();
-  return adapter.getSignedUrl(key, options);
-}
-
-/**
- * 判断文件是否存在
- *
- * 通过 OssAdapter.exists() 判断，参考 TencentOss.exists()
- */
-async function ossExists(key: string): Promise<boolean> {
-  const adapter = getOssAdapter();
-  return adapter.exists(key);
 }
 
 // ─── 位置数据 CRUD ────────────────────────────────────────────────────
@@ -208,10 +187,10 @@ export async function addMoment(
   if (!location) throw new Error(`位置 ${locationId} 不存在`);
 
   // 位置上的 moments 存储（用 Record 结构与旧项目一致）
-  const moments = (location as any).moments || {};
+  const moments = location.moments || {};
   const momentId = newId();
   moments[momentId] = { date: data.date, text: data.text };
-  (location as any).moments = moments;
+  location.moments = moments;
 
   await saveLocations(locations);
   return location;
@@ -229,7 +208,7 @@ export async function updateMoment(
   const location = locations.find((l) => l.id === locationId);
   if (!location) throw new Error(`位置 ${locationId} 不存在`);
 
-  const moments = (location as any).moments;
+  const moments = location.moments;
   if (!moments || !moments[momentId]) {
     throw new Error(`瞬间 ${momentId} 不存在`);
   }
@@ -252,8 +231,9 @@ export async function deleteMoment(
   const location = locations.find((l) => l.id === locationId);
   if (!location) throw new Error(`位置 ${locationId} 不存在`);
 
-  const moments = (location as any).moments;
+  const moments = location.moments;
   if (moments && moments[momentId]) {
+    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- Record 按键删除是预期行为
     delete moments[momentId];
   }
 

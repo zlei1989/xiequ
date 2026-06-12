@@ -4,9 +4,9 @@
 
 ## 约束
 
-- **只用 npm** — pnpm 符号链接与 Next.js standalone 模式不兼容
 - **写 Next.js 代码前先读 `node_modules/next/dist/docs/` 中的相关指南** — 当前版本可能有训练数据未覆盖的破坏性变更
 - **代码变更后、进入审查阶段前，必须先执行格式化与检查** — 顺序：`npm run format` → `npm run check` → 修复所有错误 → 再进入代码审查
+- **只用 npm** — pnpm 符号链接与 Next.js standalone 模式不兼容
 
 ## 命令
 

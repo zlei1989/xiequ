@@ -12,16 +12,18 @@ import { useState, useCallback } from 'react';
 import { clearLogs } from '../actions/clear-logs';
 import { getLogs } from '../actions/get-logs';
 
+import type { LogItem } from '../components/log-viewer';
+
 /** 设备日志管理 */
 export function useDeviceLogs(chipId: string) {
-  const [logs, setLogs] = useState<any[]>([]);
+  const [logs, setLogs] = useState<LogItem[]>([]);
   const [loading, setLoading] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
       const data = await getLogs(chipId);
-      setLogs(data as any[]);
+      setLogs(data);
     } catch (err) {
       console.error('[Watering] 加载设备日志失败:', { chipId, error: err });
       if (err instanceof Error && err.stack) console.error(err.stack);

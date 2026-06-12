@@ -30,7 +30,7 @@ export function Stats({ summary }: { summary: Summary }) {
       </Grid>
       <Card
         title="完成进度"
-        extra={`${summary.checkedPercentage}%`}
+        extra={`${String(summary.checkedPercentage)}%`}
       >
         <ProgressBar percent={summary.checkedPercentage} />
       </Card>

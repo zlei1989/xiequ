@@ -31,8 +31,8 @@ export function useMoments(locationId: string) {
     try {
       const locations = await fetchLocations();
       const location = locations.find((l) => l.id === locationId);
-      if (location && (location as any).moments) {
-        const momentsMap = (location as any).moments as Record<string, { date: string; text: string }>;
+      if (location?.moments) {
+        const momentsMap = location.moments;
         const items: Moment[] = Object.entries(momentsMap).map(([id, m]) => ({
           id,
           locationId,
@@ -54,9 +54,12 @@ export function useMoments(locationId: string) {
     }
   }, [locationId]);
 
+  // 组件挂载时加载初始数据（标准数据获取模式）
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
-    load();
+    void load();
   }, [load]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   /**
    * 新增精彩瞬间

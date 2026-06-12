@@ -48,7 +48,7 @@ export function SearchPopup({
       const items = await searchPlace(keyword);
       const elapsed = Date.now() - startTime;
       if (elapsed > 500) {
-        console.info(`[Travel] POI 搜索耗时 ${elapsed}ms, keyword=${keyword}, 结果数=${items.length}`);
+        console.info(`[Travel] POI 搜索耗时 ${String(elapsed)}ms, keyword=${keyword}, 结果数=${String(items.length)}`);
       }
       setResults(items);
     } catch (err: unknown) {
@@ -76,7 +76,7 @@ export function SearchPopup({
       }}
     >
       <NavBar onBack={onClose}>添加位置</NavBar>
-      <SearchBar placeholder="选择位置" onSearch={handleSearch} />
+      <SearchBar placeholder="选择位置" onSearch={(val) => { void handleSearch(val); }} />
       {searching ? (
         <List>
           <List.Item prefix={<DotLoading />}>搜索中</List.Item>

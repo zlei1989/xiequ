@@ -125,12 +125,14 @@ export default function TravelPage() {
         onEdit={(loc) => { setEditLocation(loc); }}
         onToggle={handleToggle}
         onDelete={handleDelete}
-        onAddMoment={() =>
-        { setEditMoment({ locationId: viewLocation!.id, moment: null }); }
-        }
-        onEditMoment={(m) =>
-        { setEditMoment({ locationId: viewLocation!.id, moment: m }); }
-        }
+        onAddMoment={() => {
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- viewLocation 由 visible 条件保证非空
+          setEditMoment({ locationId: viewLocation!.id, moment: null });
+        }}
+        onEditMoment={(m) => {
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- viewLocation 由 visible 条件保证非空
+          setEditMoment({ locationId: viewLocation!.id, moment: m });
+        }}
         onDeleteMoment={async (m) => { await removeMoment(m.id); }}
       />
 
@@ -152,7 +154,7 @@ export default function TravelPage() {
       <SearchPopup
         visible={searchVisible}
         onClose={() => { setSearchVisible(false); }}
-        onAdd={handleAdd}
+        onAdd={(data) => { void handleAdd(data); }}
       />
     </div>
   );

@@ -71,7 +71,7 @@ export default function LocationListPage() {
    * 通过检查 moments 对象是否有键来判断（而非检查数组长度），避免空对象误判。
    */
   function hasMoments(location: Location): boolean {
-    const moments = (location as any).moments as Record<string, unknown> | undefined;
+    const moments = location.moments;
     return !!moments && Object.keys(moments).length > 0;
   }
 
@@ -191,12 +191,14 @@ export default function LocationListPage() {
         onEdit={(loc) => { setEditLocation(loc); }}
         onToggle={handleToggle}
         onDelete={handleDelete}
-        onAddMoment={() =>
-        { setEditMoment({ locationId: viewLocation!.id, moment: null }); }
-        }
-        onEditMoment={(m) =>
-        { setEditMoment({ locationId: viewLocation!.id, moment: m }); }
-        }
+        onAddMoment={() => {
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- viewLocation 由 visible 条件保证非空
+          setEditMoment({ locationId: viewLocation!.id, moment: null });
+        }}
+        onEditMoment={(m) => {
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- viewLocation 由 visible 条件保证非空
+          setEditMoment({ locationId: viewLocation!.id, moment: m });
+        }}
         onDeleteMoment={async (m) => {
           await removeMoment(m.id);
         }}
@@ -220,7 +222,7 @@ export default function LocationListPage() {
       <SearchPopup
         visible={searchVisible}
         onClose={() => { setSearchVisible(false); }}
-        onAdd={handleAdd}
+        onAdd={(data) => { void handleAdd(data); }}
       />
     </>
   );

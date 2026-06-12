@@ -23,6 +23,8 @@ import {
   getPosterStyledUrl,
 } from './services/oss';
 
+import type { Location } from './types';
+
 /** 获取所有位置列表（OSS 未配置时降级返回空数组） */
 export async function fetchLocations() {
   if (!isOssConfigured()) {
@@ -35,7 +37,7 @@ export async function fetchLocations() {
   try {
     const result = await getLocations();
     const elapsed = Date.now() - t0;
-    if (elapsed > 500) console.info(`[Travel] fetchLocations 耗时 ${elapsed}ms`);
+    if (elapsed > 500) console.info(`[Travel] fetchLocations 耗时 ${String(elapsed)}ms`);
     return result;
   } catch (err) {
     console.error('[Travel] fetchLocations 失败:', err);
@@ -57,7 +59,7 @@ export async function createLocation(data: {
   try {
     const result = await addLocation(data);
     const elapsed = Date.now() - t0;
-    if (elapsed > 500) console.info(`[Travel] createLocation 耗时 ${elapsed}ms`);
+    if (elapsed > 500) console.info(`[Travel] createLocation 耗时 ${String(elapsed)}ms`);
     return result;
   } catch (err) {
     console.error('[Travel] createLocation 失败:', { name: data.name, error: err });
@@ -67,13 +69,13 @@ export async function createLocation(data: {
 }
 
 /** 编辑位置 */
-export async function editLocation(id: string, data: Partial<import('./types').Location>) {
+export async function editLocation(id: string, data: Partial<Location>) {
   console.info('[Travel] editLocation:', id);
   const t0 = Date.now();
   try {
     const result = await updateLocation(id, data);
     const elapsed = Date.now() - t0;
-    if (elapsed > 500) console.info(`[Travel] editLocation 耗时 ${elapsed}ms`);
+    if (elapsed > 500) console.info(`[Travel] editLocation 耗时 ${String(elapsed)}ms`);
     return result;
   } catch (err) {
     console.error('[Travel] editLocation 失败:', { id, error: err });
@@ -89,7 +91,7 @@ export async function removeLocation(id: string) {
   try {
     const result = await deleteLocation(id);
     const elapsed = Date.now() - t0;
-    if (elapsed > 500) console.info(`[Travel] removeLocation 耗时 ${elapsed}ms`);
+    if (elapsed > 500) console.info(`[Travel] removeLocation 耗时 ${String(elapsed)}ms`);
     return result;
   } catch (err) {
     console.error('[Travel] removeLocation 失败:', { id, error: err });
@@ -105,7 +107,7 @@ export async function createMoment(locationId: string, data: { date: string; tex
   try {
     const result = await addMoment(locationId, data);
     const elapsed = Date.now() - t0;
-    if (elapsed > 500) console.info(`[Travel] createMoment 耗时 ${elapsed}ms`);
+    if (elapsed > 500) console.info(`[Travel] createMoment 耗时 ${String(elapsed)}ms`);
     return result;
   } catch (err) {
     console.error('[Travel] createMoment 失败:', { locationId, error: err });
@@ -121,7 +123,7 @@ export async function editMoment(locationId: string, momentId: string, data: { d
   try {
     const result = await updateMoment(locationId, momentId, data);
     const elapsed = Date.now() - t0;
-    if (elapsed > 500) console.info(`[Travel] editMoment 耗时 ${elapsed}ms`);
+    if (elapsed > 500) console.info(`[Travel] editMoment 耗时 ${String(elapsed)}ms`);
     return result;
   } catch (err) {
     console.error('[Travel] editMoment 失败:', { locationId, momentId, error: err });
@@ -137,7 +139,7 @@ export async function removeMoment(locationId: string, momentId: string) {
   try {
     const result = await deleteMoment(locationId, momentId);
     const elapsed = Date.now() - t0;
-    if (elapsed > 500) console.info(`[Travel] removeMoment 耗时 ${elapsed}ms`);
+    if (elapsed > 500) console.info(`[Travel] removeMoment 耗时 ${String(elapsed)}ms`);
     return result;
   } catch (err) {
     console.error('[Travel] removeMoment 失败:', { locationId, momentId, error: err });
@@ -157,7 +159,7 @@ export async function getUploadUrl(id: string, type: 'cover' | 'icon' = 'cover')
   try {
     const result = await getPosterUploadUrl(id);
     const elapsed = Date.now() - t0;
-    if (elapsed > 500) console.info(`[Travel] getUploadUrl 耗时 ${elapsed}ms`);
+    if (elapsed > 500) console.info(`[Travel] getUploadUrl 耗时 ${String(elapsed)}ms`);
     return result;
   } catch (err) {
     console.error('[Travel] getUploadUrl 失败:', { id, error: err });
@@ -178,7 +180,7 @@ export async function getImageUrl(id: string, type: 'cover' | 'icon' = 'cover') 
   try {
     const result = await getPosterStyledUrl(id, type);
     const elapsed = Date.now() - t0;
-    if (elapsed > 500) console.info(`[Travel] getImageUrl 耗时 ${elapsed}ms`);
+    if (elapsed > 500) console.info(`[Travel] getImageUrl 耗时 ${String(elapsed)}ms`);
     return result;
   } catch (err) {
     console.error('[Travel] getImageUrl 失败:', { id, error: err });

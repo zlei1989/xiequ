@@ -46,14 +46,14 @@ export function EventButtons({
           <Button
             type="primary"
             icon={<CloudUploadOutlined />}
-            onClick={() => onGetState()}
+            onClick={() => { void onGetState(); }}
             loading={loading}
           >
             getState (轮询)
           </Button>
           <Button
             icon={<PlayCircleOutlined />}
-            onClick={() => onPushBootstrap(bootstrapCause)}
+            onClick={() => { void onPushBootstrap(bootstrapCause); }}
             loading={loading}
           >
             bootstrap (开机)
@@ -69,7 +69,7 @@ export function EventButtons({
         <Space wrap>
           <Button
             icon={<PlayCircleOutlined />}
-            onClick={() => onPushChange(changeType, changeMessage)}
+            onClick={() => { void onPushChange(changeType, changeMessage); }}
             loading={loading}
           >
             change (步骤变更)
@@ -90,7 +90,7 @@ export function EventButtons({
 
         <Button
           icon={<PlayCircleOutlined />}
-          onClick={() => onPushFinish()}
+          onClick={() => { void onPushFinish(); }}
           loading={loading}
         >
           finish (流程完成)

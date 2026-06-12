@@ -58,7 +58,7 @@ export function VoltageConfigDrawer({
       size="60%"
       open={open}
       onClose={handleClose}
-      destroyOnClose
+      destroyOnHidden
       extra={
         <Button
           icon={<CloseOutlined />}

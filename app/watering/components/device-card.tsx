@@ -49,7 +49,7 @@ export function DeviceCard({
         : rawVoltage
       : undefined;
 
-  const processes = device.processes || [];
+  const processes = device.processes;
 
   /**
    * 判断某流程是否正在执行
@@ -81,19 +81,19 @@ export function DeviceCard({
       if (isExec(index)) {
         // 关闭
         await setDeviceSwitch(device.chipId, 'off', index);
-        message.success(`已终止 ${processes[index].name}`);
+        message.success(`已终止 ${processes[index]?.name ?? '未知'}`);
       } else {
         // 打开
         await setDeviceSwitch(device.chipId, 'on', index);
-        message.success(`已执行 ${processes[index].name}`);
+        message.success(`已执行 ${processes[index]?.name ?? '未知'}`);
       }
       onRefresh();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(
-        `[DeviceCard] 切换流程失败 chipId=${device.chipId} process=${processes[index]?.name}`,
+        `[DeviceCard] 切换流程失败 chipId=${device.chipId} process=${String(processes[index]?.name)}`,
         err,
       );
-      message.error(err.message || '操作失败');
+      message.error(err instanceof Error ? err.message : String(err) || '操作失败');
     }
   }
 
@@ -103,12 +103,12 @@ export function DeviceCard({
       await setDeviceSwitch(device.chipId, 'off');
       message.success('已清除状态');
       onRefresh();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(
         `[DeviceCard] 清除设备状态失败 chipId=${device.chipId}`,
         err,
       );
-      message.error(err.message || '清除失败');
+      message.error(err instanceof Error ? err.message : String(err) || '清除失败');
     }
   }
 
@@ -118,12 +118,12 @@ export function DeviceCard({
       await removeDevice(device.chipId);
       message.success('设备已删除');
       onRefresh();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(
         `[DeviceCard] 删除设备失败 chipId=${device.chipId}`,
         err,
       );
-      message.error(err.message || '删除失败');
+      message.error(err instanceof Error ? err.message : String(err) || '删除失败');
     }
   }
 
@@ -157,6 +157,7 @@ export function DeviceCard({
           >
             配置
           </Button>
+          {/* eslint-disable @typescript-eslint/no-misused-promises -- antd Popconfirm onConfirm 支持 Promise */}
           <Popconfirm title="确认清除设备状态？" onConfirm={onClickClear}>
             <Button type="text" size="small" icon={<DeleteOutlined />} danger />
           </Popconfirm>
@@ -165,6 +166,7 @@ export function DeviceCard({
               删除
             </Button>
           </Popconfirm>
+          {/* eslint-enable @typescript-eslint/no-misused-promises */}
         </div>
       }
       style={{ marginBottom: 12 }}
@@ -238,8 +240,10 @@ export function DeviceCard({
             const rows: { idx: number; span: number }[][] = [];
             let i = 0;
             while (i < items.length) {
-              if (items[i].span === 24) {
-                rows.push([items[i]]);
+              const item = items[i];
+              if (!item) break;
+              if (item.span === 24) {
+                rows.push([item]);
                 i++;
               } else {
                 rows.push(items.slice(i, i + 2));
@@ -267,9 +271,9 @@ export function DeviceCard({
                             <ThunderboltOutlined />
                           )
                         }
-                        onClick={() => onClickSwitch(idx)}
+                        onClick={() => { void onClickSwitch(idx); }}
                       >
-                        {exec ? '停止' : processes[idx].name}
+                        {exec ? '停止' : processes[idx]?.name ?? ''}
                       </Button>
                     </Col>
                   );

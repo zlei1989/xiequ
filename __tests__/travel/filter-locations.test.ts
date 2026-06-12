@@ -36,25 +36,25 @@ describe('filterLocations', () => {
   it('matches by name (exact)', () => {
     const result = filterLocations(locations, '故宫');
     expect(result).toHaveLength(1);
-    expect(result[0].id).toBe('1');
+    expect(result[0]?.id).toBe('1');
   });
 
   it('matches by name (partial)', () => {
     const result = filterLocations(locations, '长');
     expect(result).toHaveLength(1);
-    expect(result[0].id).toBe('2');
+    expect(result[0]?.id).toBe('2');
   });
 
   it('matches by address', () => {
     const result = filterLocations(locations, '杭州');
     expect(result).toHaveLength(1);
-    expect(result[0].id).toBe('3');
+    expect(result[0]?.id).toBe('3');
   });
 
   it('matches by comments', () => {
     const result = filterLocations(locations, '值得');
     expect(result).toHaveLength(1);
-    expect(result[0].id).toBe('1');
+    expect(result[0]?.id).toBe('1');
   });
 
   it('matches across multiple locations', () => {

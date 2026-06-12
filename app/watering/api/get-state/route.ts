@@ -48,7 +48,7 @@ function buildResponse(
   // 深度睡眠时长（仅无定时任务且无流程执行时下发）
   if (
     config &&
-    (!config.schedules || config.schedules.length === 0) &&
+    (config.schedules.length === 0) &&
     state?.switch !== 'on'
   ) {
     result.sleepDuration = SLEEP_DURATION;

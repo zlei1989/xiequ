@@ -19,18 +19,22 @@ export function getAmapSecret(): string {
   return process.env.NEXT_PUBLIC_AMAP_SECRET || '';
 }
 
-// 地图 SDK 加载 Promise（防止重复加载）
-let amapPromise: Promise<any> | null = null;
+/** 地图 SDK 加载 Promise（防止重复加载） */
+let amapPromise: Promise<AMapModule> | null = null;
 
 /**
  * 动态加载高德地图 SDK（基于 @amap/amap-jsapi-loader）
+ *
+ * @amap/amap-jsapi-loader 的 load() 返回 Promise<any>，此处转为 Promise<AMapModule>
  */
-export function loadAmap(): Promise<any> {
+export function loadAmap(): Promise<AMapModule> {
   if (typeof window === 'undefined') {
     return Promise.reject(new Error('AMap only works in browser'));
   }
-  if ((window as any).AMap) {
-    return Promise.resolve((window as any).AMap);
+  /** window.AMap 由 @amap/amap-jsapi-loader 异步注入，初始为 undefined */
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  if (window.AMap) {
+    return Promise.resolve(window.AMap);
   }
   if (amapPromise) {
     return amapPromise;
@@ -38,7 +42,7 @@ export function loadAmap(): Promise<any> {
 
   const secret = getAmapSecret();
   if (secret) {
-    (window as any)._AMapSecurityConfig = {
+    window._AMapSecurityConfig = {
       securityJsCode: secret,
     };
   }
@@ -54,7 +58,7 @@ export function loadAmap(): Promise<any> {
         'AMap.Geocoder',
       ],
     }),
-  );
+  ) as Promise<AMapModule>;
 
   return amapPromise;
 }
@@ -70,7 +74,7 @@ export async function searchPlace(address: string, city?: string): Promise<AMapP
       pageSize: 48,
       city: city || '全国',
     });
-    searcher.search(address, (status: string, result: any) => {
+    searcher.search(address, (status: string, result: AMap.PlaceSearchResult) => {
       if (status !== 'complete' || !result.poiList) {
         reject(new Error(`搜索失败: ${status}`)); return;
       }
@@ -101,8 +105,10 @@ export async function getCurrentPosition(): Promise<[number, number]> {
       timeout: 10000,
     });
     geolocation.getCurrentPosition();
-    AMap.event.addListener(geolocation, 'complete', (result: any) => {
-      resolve([result.position.lng, result.position.lat]);
+    /** addListener 签名中 callback 参数为 unknown，此处通过断言转为 GeolocationResult */
+    AMap.event.addListener(geolocation, 'complete', (result: unknown) => {
+      const r = result as AMap.GeolocationResult;
+      resolve([r.position.lng, r.position.lat]);
     });
     AMap.event.addListener(geolocation, 'error', () => {
       reject(new Error('定位失败'));
@@ -117,7 +123,7 @@ export async function reverseGeocode(position: [number, number]): Promise<string
   const AMap = await loadAmap();
   return new Promise((resolve, reject) => {
     const geocoder = new AMap.Geocoder({ radius: 1, extensions: 'all' });
-    geocoder.getAddress(position, (status: string, result: any) => {
+    geocoder.getAddress(position, (status: string, result: AMap.GeocoderResult) => {
       if (status !== 'complete' || result.info !== 'OK') {
         reject(new Error('逆地理编码失败')); return;
       }
@@ -134,10 +140,13 @@ export async function getProvinceOptions(): Promise<AMapDistrictItem[]> {
   const AMap = await loadAmap();
   return new Promise((resolve, reject) => {
     const district = new AMap.DistrictSearch({ subdistrict: 1, showbiz: false });
-    district.search('中国', (status: string, result: any) => {
+    district.search('中国', (status: string, result: AMap.DistrictSearchResult) => {
       if (status !== 'complete') { reject(new Error('获取省份失败')); return; }
+      // 中国的第一个子节点为省份列表
+      const provinces = result.districtList[0]?.districtList;
+      if (!provinces) { reject(new Error('获取省份失败')); return; }
       const items: AMapDistrictItem[] = [];
-      for (const obj of result.districtList[0].districtList) {
+      for (const obj of provinces) {
         items.push({
           adcode: obj.adcode,
           name: obj.name,

@@ -34,9 +34,9 @@ export default function DeviceDetailPage({
       await remove();
       message.success('设备已删除');
       router.push('/watering');
-    } catch (err: any) {
-      console.error('[Watering] 删除设备失败:', { chipId, message: err?.message, stack: err?.stack });
-      message.error(err.message || '删除失败');
+    } catch (err: unknown) {
+      console.error('[Watering] 删除设备失败:', { chipId, message: err instanceof Error ? err.message : String(err), stack: err instanceof Error ? err.stack : undefined });
+      message.error(err instanceof Error ? err.message : String(err) || '删除失败');
     }
   }
 
@@ -66,10 +66,11 @@ export default function DeviceDetailPage({
           <Button
             type="primary"
             icon={<SaveOutlined />}
-            onClick={() => saveRef.current()}
+            onClick={() => { void saveRef.current(); }}
           >
             保存
           </Button>
+          {/* eslint-disable-next-line @typescript-eslint/no-misused-promises -- antd Popconfirm onConfirm 内部支持 Promise 返回以显示 loading 状态 */}
           <Popconfirm title="确认删除设备？不可恢复。" onConfirm={handleRemove}>
             <Button danger icon={<DeleteOutlined />}>
               删除
@@ -88,9 +89,9 @@ export default function DeviceDetailPage({
           try {
             await save(data);
             message.success('配置已保存');
-          } catch (err: any) {
+          } catch (err: unknown) {
             // 错误已在 useDeviceConfig 中记日志，此处仅提示用户
-            message.error(err?.message || '保存失败');
+            message.error(err instanceof Error ? err.message : String(err) || '保存失败');
           }
         }}
         onRemove={handleRemove}

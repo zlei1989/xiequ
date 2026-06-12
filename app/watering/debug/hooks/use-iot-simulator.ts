@@ -62,7 +62,8 @@ export function useIotSimulator() {
    * Build the query string matching the ESP32 firmware's NetworkExt.getStateQuery() order:
    * 1. Base fields: macAddress, chipId
    * 2. Custom params: event, stateId, cause, type, message, etc.
-   * 3. Component states: buttons as sensor:button_x, sensors as sensor:sensor_x, loads as load:load_x
+   * 3. Component states:
+   *    buttons as sensor:button_x, sensors as sensor:sensor_x, loads as load:load_x
    */
   const buildQuery = useCallback(
     (extra: Record<string, string> = {}): string => {
@@ -72,7 +73,7 @@ export function useIotSimulator() {
 
       // Extra params (event, stateId, cause, type, message, etc.)
       for (const [k, v] of Object.entries(extra)) {
-        if (v !== undefined && v !== '') {
+        if (v !== '') {
           params.set(k, v);
         }
       }
@@ -127,7 +128,7 @@ export function useIotSimulator() {
             // JSON 解析失败时忽略，stateId 保持旧值
           }
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('[Watering Debug] fetch 请求失败:', {
           url,
           error: err instanceof Error ? err.message : String(err),

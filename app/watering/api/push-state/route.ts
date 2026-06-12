@@ -37,8 +37,14 @@ export async function GET(request: NextRequest) {
     searchParams.forEach((value, key) => {
       const match = key.match(/^(sensor|load):(.+)$/);
       if (match) {
-        const category = match[1] === 'sensor' ? 'sensors' : 'loads';
-        gpioState[category][match[2]] = parseInt(value) || 0;
+        const [, type, name] = match;
+        if (type && name) {
+          const category = type === 'sensor' ? 'sensors' : 'loads';
+          const bucket = gpioState[category];
+          if (bucket) {
+            bucket[name] = parseInt(value) || 0;
+          }
+        }
       }
     });
 

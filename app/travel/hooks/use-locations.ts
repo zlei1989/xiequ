@@ -53,7 +53,7 @@ export function useLocations(filter?: 'all' | 'checked' | 'uncheck') {
       const t0 = Date.now();
       const data = await fetchLocations();
       const elapsed = Date.now() - t0;
-      if (elapsed > 500) console.info(`[Travel] 加载位置列表耗时 ${elapsed}ms`);
+      if (elapsed > 500) console.info(`[Travel] 加载位置列表耗时 ${String(elapsed)}ms`);
       setAllLocations(data);
     } catch (err) {
       /** ERROR: 加载位置数据失败，打印上下文帮助排查（COS 连接、权限等） */
@@ -64,9 +64,12 @@ export function useLocations(filter?: 'all' | 'checked' | 'uncheck') {
     }
   }, []);
 
+  // 组件挂载时加载初始数据（标准数据获取模式）
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
-    load();
+    void load();
   }, [load]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   /** 新增位置：调用 Server Action 后追加到本地列表（乐观更新） */
   const add = useCallback(async (data: { name: string; address: string; longitude: number; latitude: number; comments?: string }) => {
@@ -76,7 +79,7 @@ export function useLocations(filter?: 'all' | 'checked' | 'uncheck') {
     try {
       const newLoc = await createLocation(data);
       const elapsed = Date.now() - t0;
-      if (elapsed > 500) console.info(`[Travel] 新增位置耗时 ${elapsed}ms`);
+      if (elapsed > 500) console.info(`[Travel] 新增位置耗时 ${String(elapsed)}ms`);
       setAllLocations((prev) => [...prev, newLoc]);
       return newLoc;
     } catch (err) {
@@ -94,7 +97,7 @@ export function useLocations(filter?: 'all' | 'checked' | 'uncheck') {
     try {
       const updated = await editLocation(id, data);
       const elapsed = Date.now() - t0;
-      if (elapsed > 500) console.info(`[Travel] 编辑位置耗时 ${elapsed}ms`);
+      if (elapsed > 500) console.info(`[Travel] 编辑位置耗时 ${String(elapsed)}ms`);
       setAllLocations((prev) => prev.map((l) => (l.id === id ? updated : l)));
       return updated;
     } catch (err) {
@@ -112,7 +115,7 @@ export function useLocations(filter?: 'all' | 'checked' | 'uncheck') {
     try {
       await removeLocation(id);
       const elapsed = Date.now() - t0;
-      if (elapsed > 500) console.info(`[Travel] 删除位置耗时 ${elapsed}ms`);
+      if (elapsed > 500) console.info(`[Travel] 删除位置耗时 ${String(elapsed)}ms`);
       /** 软删除而非从列表移除，保留数据可恢复 */
       setAllLocations((prev) => prev.map((l) => (l.id === id ? { ...l, deleted: true } : l)));
     } catch (err) {
@@ -123,7 +126,7 @@ export function useLocations(filter?: 'all' | 'checked' | 'uncheck') {
   }, []);
 
   /** 过滤后的列表：先剔除已删除项，再按勾选状态筛选 */
-  if (process.env.NODE_ENV !== 'production') console.debug(`[Travel] 位置过滤: filter=${filter}, total=${allLocations.length}`);
+  if (process.env.NODE_ENV !== 'production') console.debug(`[Travel] 位置过滤: filter=${String(filter)}, total=${String(allLocations.length)}`);
   const filteredLocations = allLocations
     .filter((loc) => !loc.deleted)
     .filter((loc) => {

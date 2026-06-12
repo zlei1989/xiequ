@@ -57,7 +57,7 @@ export function LocationListItem({
    * 失败时打 ERROR 日志并 Toast 提示。
    */
   function handleDelete() {
-    Dialog.confirm({
+    void Dialog.confirm({
       content: `确认删除「${location.name}」及备注等信息？不可恢复。`,
       confirmText: '确定',
       cancelText: '取消',

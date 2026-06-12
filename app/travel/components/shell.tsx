@@ -7,7 +7,7 @@
 
 'use client';
 
-import { ActionSheet, Button, Dialog, NavBar, SafeArea, TabBar } from 'antd-mobile';
+import { ActionSheet, Dialog, NavBar, SafeArea, TabBar } from 'antd-mobile';
 import { EnvironmentOutline, MoreOutline, StarOutline, AppstoreOutline } from 'antd-mobile-icons';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, type ReactNode } from 'react';

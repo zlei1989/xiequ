@@ -103,7 +103,7 @@ export function ScheduleEditor({
           onChange={(v) => { update({ ...schedule, process: v }); }}
           options={processes.map((p, i) => ({
             value: i,
-            label: p.name || `流程 ${i}`,
+            label: p.name || `流程 ${String(i)}`,
           }))}
           style={{ width: '100%' }}
         />

@@ -24,8 +24,8 @@ export const TripMap = forwardRef<
   }
 >(function TripMap({ locations, onMarkerClick, style }, ref) {
       const containerRef = useRef<HTMLDivElement>(null);
-      const mapRef = useRef<any>(null);
-      const markersRef = useRef<any[]>([]);
+      const mapRef = useRef<AMap.Map | null>(null);
+      const markersRef = useRef<AMap.Marker[]>([]);
 
       useImperativeHandle(ref, () => ({
         setCenter(pos: [number, number]) {
@@ -47,7 +47,7 @@ export const TripMap = forwardRef<
           if (!containerRef.current) return;
 
           const startTime = Date.now();
-          let AMap: any;
+          let AMap: AMapModule;
           try {
             AMap = await loadAmap();
           } catch (err: unknown) {
@@ -57,18 +57,24 @@ export const TripMap = forwardRef<
           }
           const loadElapsed = Date.now() - startTime;
           if (loadElapsed > 500) {
-            console.info(`[Travel] 高德地图 SDK 加载耗时 ${loadElapsed}ms`);
+            console.info(`[Travel] 高德地图 SDK 加载耗时 ${String(loadElapsed)}ms`);
           }
 
-          // 组件可能在异步加载期间被卸载，需重新检查
-          if (aborted || !containerRef.current || mapRef.current) return;
+          // 组件可能在异步加载期间被卸载（aborted 由 cleanup 设置），需重新检查
+          if (aborted || mapRef.current) return;
+          // aborted 覆盖了组件卸载场景，ref 在 mount 阶段已校验为非 null
+          const container = containerRef.current;
 
           const centerStr = localStorage.getItem('TRAVEL_MAP_CENTER');
           const zoomStr = localStorage.getItem('TRAVEL_MAP_ZOOM');
-          const center = centerStr ? JSON.parse(centerStr) : [116.397477, 39.908692];
-          const zoom = zoomStr ? JSON.parse(zoomStr) : 13;
+          const center: [number, number] = centerStr
+            ? JSON.parse(centerStr) as [number, number]
+            : [116.397477, 39.908692];
+          /** localStorage 中 zoom 为数字，JSON.parse 返回 number |
+           *  此处断言后传给 AMap.Map */
+          const zoom: number = zoomStr ? JSON.parse(zoomStr) as number : 13;
 
-          const map = new AMap.Map(containerRef.current, {
+          const map = new AMap.Map(container, {
             zoom,
             center,
             resizeEnable: true,
@@ -83,6 +89,8 @@ export const TripMap = forwardRef<
           });
 
           // 二次确认：设置 mapRef 前检查组件是否仍在挂载状态
+          // aborted 由 cleanup 跨异步设置，TypeScript 无法追踪此突变
+          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
           if (!aborted) {
             mapRef.current = map;
           } else {
@@ -90,7 +98,7 @@ export const TripMap = forwardRef<
           }
         }
 
-        createMap();
+        void createMap();
 
         return () => {
           aborted = true;
@@ -103,10 +111,16 @@ export const TripMap = forwardRef<
 
       useEffect(() => {
         if (!mapRef.current) return;
-        const AMap = (window as any).AMap;
-        if (!AMap) return;
+        /**
+         * window.AMap 由 loadAmap() 在首个 effect 中异步注入，
+         * 类型系统无法追踪此注入时机，此处为运行时防护
+         */
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        if (!window.AMap) return;
+        const AMap = window.AMap;
 
-        markersRef.current.forEach((m) => mapRef.current.remove(m));
+        const map = mapRef.current;
+        markersRef.current.forEach((m) => { map.remove(m); });
         markersRef.current = [];
 
         for (const loc of locations) {

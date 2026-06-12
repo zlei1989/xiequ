@@ -22,7 +22,7 @@ export function ProcessStepEditor({
   step,
   gpio,
   onChange,
-  onRemove,
+  onRemove: _onRemove,
   onEditInterrupt,
   onAddInterrupt,
 }: {
@@ -35,14 +35,14 @@ export function ProcessStepEditor({
 }) {
   const loadOptions = toOptions(gpio.loads);
   const interruptColumns = [
-    { title: '#', dataIndex: '_idx', width: 40, render: (_: any, __: any, index: number) => index + 1 },
+    { title: '#', dataIndex: '_idx', width: 40, render: (_: unknown, __: unknown, index: number) => index + 1 },
     { title: '名称', dataIndex: 'name', key: 'name' },
     { title: '组件', dataIndex: 'component', key: 'component' },
     {
       title: '',
       key: 'actions',
       width: 60,
-      render: (_: any, record: Interrupt, index: number) => (
+      render: (_: unknown, _record: Interrupt, index: number) => (
         <Button
           type="text"
           size="small"

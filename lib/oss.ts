@@ -18,6 +18,24 @@
 
 import COS from 'cos-nodejs-sdk-v5';
 
+/** COS SDK 回调错误 — CosSdkError 运行时是 Error 实例，包含 stack */
+type OssErr = { statusCode?: number; message?: string; stack?: string };
+
+/**
+ * headObject 回调 data — COS SDK 错误时回调不传 data（实际为 undefined），
+ * 但 SDK 类型未标 optional，此处补充 | undefined 以匹配运行时语义。
+ */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+type HeadObjData = {} | undefined;
+
+/**
+ * getObject 回调 data — COS SDK 错误时不传 data，补充 | undefined。
+ */
+type GetObjData = { Body: Buffer } | undefined;
+
+/** getObjectUrl 回调 data（取 Url） */
+type GetObjUrlData = { Url: string };
+
 // ─── 适配器接口（参考 XpnOssAdapter） ────────────────────────────────────
 
 /**
@@ -164,26 +182,26 @@ export class TencentCosAdapter implements OssAdapter {
           Region: this.getEndpoint(),
           Key: path,
         },
-        (err: any, _ret: any) => {
+        (err: OssErr | null, _data: HeadObjData) => {
           const elapsed = Date.now() - start;
-          if (!_ret && err) {
+          if (!_data && err) {
             if (err.statusCode === 404) {
               // DEBUG: 文件不存在是正常查询结果，非错误
-              if (elapsed > 500) console.log(`[OSS] headObject 404 (${elapsed}ms) path=${path}`);
+              if (elapsed > 500) console.log(`[OSS] headObject 404 (${String(elapsed)}ms) path=${path}`);
               resolve(false);
             } else if (err.statusCode === 403) {
               // ERROR: 权限不足，打印堆栈和上下文方便排查
-              console.error(`[OSS] headObject 403 (${elapsed}ms) path=${path}:`, err.message || err);
-              if (err?.stack) console.error(err.stack);
+              console.error(`[OSS] headObject 403 (${String(elapsed)}ms) path=${path}:`, err.message || err);
+              if (err.stack) console.error(err.stack);
               reject(err);
             } else {
               // ERROR: 其他网络或服务端错误
-              console.error(`[OSS] headObject error (${elapsed}ms) path=${path} statusCode=${err.statusCode}:`, err.message || err);
-              if (err?.stack) console.error(err.stack);
+              console.error(`[OSS] headObject error (${String(elapsed)}ms) path=${path} statusCode=${String(err.statusCode)}:`, err.message || err);
+              if (err.stack) console.error(err.stack);
               reject(err);
             }
           } else {
-            if (elapsed > 500) console.log(`[OSS] headObject OK (${elapsed}ms) path=${path}`);
+            if (elapsed > 500) console.log(`[OSS] headObject OK (${String(elapsed)}ms) path=${path}`);
             resolve(true);
           }
         },
@@ -205,15 +223,15 @@ export class TencentCosAdapter implements OssAdapter {
           Region: this.getEndpoint(),
           Key: path,
         },
-        (err: any, ret: any) => {
+        (err: OssErr | null, data: GetObjData) => {
           const elapsed = Date.now() - start;
-          if (ret) {
-            const str = ret.Body.toString('utf-8');
-            if (elapsed > 500) console.log(`[OSS] getObject OK (${elapsed}ms) path=${path}`);
+          if (data) {
+            const str = data.Body.toString('utf-8');
+            if (elapsed > 500) console.log(`[OSS] getObject OK (${String(elapsed)}ms) path=${path}`);
             resolve(str); return;
           }
           // ERROR: 下载失败，打印堆栈和上下文
-          console.error(`[OSS] getObject failed (${elapsed}ms) path=${path}:`, err?.message || err);
+          console.error(`[OSS] getObject failed (${String(elapsed)}ms) path=${path}:`, err?.message || err);
           if (err?.stack) console.error(err.stack);
           reject(err);
         },
@@ -242,16 +260,16 @@ export class TencentCosAdapter implements OssAdapter {
           Sign: true,
           Headers: options?.headers,
         },
-        (err: any, ret: any) => {
+        (err: OssErr | null, data: GetObjUrlData) => {
           const elapsed = Date.now() - start;
           if (err) {
             // ERROR: 签名 URL 生成失败，打印堆栈和上下文
-            console.error(`[OSS] getSignedPutUrl failed (${elapsed}ms) path=${path}:`, err?.message || err);
-            if (err?.stack) console.error(err.stack);
+            console.error(`[OSS] getSignedPutUrl failed (${String(elapsed)}ms) path=${path}:`, err.message || err);
+            if (err.stack) console.error(err.stack);
             reject(err); return;
           }
-          if (elapsed > 500) console.log(`[OSS] getSignedPutUrl OK (${elapsed}ms) path=${path}`);
-          resolve(ret.Url);
+          if (elapsed > 500) console.log(`[OSS] getSignedPutUrl OK (${String(elapsed)}ms) path=${path}`);
+          resolve(data.Url);
         },
       );
     });
@@ -278,16 +296,16 @@ export class TencentCosAdapter implements OssAdapter {
           Sign: true,
           Headers: options?.headers,
         },
-        (err: any, ret: any) => {
+        (err: OssErr | null, data: GetObjUrlData) => {
           const elapsed = Date.now() - start;
           if (err) {
             // ERROR: 签名 URL 生成失败，打印堆栈和上下文
-            console.error(`[OSS] getSignedUrl failed (${elapsed}ms) path=${path}:`, err?.message || err);
-            if (err?.stack) console.error(err.stack);
+            console.error(`[OSS] getSignedUrl failed (${String(elapsed)}ms) path=${path}:`, err.message || err);
+            if (err.stack) console.error(err.stack);
             reject(err); return;
           }
-          if (elapsed > 500) console.log(`[OSS] getSignedUrl OK (${elapsed}ms) path=${path}`);
-          resolve(ret.Url);
+          if (elapsed > 500) console.log(`[OSS] getSignedUrl OK (${String(elapsed)}ms) path=${path}`);
+          resolve(data.Url);
         },
       );
     });
@@ -325,15 +343,15 @@ export class TencentCosAdapter implements OssAdapter {
           ContentEncoding: options.headers['Content-Encoding'],
           Body: content,
         },
-        (err: any, _ret: any) => {
+        (err: OssErr | null, _data: unknown) => {
           const elapsed = Date.now() - start;
           if (err) {
             // ERROR: 上传失败，打印堆栈和上下文
-            console.error(`[OSS] putObject failed (${elapsed}ms) path=${path}:`, err?.message || err);
-            if (err?.stack) console.error(err.stack);
+            console.error(`[OSS] putObject failed (${String(elapsed)}ms) path=${path}:`, err.message || err);
+            if (err.stack) console.error(err.stack);
             reject(err); return;
           }
-          if (elapsed > 500) console.log(`[OSS] putObject OK (${elapsed}ms) path=${path}`);
+          if (elapsed > 500) console.log(`[OSS] putObject OK (${String(elapsed)}ms) path=${path}`);
           resolve();
         },
       );
@@ -374,15 +392,15 @@ export class TencentCosAdapter implements OssAdapter {
           Region: this.getEndpoint(),
           Key: path,
         },
-        (err: any, _data: any) => {
+        (err: OssErr | null, _data: unknown) => {
           const elapsed = Date.now() - start;
           if (err) {
             // ERROR: 删除失败，打印堆栈和上下文
-            console.error(`[OSS] deleteObject failed (${elapsed}ms) path=${path}:`, err?.message || err);
-            if (err?.stack) console.error(err.stack);
+            console.error(`[OSS] deleteObject failed (${String(elapsed)}ms) path=${path}:`, err.message || err);
+            if (err.stack) console.error(err.stack);
             reject(err); return;
           }
-          if (elapsed > 500) console.log(`[OSS] deleteObject OK (${elapsed}ms) path=${path}`);
+          if (elapsed > 500) console.log(`[OSS] deleteObject OK (${String(elapsed)}ms) path=${path}`);
           resolve();
         },
       );
@@ -427,12 +445,14 @@ export function getOssAdapter(): OssAdapter {
 
   // 工厂模式：参考 XpnOss.factory()，根据配置创建对应适配器
   // INFO: 关键状态变更 — 首次创建 OSS 适配器单例
-  console.log(`[OSS] Creating TencentCosAdapter (Bucket=${process.env.OSS_BUCKET}, Region=${process.env.OSS_ENDPOINT})`);
+  console.log(`[OSS] Creating TencentCosAdapter (Bucket=${String(process.env.OSS_BUCKET)}, Region=${String(process.env.OSS_ENDPOINT)})`);
   const adapter = new TencentCosAdapter();
+  /* eslint-disable @typescript-eslint/no-non-null-assertion -- isOssConfigured() 已确保环境变量非空 */
   adapter.setEndpoint(process.env.OSS_ENDPOINT!);
   adapter.setKey(process.env.OSS_SECRET_ID!);
   adapter.setSecret(process.env.OSS_SECRET_KEY!);
   adapter.setBucket(process.env.OSS_BUCKET!);
+  /* eslint-enable @typescript-eslint/no-non-null-assertion */
 
   adapterInstance = adapter;
   return adapterInstance;

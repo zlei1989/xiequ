@@ -18,14 +18,14 @@ export function ProcessInterruptEditor({
   interrupt,
   gpio,
   onChange,
-  onRemove,
+  onRemove: _onRemove,
 }: {
   interrupt: Interrupt;
   gpio: GpioInfo;
   onChange: (updated: Interrupt) => void;
   onRemove: () => void;
 }) {
-  const sensorOptions = (gpio.sensors ?? []).map((k) => ({
+  const sensorOptions = gpio.sensors.map((k) => ({
     value: k,
     label: k,
   }));

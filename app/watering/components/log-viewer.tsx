@@ -26,10 +26,10 @@ const eventColors: Record<string, string> = {
   offline: 'gray',
 };
 
-type LogItem = {
+export type LogItem = {
   event: string;
   createdTime: string;
-  state?: any;
+  state?: unknown;
   stateId?: string;
   message?: string;
   process?: { name?: string };
@@ -46,17 +46,20 @@ function groupByStateId(logs: LogItem[]): Array<{ stateId: string; items: LogIte
   }
   // 组内按时间正序
   for (const key of Object.keys(map)) {
-    map[key].sort(
-      (a, b) =>
-        new Date(a.createdTime).getTime() - new Date(b.createdTime).getTime(),
-    );
+    const bucket = map[key];
+    if (bucket) {
+      bucket.sort(
+        (a, b) =>
+          new Date(a.createdTime).getTime() - new Date(b.createdTime).getTime(),
+      );
+    }
   }
   // 组间按最新一条时间倒序（最新的组在前）
   return Object.entries(map)
     .map(([stateId, items]) => ({ stateId, items }))
     .sort((a, b) => {
-      const lastA = new Date(a.items[a.items.length - 1].createdTime).getTime();
-      const lastB = new Date(b.items[b.items.length - 1].createdTime).getTime();
+      const lastA = new Date(a.items[a.items.length - 1]?.createdTime ?? 0).getTime();
+      const lastB = new Date(b.items[b.items.length - 1]?.createdTime ?? 0).getTime();
       return lastB - lastA;
     });
 }
@@ -64,21 +67,21 @@ function groupByStateId(logs: LogItem[]): Array<{ stateId: string; items: LogIte
 /** 计算用时 */
 function formatDuration(items: LogItem[]): string {
   if (items.length < 2) return '';
-  const begin = new Date(items[0].createdTime).getTime();
-  const end = new Date(items[items.length - 1].createdTime).getTime();
+  const begin = new Date(items[0]?.createdTime ?? 0).getTime();
+  const end = new Date(items[items.length - 1]?.createdTime ?? 0).getTime();
   const seconds = Math.round((end - begin) / 1000);
   if (seconds > 3600) {
     const h = Math.floor(seconds / 3600);
     const m = Math.floor((seconds % 3600) / 60);
     const s = seconds % 60;
-    return `${h}时${m}分${s}秒`;
+    return `${String(h)}时${String(m)}分${String(s)}秒`;
   }
   if (seconds > 60) {
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
-    return `${m}分${s}秒`;
+    return `${String(m)}分${String(s)}秒`;
   }
-  return `${seconds}秒`;
+  return `${String(seconds)}秒`;
 }
 
 /** 判断是否包含执行事件 */
@@ -105,8 +108,8 @@ function formatMessage(item: LogItem): string {
   }
 }
 
-export function LogViewer({ logs }: { logs: any[] }) {
-  if (!logs || logs.length === 0) {
+export function LogViewer({ logs }: { logs: LogItem[] }) {
+  if (logs.length === 0) {
     return (
       <div style={{ color: '#999', textAlign: 'center', padding: 32 }}>
         暂无日志
@@ -122,7 +125,7 @@ export function LogViewer({ logs }: { logs: any[] }) {
         <div key={group.stateId}>
           {gi > 0 && <Divider style={{ margin: '12px 0' }} />}
           <Timeline
-            items={group.items.map((item, idx) => ({
+            items={group.items.map((item, _idx) => ({
               color: eventColors[item.event] || 'gray',
               content: (
                 <div style={{ fontSize: 14 }}>

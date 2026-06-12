@@ -28,17 +28,17 @@ export default function DeviceLogsPage({
 
   // 组件挂载时加载日志（不自动轮询，日志数据量大）
   useEffect(() => {
-    load();
+    void load();
   }, [load]);
 
   async function handleClear() {
     try {
       await clear();
       message.success('日志已清空');
-      load();
-    } catch (err: any) {
-      console.error('[Watering] 清空日志失败:', { chipId, message: err?.message, stack: err?.stack });
-      message.error(err.message || '清空日志失败');
+      await load();
+    } catch (err: unknown) {
+      console.error('[Watering] 清空日志失败:', { chipId, message: err instanceof Error ? err.message : String(err), stack: err instanceof Error ? err.stack : undefined });
+      message.error(err instanceof Error ? err.message : String(err) || '清空日志失败');
     }
   }
 
@@ -60,9 +60,10 @@ export default function DeviceLogsPage({
           返回
         </Button>
         <div style={{ display: 'flex', gap: 8 }}>
-          <Button icon={<ReloadOutlined />} onClick={load} loading={loading}>
+          <Button icon={<ReloadOutlined />} onClick={() => { void load(); }} loading={loading}>
             刷新
           </Button>
+          {/* eslint-disable-next-line @typescript-eslint/no-misused-promises -- antd Popconfirm onConfirm 内部支持 Promise 返回以显示 loading 状态 */}
           <Popconfirm title="确认清空日志？" onConfirm={handleClear}>
             <Button icon={<DeleteOutlined />} danger>
               清空

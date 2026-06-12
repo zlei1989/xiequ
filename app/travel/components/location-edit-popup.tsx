@@ -31,6 +31,8 @@ export function LocationEditPopup({
   const [comments, setComments] = useState('');
   const [saving, setSaving] = useState(false);
 
+  // 弹窗打开时将 location 数据同步到表单（标准 UI 模式）
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (visible && location) {
       setName(location.name);
@@ -38,6 +40,7 @@ export function LocationEditPopup({
       setComments(location.comments);
     }
   }, [visible, location]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   /**
    * 提交编辑表单 —— 调用父组件 onSave 执行 Server Action 持久化，

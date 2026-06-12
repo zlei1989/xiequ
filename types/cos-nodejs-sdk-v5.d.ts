@@ -86,7 +86,8 @@ declare module 'cos-nodejs-sdk-v5' {
     Headers?: Record<string, string>;
   }
 
-  /** SDK 回调函数签名 — (错误, 数据) => void */
+  // 第三方 SDK 类型声明，回调参数类型由 COS 文档定义
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   type COSCallback = (err: any, data: any) => void;
 
   /**

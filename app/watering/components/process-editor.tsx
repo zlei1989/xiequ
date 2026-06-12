@@ -22,7 +22,7 @@ export function ProcessEditor({
   process,
   gpio,
   onChange,
-  onRemove,
+  onRemove: _onRemove,
   onEditStep,
   onAddStep,
 }: {
@@ -34,14 +34,14 @@ export function ProcessEditor({
   onAddStep: () => void;
 }) {
   const columns = [
-    { title: '#', dataIndex: '_idx', width: 40, render: (_: any, __: any, index: number) => index + 1 },
+    { title: '#', dataIndex: '_idx', width: 40, render: (_: unknown, __: unknown, index: number) => index + 1 },
     { title: '名称', dataIndex: 'name', key: 'name' },
     { title: '组件', dataIndex: 'component', key: 'component' },
     {
       title: '',
       key: 'actions',
       width: 60,
-      render: (_: any, record: Step, index: number) => (
+      render: (_: unknown, _record: Step, index: number) => (
         <Button
           type="text"
           size="small"
