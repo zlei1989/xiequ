@@ -19,7 +19,8 @@ const DIGITAL_LABELS: Record<string, string> = {
   sensor_2: '水浸2',
 };
 
-/** 模拟传感器 → 中文标签 */
+/** 模拟传感器 → 中文标签（Task 3 使用） */
+// @ts-expect-error TS6133 — Task 3 会在模拟传感器卡片中使用
 const ANALOG_LABELS: Record<string, string> = {
   sensor_0: '温度',
   sensor_3: '负载电压',

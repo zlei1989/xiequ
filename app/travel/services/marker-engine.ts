@@ -4,6 +4,10 @@
  * 封装 AMap.MarkerClusterer 聚类 + 增量 diff 更新逻辑。
  * 对比新旧 locations 列表，仅增/删/更新变化的标注，避免全量重建导致闪烁。
  * MarkerClusterer 插件不可用时降级为逐个 Marker 直接渲染。
+ *
+ * 注意：AMap MarkerClusterer 只有 setMarkers() 方法，没有 add/remove 系列方法。
+ * 因此有 clusterer 时：内部维护 markerMap，update 结束时调用 setMarkers 全量同步。
+ * 降级时：用 map.add() / map.remove() 逐个操作。
  */
 
 import { createMarkerIcon } from './marker-style';
@@ -28,7 +32,6 @@ export function createMarkerEngine(
   map: AMap.Map,
   onMarkerClick: (loc: Location) => void,
 ) {
-  
   const AMap = window.AMap;
 
   /** locationId → AMap.Marker */
@@ -81,26 +84,21 @@ export function createMarkerEngine(
     return marker;
   }
 
-  /** 添加标注到地图 */
-  function addToMap(marker: AMap.Marker) {
+  /** 同步 markerMap 中所有标注到地图 */
+  function syncToMap() {
+    const markers = [...markerMap.values()];
     if (clusterer) {
-      clusterer.addMarkers([marker]);
-    } else {
-      map.add(marker);
-    }
-  }
-
-  /** 从地图移除标注 */
-  function removeFromMap(marker: AMap.Marker) {
-    if (clusterer) {
-      clusterer.removeMarkers([marker]);
-    } else {
-      map.remove(marker);
+      // AMap MarkerClusterer 只有 setMarkers，全量设置即可
+      clusterer.setMarkers(markers);
     }
   }
 
   /**
    * 增量更新标注
+   *
+   * diff 后增量操作 markerMap，最后同步到地图。
+   * - 有 clusterer 时：setMarkers 全量同步（聚类器内部高效 diff）
+   * - 降级时：map.add/remove 逐个操作
    */
   function update(locations: Location[]) {
     const newMap = new Map(locations.map((l) => [l.id, l]));
@@ -108,7 +106,10 @@ export function createMarkerEngine(
     // 删除：旧有而新无
     for (const [id, marker] of markerMap) {
       if (!newMap.has(id)) {
-        removeFromMap(marker);
+        if (!clusterer) {
+          // 降级路径：直接从地图移除
+          map.remove(marker);
+        }
         markerMap.delete(id);
       }
     }
@@ -122,7 +123,10 @@ export function createMarkerEngine(
         // 新增：旧快照无，markerMap 也无 → 新建
         const m = createMarker(loc);
         markerMap.set(id, m);
-        addToMap(m);
+        if (!clusterer) {
+          // 降级路径：直接添加到地图
+          map.add(m);
+        }
       } else if (prev && marker && prev.checked !== loc.checked) {
         // checked 状态变更 → 原地替换图标
         const iconConfig = createMarkerIcon(getStatus(loc));
@@ -131,20 +135,27 @@ export function createMarkerEngine(
       // 其他字段变更（name 等）不重建 marker，忽略
     }
 
+    // 有 clusterer 时，统一同步到聚类器
+    if (clusterer) {
+      syncToMap();
+    }
+
     previousLocations = newMap;
   }
 
   /** 销毁引擎，清理所有标注和聚类器 */
   function destroy() {
-    for (const marker of markerMap.values()) {
-      map.remove(marker);
-    }
-    markerMap.clear();
-    previousLocations.clear();
     if (clusterer) {
       clusterer.destroy();
       clusterer = null;
+    } else {
+      // 降级路径：逐个从地图移除
+      for (const marker of markerMap.values()) {
+        map.remove(marker);
+      }
     }
+    markerMap.clear();
+    previousLocations.clear();
   }
 
   return { update, destroy };
