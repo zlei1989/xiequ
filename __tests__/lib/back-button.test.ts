@@ -229,6 +229,34 @@ describe('useBackButton', () => {
     unmountB();
   });
 
+  it('同一组件卸载后重新挂载，旧 Symbol entry 不残留', async () => {
+    const useBackButton = await loadHook();
+    const onClose1 = vi.fn();
+    const onClose2 = vi.fn();
+
+    // 第一次挂载：打开弹窗
+    const { unmount: unmount1 } = renderHook<
+      ReturnType<typeof useBackButton>,
+      { visible: boolean; cb: () => void }
+    >(({ visible, cb }) => { useBackButton(visible, cb); }, { initialProps: { visible: true, cb: onClose1 } });
+
+    // 卸载（模拟路由切换等场景）
+    unmount1();
+
+    // 第二次挂载：同一个逻辑弹窗重新打开
+    const { unmount: unmount2 } = renderHook<
+      ReturnType<typeof useBackButton>,
+      { visible: boolean; cb: () => void }
+    >(({ visible, cb }) => { useBackButton(visible, cb); }, { initialProps: { visible: true, cb: onClose2 } });
+
+    // 返回键应触发最新的 onClose2，而非旧的 onClose1
+    firePopstate();
+    expect(onClose2).toHaveBeenCalledOnce();
+    expect(onClose1).not.toHaveBeenCalled();
+
+    unmount2();
+  });
+
   it('SSR 环境（window 为 undefined）不抛出异常', async () => {
     // 暂时移除 jsdom 的 window
     vi.unstubAllGlobals();

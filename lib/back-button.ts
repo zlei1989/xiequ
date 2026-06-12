@@ -45,9 +45,12 @@ function pushPlaceholder(): void {
  */
 function handlePopstate(): void {
   // 取栈顶回调并调用（关闭最上层弹窗）
+  // 先取出回调并置空再执行，防止快速连按时重复调用
   const top = stack[stack.length - 1];
-  if (top?.onCloseRef.current) {
-    top.onCloseRef.current();
+  const close = top?.onCloseRef.current;
+  if (close) {
+    top.onCloseRef.current = null;
+    close();
   }
 
   // 重新注入占位，阻止页面跳转
