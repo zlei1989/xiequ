@@ -7,12 +7,20 @@
 
 'use client';
 
-import { Card, Input, ProgressCircle, Slider, Switch } from 'antd-mobile';
+import {
+  Card,
+  Form,
+  Grid,
+  Input,
+  ProgressCircle,
+  Slider,
+  Space,
+  Switch,
+} from 'antd-mobile';
 import { useCallback, useEffect, useRef } from 'react';
 
 import type { DeviceIdentity, GpioState } from '../hooks/use-iot-simulator';
 import type { Dispatch, SetStateAction } from 'react';
-
 
 /** 数字传感器 → 中文标签 */
 const DIGITAL_LABELS: Record<string, string> = {
@@ -20,7 +28,7 @@ const DIGITAL_LABELS: Record<string, string> = {
   sensor_2: '水浸2',
 };
 
-/** 模拟传感器 → 中文标签（Task 3 使用） */
+/** 模拟传感器 → 中文标签 */
 export const ANALOG_LABELS: Record<string, string> = {
   sensor_0: '温度',
   sensor_3: '负载电压',
@@ -64,7 +72,6 @@ export function DeviceForm({
       timers.clear();
     };
     // ref 引用稳定，仅在挂载/卸载时执行
-     
   }, []);
 
   /** 按钮值变更：若切为 0 则 2 秒后自动回 1 */
@@ -103,58 +110,46 @@ export function DeviceForm({
   );
 
   return (
-    <div className="flex flex-col gap-3">
+    <Space direction="vertical" block>
       {/* ---- 设备标识 ---- */}
       <Card title="设备标识">
-        <div className="flex flex-col gap-2 px-2 pb-1">
-          <div className="flex items-center gap-2">
-            <span className="w-14 shrink-0 text-sm text-gray-500">
-              chipId
-            </span>
+        <Form layout="horizontal">
+          <Form.Item label="chipId">
             <Input
               value={identity.chipId}
               onChange={(v) => {
                 onIdentityChange({ ...identity, chipId: v });
               }}
-              className="flex-1"
             />
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="w-14 shrink-0 text-sm text-gray-500">MAC</span>
+          </Form.Item>
+          <Form.Item label="MAC">
             <Input
               value={identity.macAddress}
               onChange={(v) => {
                 onIdentityChange({ ...identity, macAddress: v });
               }}
-              className="flex-1"
             />
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="w-14 shrink-0 text-sm text-gray-500">
-              stateId
-            </span>
+          </Form.Item>
+          <Form.Item label="stateId">
             <Input
               value={identity.stateId}
               onChange={(v) => {
                 onIdentityChange({ ...identity, stateId: v });
               }}
-              className="flex-1"
             />
-          </div>
-        </div>
+          </Form.Item>
+        </Form>
       </Card>
 
       {/* ---- 数字传感器 ---- */}
       <Card title="数字传感器 (0/1)">
-        <div className="flex flex-col gap-2 px-2 pb-1">
+        <Form layout="horizontal">
           {Object.entries(gpio.digitalSensors).map(([key, val]) => (
-            <div key={key} className="flex items-center justify-between">
-              <span className="text-sm">
-                {key}{' '}
-                <span className="text-gray-400">
-                  ({DIGITAL_LABELS[key] ?? key})
-                </span>
-              </span>
+            <Form.Item
+              key={key}
+              label={`${key} (${DIGITAL_LABELS[key] ?? key})`}
+              childElementPosition="right"
+            >
               <Switch
                 checked={val === 1}
                 onChange={(checked) => {
@@ -167,40 +162,40 @@ export function DeviceForm({
                   });
                 }}
               />
-            </div>
+            </Form.Item>
           ))}
-        </div>
+        </Form>
       </Card>
 
       {/* ---- 按钮 ---- */}
       <Card title="按钮 (0/1，切为 0 后 2 秒自动回 1)">
-        <div className="flex flex-col gap-2 px-2 pb-1">
+        <Form layout="horizontal">
           {Object.entries(gpio.buttons).map(([key, val]) => (
-            <div key={key} className="flex items-center justify-between">
-              <span className="text-sm">{key}</span>
+            <Form.Item
+              key={key}
+              label={key}
+              childElementPosition="right"
+            >
               <Switch
                 checked={val === 1}
                 onChange={(checked) => {
                   handleButtonChange(key, checked);
                 }}
               />
-            </div>
+            </Form.Item>
           ))}
-        </div>
+        </Form>
       </Card>
 
       {/* ---- 模拟传感器 ---- */}
       <Card title="模拟传感器 (0-1023)">
-        <div className="flex flex-col gap-3 px-2 pb-1">
+        <Form layout="horizontal">
           {Object.entries(gpio.analogSensors).map(([key, val]) => (
-            <div key={key}>
-              <div className="mb-1 flex items-center justify-between">
-                <span className="text-sm">
-                  {key}{' '}
-                  <span className="text-gray-400">
-                    ({ANALOG_LABELS[key] ?? key})
-                  </span>
-                </span>
+            <Form.Item
+              key={key}
+              label={`${key} (${ANALOG_LABELS[key] ?? key})`}
+            >
+              <Space direction="vertical" block>
                 <Input
                   value={String(val)}
                   onChange={(v) => {
@@ -217,33 +212,32 @@ export function DeviceForm({
                     });
                   }}
                   type="number"
-                  className="w-20"
                 />
-              </div>
-              <Slider
-                min={0}
-                max={1023}
-                step={1}
-                value={val}
-                onChange={(v) => {
-                  const num = v as number;
-                  onGpioChange({
-                    ...gpio,
-                    analogSensors: {
-                      ...gpio.analogSensors,
-                      [key]: num,
-                    },
-                  });
-                }}
-              />
-            </div>
+                <Slider
+                  min={0}
+                  max={1023}
+                  step={1}
+                  value={val}
+                  onChange={(v) => {
+                    const num = v as number;
+                    onGpioChange({
+                      ...gpio,
+                      analogSensors: {
+                        ...gpio.analogSensors,
+                        [key]: num,
+                      },
+                    });
+                  }}
+                />
+              </Space>
+            </Form.Item>
           ))}
-        </div>
+        </Form>
       </Card>
 
       {/* ---- 负载（纯展示） ---- */}
       <Card title="负载">
-        <div className="grid grid-cols-2 gap-3 px-2 pb-1">
+        <Grid columns={2} gap={12}>
           {Object.entries(gpio.loads).map(([key, val]) => {
             // 百分比计算：PWM 模式 val/255*100，1024=100%，0=0%
             const pwmPercent =
@@ -268,7 +262,7 @@ export function DeviceForm({
                   : `PWM ${pwmPercent}%`;
 
             return (
-              <div key={key} className="flex flex-col items-center gap-1">
+              <Grid.Item key={key}>
                 <ProgressCircle
                   percent={pwmPercent}
                   style={{
@@ -279,13 +273,15 @@ export function DeviceForm({
                 >
                   <span className="text-sm font-medium">{val}</span>
                 </ProgressCircle>
-                <span className="text-xs text-gray-500">{key}</span>
-                <span className="text-xs text-gray-400">{label}</span>
-              </div>
+                <Space direction="vertical" block>
+                  <span className="text-xs text-gray-500">{key}</span>
+                  <span className="text-xs text-gray-400">{label}</span>
+                </Space>
+              </Grid.Item>
             );
           })}
-        </div>
+        </Grid>
       </Card>
-    </div>
+    </Space>
   );
 }
