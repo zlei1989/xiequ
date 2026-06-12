@@ -10,6 +10,7 @@ import nextTs from "eslint-config-next/typescript";
 import stylistic from "@stylistic/eslint-plugin";
 import importX from "eslint-plugin-import-x";
 import tseslint from "typescript-eslint";
+import cssModules from "eslint-plugin-css-modules";
 
 const eslintConfig = tseslint.config(
   // Next.js 官方规则 (core-web-vitals + typescript)
@@ -53,6 +54,14 @@ const eslintConfig = tseslint.config(
         },
       ],
       "import-x/no-cycle": "warn",
+    },
+  },
+  // CSS Modules 类名校验 — 来自 eslint-plugin-css-modules
+  {
+    plugins: { "css-modules": cssModules },
+    rules: {
+      "css-modules/no-unused-class": "warn",
+      "css-modules/no-undef-class": "error",
     },
   },
   // TypeScript 专项规则
