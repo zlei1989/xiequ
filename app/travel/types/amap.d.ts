@@ -227,6 +227,6 @@ interface AMapModule {
 
 /** 扩展 Window（AMap 通过异步加载注入，初始不存在） */
 interface Window {
-  AMap: (AMapModule & { MarkerClusterer?: AMapModule['MarkerClusterer'] }) | undefined;
+  AMap: (Omit<AMapModule, 'MarkerClusterer'> & { MarkerClusterer?: AMapModule['MarkerClusterer'] }) | undefined;
   _AMapSecurityConfig?: { securityJsCode: string };
 }
