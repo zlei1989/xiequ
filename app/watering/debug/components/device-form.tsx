@@ -7,7 +7,7 @@
 
 'use client';
 
-import { Card, Input, Switch } from 'antd-mobile';
+import { Card, Input, ProgressCircle, Slider, Switch } from 'antd-mobile';
 import { useCallback, useEffect, useRef } from 'react';
 
 import type { DeviceIdentity, GpioState } from '../hooks/use-iot-simulator';
@@ -186,7 +186,103 @@ export function DeviceForm({
         </div>
       </Card>
 
-      {/* 模拟传感器 和 负载 在 Task 3 中添加 */}
+      {/* ---- 模拟传感器 ---- */}
+      <Card title="模拟传感器 (0-1023)">
+        <div className="flex flex-col gap-3 px-2 pb-1">
+          {Object.entries(gpio.analogSensors).map(([key, val]) => (
+            <div key={key}>
+              <div className="mb-1 flex items-center justify-between">
+                <span className="text-sm">
+                  {key}{' '}
+                  <span className="text-gray-400">
+                    ({ANALOG_LABELS[key] ?? key})
+                  </span>
+                </span>
+                <Input
+                  value={String(val)}
+                  onChange={(v) => {
+                    const num = Math.min(
+                      1023,
+                      Math.max(0, parseInt(v, 10) || 0),
+                    );
+                    onGpioChange({
+                      ...gpio,
+                      analogSensors: {
+                        ...gpio.analogSensors,
+                        [key]: num,
+                      },
+                    });
+                  }}
+                  type="number"
+                  className="w-20"
+                />
+              </div>
+              <Slider
+                min={0}
+                max={1023}
+                step={1}
+                value={val}
+                onChange={(v) => {
+                  const num = v as number;
+                  onGpioChange({
+                    ...gpio,
+                    analogSensors: {
+                      ...gpio.analogSensors,
+                      [key]: num,
+                    },
+                  });
+                }}
+              />
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      {/* ---- 负载（纯展示） ---- */}
+      <Card title="负载">
+        <div className="grid grid-cols-2 gap-3 px-2 pb-1">
+          {Object.entries(gpio.loads).map(([key, val]) => {
+            // 百分比计算：PWM 模式 val/255*100，1024=100%，0=0%
+            const pwmPercent =
+              val === 0
+                ? 0
+                : val === 1024
+                  ? 100
+                  : Math.round((val / 255) * 100);
+            // 颜色：0=灰，1-255=绿，1024=红
+            const color =
+              val === 0
+                ? 'var(--adm-color-weak)'
+                : val === 1024
+                  ? 'var(--adm-color-danger)'
+                  : 'var(--adm-color-success)';
+            // 状态文字
+            const label =
+              val === 0
+                ? '停止'
+                : val === 1024
+                  ? '全速'
+                  : `PWM ${pwmPercent}%`;
+
+            return (
+              <div key={key} className="flex flex-col items-center gap-1">
+                <ProgressCircle
+                  percent={pwmPercent}
+                  style={{
+                    '--fill-color': color,
+                    '--size': '64px',
+                    '--track-width': '4px',
+                  }}
+                >
+                  <span className="text-sm font-medium">{val}</span>
+                </ProgressCircle>
+                <span className="text-xs text-gray-500">{key}</span>
+                <span className="text-xs text-gray-400">{label}</span>
+              </div>
+            );
+          })}
+        </div>
+      </Card>
     </div>
   );
 }
