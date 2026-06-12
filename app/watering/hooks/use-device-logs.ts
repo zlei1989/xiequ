@@ -3,6 +3,7 @@
  *
  * 提供日志加载和清空功能。
  * 与 useDevices 不同，日志不自动轮询（数据量大），需手动 load。
+ * error 在 load 失败时设为归一化 Error，成功/初始时为 null。
  */
 
 'use client';
