@@ -72,7 +72,6 @@ declare namespace AMap {
       options?: MarkerClustererOptions,
     );
     setMarkers(markers: Marker[]): void;
-    destroy(): void;
   }
   interface MarkerClustererOptions {
     gridSize?: number;

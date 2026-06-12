@@ -121,18 +121,20 @@ describe('createMarkerEngine', () => {
     expect(callCountAfterSecond).toBe(callCountAfterFirst);
   });
 
-  it('destroy cleans up clusterer', () => {
+  it('destroy clears clusterer via setMarkers([])', () => {
     const { engine } = setupEngine();
 
     engine.update([makeLocation({ id: '1' })]);
     engine.destroy();
 
-    // MarkerClusterer.destroy 被调用
+    // MarkerClusterer.setMarkers 被调用（清空为空数组）
     /* eslint-disable @typescript-eslint/no-unsafe-member-access,
         @typescript-eslint/no-unsafe-assignment */
-    const clustererDestroy = mockAmap.MarkerClusterer.mock.results[0]?.value?.destroy;
+    const clustererSetMarkers = mockAmap.MarkerClusterer.mock.results[0]?.value?.setMarkers;
     /* eslint-enable @typescript-eslint/no-unsafe-member-access,
         @typescript-eslint/no-unsafe-assignment */
-    expect(clustererDestroy).toHaveBeenCalled();
+    // destroy 时应调用 setMarkers([]) 清空
+    const lastCall = (clustererSetMarkers as ReturnType<typeof vi.fn>)?.mock?.lastCall;
+    expect(lastCall?.[0]).toEqual([]);
   });
 });

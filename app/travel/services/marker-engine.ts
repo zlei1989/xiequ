@@ -146,10 +146,9 @@ export function createMarkerEngine(
   /** 销毁引擎，清理所有标注和聚类器 */
   function destroy() {
     if (clusterer) {
-      clusterer.destroy();
-      clusterer = null;
+      // AMap MarkerClusterer 无 destroy 方法，设空数组清空
+      clusterer.setMarkers([]);
     } else {
-      // 降级路径：逐个从地图移除
       for (const marker of markerMap.values()) {
         map.remove(marker);
       }
