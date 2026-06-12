@@ -57,7 +57,9 @@ const eslintConfig = tseslint.config(
     },
   },
   // CSS Modules 类名校验 — 来自 eslint-plugin-css-modules
+  // 仅对 TSX/TS 文件生效，插件内部自动过滤不含 CSS Module import 的文件
   {
+    files: ["**/*.tsx", "**/*.ts"],
     plugins: { "css-modules": cssModules },
     rules: {
       "css-modules/no-unused-class": "warn",
