@@ -10,7 +10,7 @@ import { vi } from 'vitest';
 function createMockClass(methods: Record<string, () => unknown> = {}) {
   return vi.fn().mockImplementation(function (this: Record<string, unknown>, ...args: unknown[]) {
     Object.assign(this, methods);
-    (this as Record<string, unknown>)._constructorArgs = args;
+    (this)._constructorArgs = args;
     return this;
   });
 }
@@ -74,13 +74,17 @@ export function createAmapMock() {
       if (hasClusterer) {
         amap.MarkerClusterer = MarkerClusterer;
       }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (window as any).AMap = amap;
+      // 在 node 环境下 polyfill window 供被测代码访问 window.AMap
+      const g = (typeof window !== 'undefined' ? window : globalThis) as Record<string, unknown>;
+      g.AMap = amap;
+      if (typeof window === 'undefined') {
+        g.window = g;
+      }
       return amap;
     },
     uninstall() {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      delete (window as any).AMap;
+      const g = (typeof window !== 'undefined' ? window : globalThis) as Record<string, unknown>;
+      delete g.AMap;
     },
   };
 }
