@@ -164,7 +164,7 @@ IInterruptComponent     ← Sensor / AnalogSensor / Button 实现（流程中断
 |------|--------|------|
 | `macAddress` | `20:E7:C8:59:9B:28` | 设备 WiFi MAC 地址，用于服务端唯一标识设备 |
 | `chipId` | `5872424` | 芯片 ID，基于 MAC 地址生成的 32 位整数标识，作为设备备选标识 |
-| `sensor:{key}` | `sensor:sensor_0=1827` | 传感器组件当前状态，前缀 `sensor:` + 组件注册键名，值由 `IInterruptComponent.getState()` 返回 |
+| `sensor:{key}` | `sensor:sensor_0=1024` | 传感器组件当前状态，前缀 `sensor:` + 组件注册键名，值由 `IInterruptComponent.getState()` 返回 |
 | `load:{key}` | `load:load_0=0` | 负载组件当前值，前缀 `load:` + 组件注册键名，值由 `IStepComponent.getValue()` 返回 |
 
 **组件状态参数详解：**
@@ -172,11 +172,11 @@ IInterruptComponent     ← Sensor / AnalogSensor / Button 实现（流程中断
 | 参数 | 示例值 | 说明 |
 |------|--------|------|
 | `sensor:button_0` ~ `sensor:button_4` | `1` | 按钮状态（1=按下/高电平，0=释放/低电平） |
-| `sensor:sensor_0` | `1827` | 温度传感器模拟值（0~1023，需通过分压器公式换算为实际温度） |
+| `sensor:sensor_0` | `1024` | 温度传感器模拟值（0~1024，需通过分压器公式换算为实际温度） |
 | `sensor:sensor_1` | `1` | 水浸传感器 1 状态（1=检测到水，0=干燥） |
 | `sensor:sensor_2` | `1` | 水浸传感器 2 状态（1=检测到水，0=干燥） |
-| `sensor:sensor_3` | `0` | 负载电压模拟值（0~1023，需通过分压器公式换算为实际电压） |
-| `sensor:sensor_4` | `355` | 电源电压模拟值（0~1023，需通过分压器公式换算为实际电压） |
+| `sensor:sensor_3` | `0` | 负载电压模拟值（0~1024，需通过分压器公式换算为实际电压） |
+| `sensor:sensor_4` | `355` | 电源电压模拟值（0~1024，需通过分压器公式换算为实际电压） |
 | `load:load_0` ~ `load:load_3` | `0` | 水泵当前值（0=停止，1~255=PWM 占空比，1024=全速开关模式） |
 
 > **注意：** 传感器和负载的键名（如 `sensor_0`、`load_0`）由 `Process.registerComponent()` 注册时指定，与服务端流程配置中的 `componentKey` 对应。
@@ -188,13 +188,13 @@ IInterruptComponent     ← Sensor / AnalogSensor / Button 实现（流程中断
 **请求示例（URL 解码后）：**
 
 ```
-http://xiequ.7qbjs.com/api/iot-wfm/getState?macAddress=20:E7:C8:59:9B:28&chipId=5872424&stateId=EEvvj2qX&sensor:button_0=1&sensor:button_1=1&sensor:button_2=1&sensor:button_3=1&sensor:button_4=1&sensor:sensor_0=1827&sensor:sensor_1=1&sensor:sensor_2=1&sensor:sensor_3=0&sensor:sensor_4=355&load:load_0=0&load:load_1=0&load:load_2=0&load:load_3=0
+http://xiequ.7qbjs.com/api/iot-wfm/getState?macAddress=20:E7:C8:59:9B:28&chipId=5872424&stateId=EEvvj2qX&sensor:button_0=1&sensor:button_1=1&sensor:button_2=1&sensor:button_3=1&sensor:button_4=1&sensor:sensor_0=1024&sensor:sensor_1=1&sensor:sensor_2=1&sensor:sensor_3=0&sensor:sensor_4=355&load:load_0=0&load:load_1=0&load:load_2=0&load:load_3=0
 ```
 
 **请求示例（URL 编码后）：**
 
 ```
-http://xiequ.7qbjs.com/api/iot-wfm/getState?macAddress=20%3AE7%3AC8%3A59%3A9B%3A28&chipId=5872424&stateId=EEvvj2qX&sensor%3Abutton_0=1&sensor%3Abutton_1=1&sensor%3Abutton_2=1&sensor%3Abutton_3=1&sensor%3Abutton_4=1&sensor%3Asensor_0=1827&sensor%3Asensor_1=1&sensor%3Asensor_2=1&sensor%3Asensor_3=0&sensor%3Asensor_4=355&load%3Aload_0=0&load%3Aload_1=0&load%3Aload_2=0&load%3Aload_3=0
+http://xiequ.7qbjs.com/api/iot-wfm/getState?macAddress=20%3AE7%3AC8%3A59%3A9B%3A28&chipId=5872424&stateId=EEvvj2qX&sensor%3Abutton_0=1&sensor%3Abutton_1=1&sensor%3Abutton_2=1&sensor%3Abutton_3=1&sensor%3Abutton_4=1&sensor%3Asensor_0=1024&sensor%3Asensor_1=1&sensor%3Asensor_2=1&sensor%3Asensor_3=0&sensor%3Asensor_4=355&load%3Aload_0=0&load%3Aload_1=0&load%3Aload_2=0&load%3Aload_3=0
 ```
 
 **特有参数：**
@@ -238,13 +238,13 @@ http://xiequ.7qbjs.com/api/iot-wfm/getState?macAddress=20%3AE7%3AC8%3A59%3A9B%3A
 **请求示例 — 开机上报（URL 解码后）：**
 
 ```
-http://xiequ.7qbjs.com/api/iot-wfm/pushState?macAddress=20:E7:C8:59:9B:28&chipId=5872424&event=bootstrap&sensor:button_0=1&sensor:button_1=1&sensor:button_2=1&sensor:button_3=1&sensor:button_4=1&sensor:sensor_0=1827&sensor:sensor_1=1&sensor:sensor_2=1&sensor:sensor_3=0&sensor:sensor_4=348&load:load_0=0&load:load_1=0&load:load_2=0&load:load_3=0
+http://xiequ.7qbjs.com/api/iot-wfm/pushState?macAddress=20:E7:C8:59:9B:28&chipId=5872424&event=bootstrap&sensor:button_0=1&sensor:button_1=1&sensor:button_2=1&sensor:button_3=1&sensor:button_4=1&sensor:sensor_0=1024&sensor:sensor_1=1&sensor:sensor_2=1&sensor:sensor_3=0&sensor:sensor_4=348&load:load_0=0&load:load_1=0&load:load_2=0&load:load_3=0
 ```
 
 **请求示例 — 开机上报（URL 编码后）：**
 
 ```
-http://xiequ.7qbjs.com/api/iot-wfm/pushState?macAddress=20%3AE7%3AC8%3A59%3A9B%3A28&chipId=5872424&event=bootstrap&sensor%3Abutton_0=1&sensor%3Abutton_1=1&sensor%3Abutton_2=1&sensor%3Abutton_3=1&sensor%3Abutton_4=1&sensor%3Asensor_0=1827&sensor%3Asensor_1=1&sensor%3Asensor_2=1&sensor%3Asensor_3=0&sensor%3Asensor_4=348&load%3Aload_0=0&load%3Aload_1=0&load%3Aload_2=0&load%3Aload_3=0
+http://xiequ.7qbjs.com/api/iot-wfm/pushState?macAddress=20%3AE7%3AC8%3A59%3A9B%3A28&chipId=5872424&event=bootstrap&sensor%3Abutton_0=1&sensor%3Abutton_1=1&sensor%3Abutton_2=1&sensor%3Abutton_3=1&sensor%3Abutton_4=1&sensor%3Asensor_0=1024&sensor%3Asensor_1=1&sensor%3Asensor_2=1&sensor%3Asensor_3=0&sensor%3Asensor_4=348&load%3Aload_0=0&load%3Aload_1=0&load%3Aload_2=0&load%3Aload_3=0
 ```
 
 **特有参数：**

@@ -71,13 +71,7 @@ export function SearchPopup({
       onMaskClick={onClose}
       onClose={onClose}
       position="bottom"
-      bodyStyle={{
-        borderTopLeftRadius: 16,
-        borderTopRightRadius: 16,
-        minHeight: '60vh',
-        maxHeight: '75vh',
-        overflow: 'auto',
-      }}
+      bodyClassName="rounded-t-2xl min-h-[60vh] max-h-[75vh] overflow-auto"
     >
       <NavBar onBack={onClose}>添加位置</NavBar>
       <SearchBar placeholder="选择位置" onSearch={(val) => { void handleSearch(val); }} />

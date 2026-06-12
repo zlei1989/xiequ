@@ -794,30 +794,13 @@ const apps = [
 
 **Files:** Modify: `app/travel/components/trip-map.tsx`
 
-- [ ] **Step 1: 容器 div 支持 className + style 合并**
+- [x] **Step 1: 容器 div 改用 Tailwind + 错误 UI 改用 antd-mobile** ✅
 
-```diff
-  import type { CSSProperties } from 'react';
-
-  export const TripMap = forwardRef<
-    { setCenter: (pos: [number, number]) => void },
-    {
-      locations: Location[];
-      onMarkerClick: (location: Location) => void;
--     style?: CSSProperties;
-+     style?: CSSProperties;
-+     className?: string;
-    }
-- >(function TripMap({ locations, onMarkerClick, style }, ref) {
-+ >(function TripMap({ locations, onMarkerClick, style, className }, ref) {
-```
-
-```diff
-- <div ref={containerRef} style={{ width: '100%', height: 'calc(100vh - 64px)', ...style }} />
-+ <div ref={containerRef} className={className} style={{ width: '100%', height: 'calc(100vh - 64px)', ...style }} />
-```
-
-> `width: '100%'` 和 `height: 'calc(100vh - 64px)'` 保留为 style（动态计算 + 需要与外部传入的 style 合并）。
+> **实际实施超出计划范围：**
+> - 容器 style（width/height/backgroundColor）→ 全部迁移到 Tailwind：`className="h-[calc(100vh-64px)] w-full bg-[var(--background)]"`
+> - 错误 UI（两个）→ 从手写 HTML + 内联样式改为 antd-mobile `ErrorBlock` + `Button`（遵循"能用 antd-mobile 就不自己定义"）
+> - Map 构造时传入 `mapStyle: STYLE_MAP[readTheme()]`（防闪烁，非 Tailwind 迁移但同一批改动）
+> - props 新增 `className?: string`
 
 ---
 
@@ -825,16 +808,22 @@ const apps = [
 
 **Files:** Modify: `location-edit-popup.tsx` + `location-view-popup.tsx` + `moment-edit-popup.tsx` + `search-popup.tsx`
 
-这些文件中的 `bodyStyle` 是 antd-mobile `Popup` 的 prop，**保留不变**（"不碰 antd 组件样式"决策）。需要迁移的是：
+- [x] **Step 1: Popup `bodyStyle` → `bodyClassName`（Tailwind）** ✅
 
-- [ ] **Step 1: `location-edit-popup.tsx` — Form 的 style**
+> **实际实施超出计划范围：** antd-mobile Popup 的 `bodyStyle` prop 也迁移到了 Tailwind（用 `bodyClassName`）
+> - `location-edit-popup.tsx` → `bodyClassName="rounded-t-2xl min-h-[50vh] max-h-[75vh] overflow-auto"`
+> - `location-view-popup.tsx` → `bodyClassName="rounded-t-2xl max-h-[75vh] overflow-auto"`
+> - `moment-edit-popup.tsx` → `bodyClassName="rounded-t-2xl min-h-[40vh] max-h-[75vh] overflow-auto"`
+> - `search-popup.tsx` → `bodyClassName="rounded-t-2xl min-h-[60vh] max-h-[75vh] overflow-auto"`
+
+- [x] **Step 2: `location-edit-popup.tsx` — Form 的 style** ✅
 
 ```diff
 - <Form layout="vertical" style={{ padding: '0 16px' }}>
 + <Form layout="vertical" className="px-4">
 ```
 
-- [ ] **Step 2: `location-view-popup.tsx` — 绝对定位覆盖层**
+- [x] **Step 3: `location-view-popup.tsx` — 绝对定位覆盖层 + Space** ✅
 
 ```diff
 - <div style={{ position: 'relative' }}>
@@ -842,25 +831,17 @@ const apps = [
 
 - <div style={{ position: 'absolute', right: 8, bottom: 8 }}>
 + <div className="absolute right-2 bottom-2">
-```
 
-- [ ] **Step 3: `location-view-popup.tsx` — Space 组件**
-
-```diff
 - <Space direction="vertical" style={{ width: '100%' }}>
 + <Space direction="vertical" className="w-full">
 ```
 
-- [ ] **Step 4: `moment-edit-popup.tsx` — Form 的 style**
+- [x] **Step 4: `moment-edit-popup.tsx` — Form 的 style** ✅
 
 ```diff
 - <Form layout="vertical" style={{ padding: '0 16px' }}>
 + <Form layout="vertical" className="px-4">
 ```
-
-- [ ] **Step 5: `search-popup.tsx` — bodyStyle 保留不变**（antd-mobile Popup prop）
-
-搜索弹窗的 `bodyStyle` 是 antd-mobile prop，保留。
 
 ---
 
@@ -868,7 +849,7 @@ const apps = [
 
 **Files:** Modify 6 files (see below)
 
-- [ ] **Step 1: `cover-image.tsx` — borderRadius 条件样式**
+- [x] **Step 1: `cover-image.tsx` — borderRadius 条件样式** ✅
 
 ```diff
 - const style: CSSProperties = {
@@ -880,13 +861,17 @@ const apps = [
 ```
 同时移除 `CSSProperties` 导入（若不再使用）。
 
-- [ ] **Step 2: `stats.tsx` — Card headerStyle / bodyStyle**
+- [x] **Step 2: `stats.tsx` — Card headerStyle / bodyStyle → headerClassName / bodyClassName** ✅
 
-`Card` 的 `headerStyle` 和 `bodyStyle` 是 antd-mobile Card 的 prop，**保留不变**。
+> **实际实施超出计划范围：** antd-mobile Card 的 `headerStyle`/`bodyStyle` 也迁移到 Tailwind：
+> ```diff
+> - <Card title="已去" headerStyle={{ justifyContent: 'center' }} bodyStyle={{ textAlign: 'center' }}>
+> + <Card title="已去" headerClassName="justify-center" bodyClassName="text-center">
+> ```
 
 - [ ] **Step 3: `status-tag.tsx` — 无 inline style**，无需变更。
 
-- [ ] **Step 4: `upload-image.tsx` — input display:none**
+- [x] **Step 4: `upload-image.tsx` — input display:none** ✅
 
 ```diff
 - <input ... style={{ display: 'none' }} />

@@ -526,9 +526,9 @@ pnpm deploy
 📍 SCF: xxx (ap-xxx)
 🔨 正在构建 Next.js 项目...
 ✅ 构建完成
-📦 正在打包 → server_scf_20260610235959.zip
+📦 正在打包 → server_scf_20260610245959.zip
 ✅ 打包完成 (X.XX MB)
-☁️  正在上传到 COS → xxx/deploy/server_scf_20260610235959.zip
+☁️  正在上传到 COS → xxx/deploy/server_scf_20260610245959.zip
 ✅ COS 上传完成 (200)
 🚀 正在部署到 SCF → xxx
 ✅ 部署成功

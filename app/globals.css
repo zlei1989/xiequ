@@ -26,3 +26,13 @@ body {
   color: var(--foreground);
   background: var(--background);
 }
+
+/* 避免 AMap 初始化时 canvas 未绘制导致白色闪烁。
+   AMap JSAPI v2 接管容器后创建 canvas 图层，首帧绘制前 canvas 透明。
+   此处强制 canvas 背景跟随系统主题，确保从容器 → canvas → 首帧全程无白色间隙。 */
+.amap-container,
+.amap-container canvas,
+.amap-maps,
+.amap-layers {
+  background-color: var(--background) !important;
+}

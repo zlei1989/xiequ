@@ -102,13 +102,7 @@ export function MomentEditPopup({
       onMaskClick={onClose}
       onClose={onClose}
       position="bottom"
-      bodyStyle={{
-        borderTopLeftRadius: 16,
-        borderTopRightRadius: 16,
-        minHeight: '40vh',
-        maxHeight: '75vh',
-        overflow: 'auto',
-      }}
+      bodyClassName="rounded-t-2xl min-h-[40vh] max-h-[75vh] overflow-auto"
     >
       <NavBar
         onBack={onClose}

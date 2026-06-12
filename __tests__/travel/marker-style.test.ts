@@ -27,20 +27,23 @@ describe('createMarkerIcon', () => {
   it('returns icon config with success color for visited status', () => {
     // node 环境使用 fallback
     const icon = createMarkerIcon('visited');
-    expect(icon.image).toContain('#00b578');
+    expect(icon.image).toContain('%2300b578'); // # 已被编码为 %23
     expect(icon.image).toContain('data:image/svg+xml');
     expect(icon.size).toEqual([24, 24]);
-    expect(icon.imageOffset).toEqual([-12, -12]);
+    expect(icon.imageSize).toEqual([24, 24]);
   });
 
   it('returns icon config with primary color for unvisited status', () => {
     const icon = createMarkerIcon('unvisited');
-    expect(icon.image).toContain('#1677ff');
+    expect(icon.image).toContain('%231677ff'); // # 已被编码为 %23
   });
 
   it('generates valid SVG with circle elements', () => {
     const icon = createMarkerIcon('visited');
-    const decoded = decodeURIComponent(icon.image.replace('data:image/svg+xml;charset=utf-8,', ''));
+    // 解码 data URL：先还原 %23 → #，再取 SVG 内容
+    const decoded = decodeURIComponent(
+      icon.image.replace('data:image/svg+xml;charset=utf-8,', ''),
+    );
     expect(decoded).toContain('<circle');
     expect(decoded).toContain('r="11"');
     expect(decoded).toContain('r="4"');

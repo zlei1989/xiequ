@@ -255,7 +255,7 @@ export function DeviceCard({
                 {row.map(({ idx, span }) => {
                   const exec = isExec(idx);
                   // idleSleep 模式下仅允许终止正在执行的流程
-                  const disabled = !device.isOnline || (!exec && !!device.idleSleep);
+                  const disabled = !device.isOnline || (!exec && device.idleSleep);
                   return (
                     <Col span={span} key={idx}>
                       <Button

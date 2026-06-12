@@ -114,7 +114,7 @@ export type LogEntry = {
 // Default GPIO values matching the ESP32 firmware's 4-pump setup
 const DEFAULT_GPIO: GpioState = {
   buttons: { button_0: 0, button_1: 0, button_2: 0, button_3: 0, button_4: 0 },
-  sensors: { sensor_0: 1827, sensor_1: 0, sensor_2: 0, sensor_3: 0, sensor_4: 355 },
+  sensors: { sensor_0: 1024, sensor_1: 0, sensor_2: 0, sensor_3: 0, sensor_4: 355 },
   loads: { load_0: 0, load_1: 0, load_2: 0, load_3: 0 },
 };
 
@@ -364,7 +364,7 @@ export function DeviceForm({
                 addonBefore={key}
                 value={val}
                 min={0}
-                max={1023}
+                max={1024}
                 onChange={(v) =>
                   onGpioChange({
                     ...gpio,

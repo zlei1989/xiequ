@@ -47,7 +47,7 @@ void AnalogSensor::setIntercept(int value) { intercept = value; }
 
 /**
  * 获得当前模拟值
- * @return 模拟值（0~1023）
+ * @return 模拟值（0~1024）
  */
 long AnalogSensor::getState() { return lastState; }
 
@@ -77,7 +77,7 @@ void AnalogSensor::next(bool silent) {
     return;
   }
   unsigned long now = millis();
-  // 读取模拟值（0~1023）
+  // 读取模拟值（0~1024）
   long state = analogRead(pin);
   // 数值未变化则跳过
   if (lastState == state) {

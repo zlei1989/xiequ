@@ -112,13 +112,21 @@ export default {
 
 **验收标准**：浇花模块所有页面可正常访问、操作。
 
-### 第三批：travel/ 旅行模块（5+ 个文件，~40 处 inline style）
+### 第三批：travel/ 旅行模块（5+ 个文件，~40 处 inline style）✅ 已完成
 
 迁移顺序（由外向内）：
-1. `app/travel/layout.tsx`
-2. `app/travel/page.tsx`
-3. `app/travel/list/page.tsx`
-4. `app/travel/components/` 逐个组件
+1. `app/travel/layout.tsx` ✅
+2. `app/travel/page.tsx` ✅
+3. `app/travel/list/page.tsx` ✅（无 inline style）
+4. `app/travel/components/` 逐个组件 ✅
+
+**已完成项目：**
+- `trip-map.tsx`: 错误 UI 手写 HTML + 内联样式 → antd-mobile `ErrorBlock` + `Button`；容器 style → `w-full h-[calc(100vh-64px)] bg-[var(--background)]`
+- `location-edit-popup.tsx`: `bodyStyle` → `bodyClassName="rounded-t-2xl min-h-[50vh] max-h-[75vh] overflow-auto"`
+- `location-view-popup.tsx`: `bodyStyle` → `bodyClassName="rounded-t-2xl max-h-[75vh] overflow-auto"`
+- `moment-edit-popup.tsx`: `bodyStyle` → `bodyClassName="rounded-t-2xl min-h-[40vh] max-h-[75vh] overflow-auto"`
+- `search-popup.tsx`: `bodyStyle` → `bodyClassName="rounded-t-2xl min-h-[60vh] max-h-[75vh] overflow-auto"`
+- `stats.tsx`: Card `headerStyle`/`bodyStyle` → `headerClassName`/`bodyClassName` + Tailwind
 
 **验收标准**：旅行模块所有页面可正常访问、操作。
 

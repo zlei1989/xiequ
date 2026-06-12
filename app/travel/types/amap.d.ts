@@ -30,6 +30,8 @@ declare namespace AMap {
     zoom: number;
     center: [number, number];
     resizeEnable?: boolean;
+    /** 地图样式 ID，如 'amap://styles/dark'。在构造函数传入可避免 setMapStyle 导致的闪烁 */
+    mapStyle?: string;
   }
 
   /** 标记点 */
@@ -58,10 +60,11 @@ declare namespace AMap {
   class Icon {
     constructor(options: IconOptions);
   }
+  /** Icon 有效属性：image、size、imageSize。imageOffset 是 MarkerCluster styles 的，非 Icon 的。 */
   interface IconOptions {
     image: string;
-    size: Pixel;
-    imageOffset?: Pixel;
+    size: [number, number];
+    imageSize?: [number, number];
   }
 
   /** 点聚合 */

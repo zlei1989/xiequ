@@ -21,6 +21,15 @@ import COS from 'cos-nodejs-sdk-v5';
 /** COS SDK 回调错误 — CosSdkError 运行时是 Error 实例，包含 stack */
 type OssErr = { statusCode?: number; message?: string; stack?: string };
 
+/** 将 COS SDK 回调错误转为 Error 实例（运行时已是 Error，此处做类型安全转换） */
+function toOssError(err: OssErr | null): Error {
+  if (err instanceof Error) return err;
+  const message = err?.message ?? '未知 OSS 错误';
+  const error = new Error(message);
+  if (err?.stack) error.stack = err.stack;
+  return error;
+}
+
 /**
  * headObject 回调 data — COS SDK 错误时回调不传 data（实际为 undefined），
  * 但 SDK 类型未标 optional，此处补充 | undefined 以匹配运行时语义。
@@ -193,12 +202,12 @@ export class TencentCosAdapter implements OssAdapter {
               // ERROR: 权限不足，打印堆栈和上下文方便排查
               console.error(`[OSS] headObject 403 (${String(elapsed)}ms) path=${path}:`, err.message || err);
               if (err.stack) console.error(err.stack);
-              reject(err);
+              reject(toOssError(err));
             } else {
               // ERROR: 其他网络或服务端错误
               console.error(`[OSS] headObject error (${String(elapsed)}ms) path=${path} statusCode=${String(err.statusCode)}:`, err.message || err);
               if (err.stack) console.error(err.stack);
-              reject(err);
+              reject(toOssError(err));
             }
           } else {
             if (elapsed > 500) console.log(`[OSS] headObject OK (${String(elapsed)}ms) path=${path}`);
@@ -233,7 +242,7 @@ export class TencentCosAdapter implements OssAdapter {
           // ERROR: 下载失败，打印堆栈和上下文
           console.error(`[OSS] getObject failed (${String(elapsed)}ms) path=${path}:`, err?.message || err);
           if (err?.stack) console.error(err.stack);
-          reject(err);
+          reject(toOssError(err));
         },
       );
     });
@@ -266,7 +275,7 @@ export class TencentCosAdapter implements OssAdapter {
             // ERROR: 签名 URL 生成失败，打印堆栈和上下文
             console.error(`[OSS] getSignedPutUrl failed (${String(elapsed)}ms) path=${path}:`, err.message || err);
             if (err.stack) console.error(err.stack);
-            reject(err); return;
+            reject(toOssError(err)); return;
           }
           if (elapsed > 500) console.log(`[OSS] getSignedPutUrl OK (${String(elapsed)}ms) path=${path}`);
           resolve(data.Url);
@@ -302,7 +311,7 @@ export class TencentCosAdapter implements OssAdapter {
             // ERROR: 签名 URL 生成失败，打印堆栈和上下文
             console.error(`[OSS] getSignedUrl failed (${String(elapsed)}ms) path=${path}:`, err.message || err);
             if (err.stack) console.error(err.stack);
-            reject(err); return;
+            reject(toOssError(err)); return;
           }
           if (elapsed > 500) console.log(`[OSS] getSignedUrl OK (${String(elapsed)}ms) path=${path}`);
           resolve(data.Url);
@@ -349,7 +358,7 @@ export class TencentCosAdapter implements OssAdapter {
             // ERROR: 上传失败，打印堆栈和上下文
             console.error(`[OSS] putObject failed (${String(elapsed)}ms) path=${path}:`, err.message || err);
             if (err.stack) console.error(err.stack);
-            reject(err); return;
+            reject(toOssError(err)); return;
           }
           if (elapsed > 500) console.log(`[OSS] putObject OK (${String(elapsed)}ms) path=${path}`);
           resolve();
@@ -398,7 +407,7 @@ export class TencentCosAdapter implements OssAdapter {
             // ERROR: 删除失败，打印堆栈和上下文
             console.error(`[OSS] deleteObject failed (${String(elapsed)}ms) path=${path}:`, err.message || err);
             if (err.stack) console.error(err.stack);
-            reject(err); return;
+            reject(toOssError(err)); return;
           }
           if (elapsed > 500) console.log(`[OSS] deleteObject OK (${String(elapsed)}ms) path=${path}`);
           resolve();

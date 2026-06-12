@@ -2,10 +2,12 @@
  * MarkerEngine 标注引擎单元测试
  *
  * 测试增量 diff 更新逻辑：新增/删除/状态变更/destroy。
- * 使用 AMap mock 模拟地图 SDK，验证 Marker 和 MarkerClusterer 的调用。
+ * 使用 AMap mock 模拟地图 SDK，验证 Marker 和 map.add/map.remove 的调用。
  *
- * 注意：AMap MarkerClusterer 只有 setMarkers() 方法，没有 add/remove 系列方法。
+ * 注意：已移除 MarkerClusterer 路径 —— setMarkers() 经实测为空操作。
  */
+
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
@@ -32,12 +34,12 @@ function makeLocation(overrides: Partial<Location> = {}): Location {
 
 /** 创建 mock 地图实例并构造引擎 */
 function setupEngine(onClick?: (loc: Location) => void) {
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+   
   const map = new mockAmap.Map();
   const onMarkerClick = onClick ?? (() => {});
   // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
   const engine = createMarkerEngine(map, onMarkerClick);
-  return { engine };
+  return { engine, map };
 }
 
 describe('createMarkerEngine', () => {
@@ -50,8 +52,8 @@ describe('createMarkerEngine', () => {
     mockAmap.uninstall();
   });
 
-  it('creates markers for initial locations', () => {
-    const { engine } = setupEngine();
+  it('creates markers and adds to map for initial locations', () => {
+    const { engine, map } = setupEngine();
 
     const locations = [makeLocation({ id: '1' }), makeLocation({ id: '2' })];
     engine.update(locations);
@@ -59,37 +61,47 @@ describe('createMarkerEngine', () => {
     // 验证 Marker 被创建了 2 次
     const MarkerCtor = mockAmap.Marker as ReturnType<typeof vi.fn>;
     expect(MarkerCtor).toHaveBeenCalledTimes(2);
+
+    // 验证每个 marker 都通过 map.add 添加到地图
+    /* eslint-disable @typescript-eslint/no-unsafe-member-access */
+    const addSpy = map.add as ReturnType<typeof vi.fn>;
+    expect(addSpy).toHaveBeenCalledTimes(2);
   });
 
   it('adds new marker for new location on second update', () => {
-    const { engine } = setupEngine();
+     
+    const { engine, map } = setupEngine();
 
     engine.update([makeLocation({ id: '1' })]);
-    const callCountAfterFirst = (mockAmap.Marker as ReturnType<typeof vi.fn>).mock.calls.length;
+     
+    const markerCallsAfterFirst = (mockAmap.Marker as ReturnType<typeof vi.fn>).mock.calls.length;
+     
+    const addCallsAfterFirst = (map.add as ReturnType<typeof vi.fn>).mock.calls.length;
 
     engine.update([makeLocation({ id: '1' }), makeLocation({ id: '2' })]);
-    const callCountAfterSecond = (mockAmap.Marker as ReturnType<typeof vi.fn>).mock.calls.length;
 
     // 第二次 update 只应新建 id='2' 的 marker（1 个），不应重建 id='1'
-    expect(callCountAfterSecond - callCountAfterFirst).toBe(1);
+     
+    expect(
+      (mockAmap.Marker as ReturnType<typeof vi.fn>).mock.calls.length - markerCallsAfterFirst,
+    ).toBe(1);
+    // 只应新增 1 次 map.add（id='2'）
+     
+    expect((map.add as ReturnType<typeof vi.fn>).mock.calls.length - addCallsAfterFirst).toBe(1);
   });
 
-  it('removes marker for deleted location via setMarkers', () => {
-    const { engine } = setupEngine();
+  it('removes marker for deleted location via map.remove', () => {
+     
+    const { engine, map } = setupEngine();
 
     engine.update([makeLocation({ id: '1' }), makeLocation({ id: '2' })]);
 
     // 删除 id='1'
     engine.update([makeLocation({ id: '2' })]);
 
-    // MarkerClusterer.setMarkers 被调用（update 结束时全量同步）
-    /* eslint-disable @typescript-eslint/no-unsafe-member-access,
-        @typescript-eslint/no-unsafe-assignment */
-    const clustererSetMarkers = mockAmap.MarkerClusterer.mock.results[0]?.value?.setMarkers;
-    /* eslint-enable @typescript-eslint/no-unsafe-member-access,
-        @typescript-eslint/no-unsafe-assignment */
-    // 第二次 update 时应调用过 setMarkers
-    expect(clustererSetMarkers).toHaveBeenCalled();
+    // map.remove 被调用 1 次（删除 id='1' 的 marker）
+     
+    expect(map.remove).toHaveBeenCalledTimes(1);
   });
 
   it('updates icon when checked status changes', () => {
@@ -101,9 +113,9 @@ describe('createMarkerEngine', () => {
     engine.update([makeLocation({ id: '1', checked: true })]);
 
     // Marker.setIcon 被调用
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+     
     const markerInstance = (mockAmap.Marker as ReturnType<typeof vi.fn>).mock.results[0]?.value;
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+     
     expect(markerInstance.setIcon).toHaveBeenCalledTimes(1);
   });
 
@@ -121,20 +133,15 @@ describe('createMarkerEngine', () => {
     expect(callCountAfterSecond).toBe(callCountAfterFirst);
   });
 
-  it('destroy clears clusterer via setMarkers([])', () => {
-    const { engine } = setupEngine();
+  it('destroy removes all markers from map', () => {
+     
+    const { engine, map } = setupEngine();
 
-    engine.update([makeLocation({ id: '1' })]);
+    engine.update([makeLocation({ id: '1' }), makeLocation({ id: '2' })]);
     engine.destroy();
 
-    // MarkerClusterer.setMarkers 被调用（清空为空数组）
-    /* eslint-disable @typescript-eslint/no-unsafe-member-access,
-        @typescript-eslint/no-unsafe-assignment */
-    const clustererSetMarkers = mockAmap.MarkerClusterer.mock.results[0]?.value?.setMarkers;
-    /* eslint-enable @typescript-eslint/no-unsafe-member-access,
-        @typescript-eslint/no-unsafe-assignment */
-    // destroy 时应调用 setMarkers([]) 清空
-    const lastCall = (clustererSetMarkers as ReturnType<typeof vi.fn>)?.mock?.lastCall;
-    expect(lastCall?.[0]).toEqual([]);
+    // destroy 时应调用 map.remove 移除所有 marker
+     
+    expect(map.remove).toHaveBeenCalledTimes(2);
   });
 });

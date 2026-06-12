@@ -56,7 +56,6 @@ export function loadAmap(): Promise<AMapModule> {
         'AMap.DistrictSearch',
         'AMap.Geolocation',
         'AMap.Geocoder',
-        'AMap.MarkerClusterer',
       ],
     }),
   ) as Promise<AMapModule>;

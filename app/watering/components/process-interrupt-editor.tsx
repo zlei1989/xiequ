@@ -76,7 +76,7 @@ export function ProcessInterruptEditor({
           onChange={(e) =>
           { onChange({
             ...interrupt,
-            signalType: e.target.value,
+            signalType: e.target.value as Interrupt['signalType'],
           }); }
           }
           optionType="button"
@@ -116,7 +116,7 @@ export function ProcessInterruptEditor({
               onChange={(e) =>
               { onChange({
                 ...interrupt,
-                logic: e.target.value,
+                logic: e.target.value as Interrupt['logic'],
               }); }
               }
               optionType="button"

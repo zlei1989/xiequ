@@ -73,13 +73,7 @@ export function LocationEditPopup({
       onMaskClick={onClose}
       onClose={onClose}
       position="bottom"
-      bodyStyle={{
-        borderTopLeftRadius: 16,
-        borderTopRightRadius: 16,
-        minHeight: '50vh',
-        maxHeight: '75vh',
-        overflow: 'auto',
-      }}
+      bodyClassName="rounded-t-2xl min-h-[50vh] max-h-[75vh] overflow-auto"
     >
       <NavBar
         onBack={onClose}

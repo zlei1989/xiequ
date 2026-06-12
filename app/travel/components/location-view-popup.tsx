@@ -103,12 +103,7 @@ export function LocationViewPopup({
       onMaskClick={onClose}
       onClose={onClose}
       position="bottom"
-      bodyStyle={{
-        borderTopLeftRadius: 16,
-        borderTopRightRadius: 16,
-        maxHeight: '75vh',
-        overflow: 'auto',
-      }}
+      bodyClassName="rounded-t-2xl max-h-[75vh] overflow-auto"
     >
       <div className="relative">
         <CoverImage src={coverUrl} alt={loc.name} height={240} />

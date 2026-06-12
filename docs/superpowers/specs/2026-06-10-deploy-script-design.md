@@ -83,7 +83,7 @@ DEPLOY_SCF_FUNCTION=
 zip 包内结构（对应 SCF 函数运行时根目录）：
 
 ```
-server_scf_20260610235959.zip
+server_scf_20260610245959.zip
 ├── scf_bootstrap       # SCF 入口启动脚本（已有）
 ├── package.json        # 运行时依赖声明
 ├── node_modules/       # 生产依赖（由 SCF InstallDependency 自动安装）

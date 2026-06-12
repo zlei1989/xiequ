@@ -2,9 +2,15 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** 修复 TripMap 切换 Tab 后标注消失 bug，添加 MarkerClusterer 聚类、按状态区分标注颜色、系统亮暗主题跟随。
+**Goal:** 修复 TripMap 切换 Tab 后标注消失 bug，按状态区分标注颜色、系统亮暗主题跟随。
 
-**Architecture:** 在 TripMap 中引入 `mapReady` 状态串行化异步时序；新增 `marker-style.ts`（antd-mobile 语义色图标）、`marker-engine.ts`（增量 diff + AMap.MarkerClusterer）、`use-map-theme.ts`（MutationObserver 监听系统主题）三个独立模块。不改变组件树结构。
+**Architecture:** 在 TripMap 中引入 `mapReady` 状态串行化异步时序；新增 `marker-style.ts`（antd-mobile 语义色图标）、`marker-engine.ts`（增量 diff + map.add/map.remove）、`use-map-theme.ts`（MutationObserver 监听系统主题）三个独立模块。不改变组件树结构。
+
+> **实施后变更（2026-06-13）：**
+> - **移除 MarkerClusterer** — 经浏览器运行时验证，`AMap.MarkerClusterer.setMarkers()` 为空操作（仅返回 length），`setData()` 需要 `{lnglat, weight}[]` 格式，与 `AMap.Marker[]` 体系不兼容。改为 `map.add()`/`map.remove()` 直接管理标注。
+> - **修正 IconOptions** — `imageOffset` 不是 `AMap.Icon` 的有效属性（属于 MarkerCluster styles），改为 `imageSize`。类型定义同步修正。
+> - **SVG data URL 编码** — 颜色值 `#` 编码为 `%23`，防止被移动端 WebView 误解析为 URL fragment。
+> - **移除标注文字标签** — marker 不再设置 `label` 属性，仅保留圆点图标 + `title` 悬停提示。
 
 **Tech Stack:** AMap JSAPI v2.0, @amap/amap-jsapi-loader, React 19, antd-mobile 5.x, vitest, TypeScript
 
@@ -782,86 +788,12 @@ npx vitest run __tests__/travel/use-map-theme.test.ts
 
 创建 `app/travel/hooks/use-map-theme.ts`：
 
-```typescript
-/**
- * 地图亮暗主题跟随 Hook
- *
- * 读取 document.documentElement.dataset.prefersColorScheme 获取系统主题，
- * 通过 MutationObserver 监听变化，调用 map.setMapStyle() 切换 AMap 暗色/亮色样式。
- */
-
-import { useEffect, useRef, useState } from 'react';
-
-/** AMap 地图样式 ID */
-const STYLE_MAP = {
-  light: 'amap://styles/light',
-  dark: 'amap://styles/dark',
-} as const;
-
-type Theme = keyof typeof STYLE_MAP;
-
-/** 从 DOM 读取当前系统主题 */
-function readTheme(): Theme {
-  if (typeof document === 'undefined') return 'light';
-  const val = document.documentElement.dataset.prefersColorScheme;
-  return val === 'dark' ? 'dark' : 'light';
-}
-
-/**
- * 监听系统主题变化并同步到 AMap 地图
- *
- * @param map — AMap.Map 实例（null 时不做任何操作）
- * @returns 当前主题字符串（'light' | 'dark'），map 为 null 时返回 null
- */
-export function useMapTheme(map: AMap.Map | null): Theme | null {
-  const [theme, setTheme] = useState<Theme | null>(() =>
-    map ? readTheme() : null,
-  );
-  // 用 ref 避免 MutationObserver 回调中读到过期 theme
-  const themeRef = useRef(theme);
-  themeRef.current = theme;
-
-  useEffect(() => {
-    if (!map) return;
-
-    // 初始设置
-    const initial = readTheme();
-    setTheme(initial);
-    map.setMapStyle(STYLE_MAP[initial]);
-
-    // 监听 data-prefers-color-scheme 属性变化
-    const observer = new MutationObserver(() => {
-      const next = readTheme();
-      if (next !== themeRef.current) {
-        setTheme(next);
-        // 加过渡避免突兀跳变（通过操作地图容器样式）
-        const container = map.getContainer?.();
-        if (container && 'style' in container) {
-          (container as HTMLElement).style.transition = 'opacity 300ms';
-          (container as HTMLElement).style.opacity = '0.6';
-          map.setMapStyle(STYLE_MAP[next]);
-          setTimeout(() => {
-            (container as HTMLElement).style.opacity = '1';
-          }, 100);
-        } else {
-          map.setMapStyle(STYLE_MAP[next]);
-        }
-      }
-    });
-
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['data-prefers-color-scheme'],
-    });
-
-    return () => {
-      observer.disconnect();
-    };
-  }, [map]);
-
-  return theme;
-}
-```
+> **实际实现使用了 `useSyncExternalStore` + `useCallback`，而非此处的 `useState` + `useRef`。**
+> 详见源文件 `app/travel/hooks/use-map-theme.ts`。
+> 核心设计：
+> - `useSyncExternalStore` 订阅 MutationObserver（监听 `data-prefers-color-scheme`），React 自动管理订阅生命周期
+> - `useEffect` 在 map 实例或 theme 变化时调用 `map.setMapStyle()`
+> - 导出 `readTheme()` 和 `STYLE_MAP`，供 map 构造函数同步使用
 
 - [ ] **Step 4: 运行测试确认通过**
 
@@ -915,7 +847,14 @@ git commit -m "feat: amap plugins 添加 AMap.MarkerClusterer"
 
 - [ ] **Step 1: 重写 TripMap 组件**
 
-用以下内容替换 `app/travel/components/trip-map.tsx`：
+用以下内容替换 `app/travel/components/trip-map.tsx`。
+
+> **实际实现与下方代码有以下差异**（详见源文件）：
+> - Map 构造时传入 `mapStyle: STYLE_MAP[readTheme()]`，防闪烁
+> - 容器 className 用 Tailwind（`w-full h-[calc(100vh-64px)] bg-[var(--background)]`），不再手写内联 style
+> - 错误 UI 改用 antd-mobile `ErrorBlock` + `Button`，不再手写 HTML + 内联样式
+> - 重试用 `retryKey` state（作为 useEffect 依赖），不用 `retryRef`
+> - props 新增 `className?: string`
 
 ```typescript
 /**

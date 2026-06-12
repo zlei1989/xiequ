@@ -89,10 +89,9 @@ export async function removeLocation(id: string) {
   console.info('[Travel] removeLocation:', id);
   const t0 = Date.now();
   try {
-    const result = await deleteLocation(id);
+    await deleteLocation(id);
     const elapsed = Date.now() - t0;
     if (elapsed > 500) console.info(`[Travel] removeLocation 耗时 ${String(elapsed)}ms`);
-    return result;
   } catch (err) {
     console.error('[Travel] removeLocation 失败:', { id, error: err });
     if (err instanceof Error && err.stack) console.error(err.stack);
@@ -178,11 +177,13 @@ export async function getUploadUrl(id: string, type: 'cover' | 'icon' = 'cover')
  * 返回带样式后缀的公共访问地址：
  * https://{bucket}.cos.{region}.myqcloud.com/apps/travel/posters/{id}.jpg/{type}
  */
+/** @see {@link getPosterStyledUrl} — 同步函数，但 Server Action 需要 async 以支持客户端 Promise 包装 */
+// eslint-disable-next-line @typescript-eslint/require-await
 export async function getImageUrl(id: string, type: 'cover' | 'icon' = 'cover') {
   console.info('[Travel] getImageUrl:', id, type);
   const t0 = Date.now();
   try {
-    const result = await getPosterStyledUrl(id, type);
+    const result = getPosterStyledUrl(id, type);
     const elapsed = Date.now() - t0;
     if (elapsed > 500) console.info(`[Travel] getImageUrl 耗时 ${String(elapsed)}ms`);
     return result;

@@ -65,8 +65,10 @@ describe('useBackButton', () => {
     const useBackButton = await loadHook();
     const onClose = vi.fn();
 
-    const { rerender, unmount } = renderHook<ReturnType<typeof useBackButton>, { visible: boolean }>(
-      ({ visible }) => { useBackButton(visible, onClose); },
+    const { rerender, unmount } = renderHook<
+      ReturnType<typeof useBackButton>,
+      { visible: boolean }
+    >(({ visible }) => { useBackButton(visible, onClose); },
       { initialProps: { visible: false } },
     );
 
@@ -87,8 +89,10 @@ describe('useBackButton', () => {
     const useBackButton = await loadHook();
     const onClose = vi.fn();
 
-    const { rerender, unmount } = renderHook<ReturnType<typeof useBackButton>, { visible: boolean }>(
-      ({ visible }) => { useBackButton(visible, onClose); },
+    const { rerender, unmount } = renderHook<
+      ReturnType<typeof useBackButton>,
+      { visible: boolean }
+    >(({ visible }) => { useBackButton(visible, onClose); },
       { initialProps: { visible: false } },
     );
 
@@ -106,15 +110,19 @@ describe('useBackButton', () => {
     const onCloseB = vi.fn();
 
     // 弹窗 A
-    const { rerender: rerenderA, unmount: unmountA } = renderHook<ReturnType<typeof useBackButton>, { visible: boolean }>(
-      ({ visible }) => { useBackButton(visible, onCloseA); },
+    const { rerender: rerenderA, unmount: unmountA } = renderHook<
+      ReturnType<typeof useBackButton>,
+      { visible: boolean }
+    >(({ visible }) => { useBackButton(visible, onCloseA); },
       { initialProps: { visible: false } },
     );
     rerenderA({ visible: true });
 
     // 弹窗 B（嵌套在 A 之上）
-    const { rerender: rerenderB, unmount: unmountB } = renderHook<ReturnType<typeof useBackButton>, { visible: boolean }>(
-      ({ visible }) => { useBackButton(visible, onCloseB); },
+    const { rerender: rerenderB, unmount: unmountB } = renderHook<
+      ReturnType<typeof useBackButton>,
+      { visible: boolean }
+    >(({ visible }) => { useBackButton(visible, onCloseB); },
       { initialProps: { visible: false } },
     );
     rerenderB({ visible: true });
@@ -139,8 +147,10 @@ describe('useBackButton', () => {
     const useBackButton = await loadHook();
     const onClose = vi.fn();
 
-    const { rerender, unmount } = renderHook<ReturnType<typeof useBackButton>, { visible: boolean }>(
-      ({ visible }) => { useBackButton(visible, onClose); },
+    const { rerender, unmount } = renderHook<
+      ReturnType<typeof useBackButton>,
+      { visible: boolean }
+    >(({ visible }) => { useBackButton(visible, onClose); },
       { initialProps: { visible: false } },
     );
 
@@ -162,8 +172,10 @@ describe('useBackButton', () => {
     const useBackButton = await loadHook();
     const onClose = vi.fn();
 
-    const { rerender, unmount } = renderHook<ReturnType<typeof useBackButton>, { visible: boolean }>(
-      ({ visible }) => { useBackButton(visible, onClose); },
+    const { rerender, unmount } = renderHook<
+      ReturnType<typeof useBackButton>,
+      { visible: boolean }
+    >(({ visible }) => { useBackButton(visible, onClose); },
       { initialProps: { visible: false } },
     );
 
@@ -182,10 +194,12 @@ describe('useBackButton', () => {
     const onCloseOld = vi.fn();
     const onCloseNew = vi.fn();
 
-    const { rerender, unmount } = renderHook<ReturnType<typeof useBackButton>, { visible: boolean; cb: () => void }>(
-      ({ visible, cb }) => { useBackButton(visible, cb); },
-    { initialProps: { visible: true, cb: onCloseOld } },
-    );
+    const { rerender, unmount } = renderHook<
+      ReturnType<typeof useBackButton>,
+      { visible: boolean; cb: () => void }
+    >(({ visible, cb }) => { useBackButton(visible, cb); },
+        { initialProps: { visible: true, cb: onCloseOld } },
+        );
 
     // 更新回调函数引用
     rerender({ visible: true, cb: onCloseNew });
@@ -205,15 +219,19 @@ describe('useBackButton', () => {
     const onCloseB = vi.fn();
 
     // 弹窗 A
-    const { rerender: rerenderA, unmount: unmountA } = renderHook<ReturnType<typeof useBackButton>, { visible: boolean }>(
-      ({ visible }) => { useBackButton(visible, onCloseA); },
+    const { rerender: rerenderA, unmount: unmountA } = renderHook<
+      ReturnType<typeof useBackButton>,
+      { visible: boolean }
+    >(({ visible }) => { useBackButton(visible, onCloseA); },
       { initialProps: { visible: false } },
     );
     rerenderA({ visible: true });
 
     // 弹窗 B
-    const { rerender: rerenderB, unmount: unmountB } = renderHook<ReturnType<typeof useBackButton>, { visible: boolean }>(
-      ({ visible }) => { useBackButton(visible, onCloseB); },
+    const { rerender: rerenderB, unmount: unmountB } = renderHook<
+      ReturnType<typeof useBackButton>,
+      { visible: boolean }
+    >(({ visible }) => { useBackButton(visible, onCloseB); },
       { initialProps: { visible: false } },
     );
     rerenderB({ visible: true });
@@ -238,7 +256,10 @@ describe('useBackButton', () => {
     const { unmount: unmount1 } = renderHook<
       ReturnType<typeof useBackButton>,
       { visible: boolean; cb: () => void }
-    >(({ visible, cb }) => { useBackButton(visible, cb); }, { initialProps: { visible: true, cb: onClose1 } });
+    >(
+        ({ visible, cb }) => { useBackButton(visible, cb); },
+        { initialProps: { visible: true, cb: onClose1 } },
+        );
 
     // 卸载（模拟路由切换等场景）
     unmount1();
@@ -247,7 +268,10 @@ describe('useBackButton', () => {
     const { unmount: unmount2 } = renderHook<
       ReturnType<typeof useBackButton>,
       { visible: boolean; cb: () => void }
-    >(({ visible, cb }) => { useBackButton(visible, cb); }, { initialProps: { visible: true, cb: onClose2 } });
+    >(
+        ({ visible, cb }) => { useBackButton(visible, cb); },
+        { initialProps: { visible: true, cb: onClose2 } },
+        );
 
     // 返回键应触发最新的 onClose2，而非旧的 onClose1
     firePopstate();

@@ -9,9 +9,10 @@
 
 'use client';
 
+import { Button, ErrorBlock } from 'antd-mobile';
 import { forwardRef, useImperativeHandle, useEffect, useRef, useState } from 'react';
 
-import { useMapTheme } from '../hooks/use-map-theme';
+import { readTheme, STYLE_MAP, useMapTheme } from '../hooks/use-map-theme';
 import { loadAmap } from '../services/amap';
 import { createMarkerEngine } from '../services/marker-engine';
 
@@ -87,6 +88,8 @@ export const TripMap = forwardRef<
             zoom,
             center,
             resizeEnable: true,
+            // 构造时即传入当前主题样式，避免地图先用默认亮色再 setMapStyle 切暗色导致的闪烁
+            mapStyle: STYLE_MAP[readTheme()],
           });
 
           map.on('moveend', () => {
@@ -145,52 +148,24 @@ export const TripMap = forwardRef<
       // 加载失败降级 UI（重试 3 次后放弃）
       if (loadError && retryKey >= 3) {
         return (
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              height: '100%',
-              color: '#999',
-              fontSize: 14,
-              gap: 12,
-            }}
-          >
-            <span>地图加载失败</span>
-            <span style={{ fontSize: 12 }}>请检查网络连接后刷新页面</span>
+          <div className="flex h-full items-center justify-center">
+            <ErrorBlock
+              status="default"
+              title="地图加载失败"
+              description="请检查网络连接后刷新页面"
+            />
           </div>
         );
       }
 
       if (loadError) {
         return (
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              height: '100%',
-              color: '#999',
-              fontSize: 14,
-              gap: 12,
-            }}
-          >
-            <span>{loadError}</span>
-            <button
-              onClick={handleRetry}
-              style={{
-                padding: '8px 16px',
-                borderRadius: 4,
-                border: '1px solid #1677ff',
-                background: 'white',
-                color: '#1677ff',
-                cursor: 'pointer',
-              }}
-            >
-              重试
-            </button>
+          <div className="flex h-full items-center justify-center">
+            <ErrorBlock status="default" title={loadError}>
+              <Button color="primary" fill="outline" onClick={handleRetry}>
+                重试
+              </Button>
+            </ErrorBlock>
           </div>
         );
       }
@@ -198,8 +173,10 @@ export const TripMap = forwardRef<
       return (
         <div
           ref={containerRef}
-          className={className}
-          style={{ width: '100%', height: 'calc(100vh - 64px)', ...style }}
+          // w-full + h-[calc(100vh-64px)] 替代内联 width/height，
+          // bg-[var(--background)] 跟随系统主题，避免 AMap 接管前透出白色
+          className={`h-[calc(100vh-64px)] w-full bg-[var(--background)] ${className || ''}`}
+          style={style}
         />
       );
     });

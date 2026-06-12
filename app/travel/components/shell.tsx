@@ -84,6 +84,8 @@ export function Shell({ children }: { children: ReactNode }) {
         <TabBar.Item key="/travel/list" icon={<StarOutline />} title="收藏" />
       </TabBar>
 
+      <SafeArea position="bottom" />
+
       <ActionSheet
         visible={actionVisible}
         actions={[

@@ -14,15 +14,19 @@
 import { useCallback, useEffect, useSyncExternalStore } from 'react';
 
 /** AMap 地图样式 ID */
-const STYLE_MAP = {
+export const STYLE_MAP = {
   light: 'amap://styles/light',
   dark: 'amap://styles/dark',
 } as const;
 
 type Theme = keyof typeof STYLE_MAP;
 
-/** 从 DOM 读取当前系统主题 */
-function readTheme(): Theme {
+/**
+ * 从 DOM 同步读取当前系统主题
+ *
+ * 可在 map 构造函数中调用，确保地图首帧即用正确样式，避免 setMapStyle 闪烁。
+ */
+export function readTheme(): Theme {
   if (typeof document === 'undefined') return 'light';
   const val = document.documentElement.dataset.prefersColorScheme;
   return val === 'dark' ? 'dark' : 'light';
@@ -48,7 +52,7 @@ export function useMapTheme(map: AMap.Map | null): Theme | null {
     }, []),
     useCallback(() => readTheme(), []),
     // SSR 快照：服务端无 DOM，始终返回 light
-    useCallback(() => 'light' as Theme, []),
+    useCallback(() => 'light', []),
   );
 
   // 当 map 实例或主题变化时，同步到地图样式
