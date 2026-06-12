@@ -6,7 +6,7 @@
 
 'use client';
 
-import { NavBar, NoticeBar } from 'antd-mobile';
+import { NavBar, NoticeBar,Space } from 'antd-mobile';
 
 import { DeviceForm } from './components/device-form';
 import { EventButtons } from './components/event-buttons';
@@ -29,7 +29,7 @@ export default function DebugPage() {
   } = useIotSimulator();
 
   return (
-    <div className="flex flex-col gap-4">
+    <>
       <NavBar back={null}>
         IoT 设备模拟器
       </NavBar>
@@ -37,23 +37,22 @@ export default function DebugPage() {
         content="模拟 ESP32 设备发起 getState / pushState 请求，用于调试服务端设备协议"
         color="default"
       />
-
-      <DeviceForm
-        identity={identity}
-        onIdentityChange={setIdentity}
-        gpio={gpio}
-        onGpioChange={setGpio}
-      />
-
-      <EventButtons
-        onGetState={getState}
-        onPushBootstrap={pushBootstrap}
-        onPushChange={pushChange}
-        onPushFinish={pushFinish}
-        loading={loading}
-      />
-
-      <ResponseLog logs={logs} onClear={clearLogs} />
-    </div>
+      <Space  direction='vertical' block className="gap-4">
+        <DeviceForm
+          identity={identity}
+          onIdentityChange={setIdentity}
+          gpio={gpio}
+          onGpioChange={setGpio}
+        />
+        <EventButtons
+          onGetState={getState}
+          onPushBootstrap={pushBootstrap}
+          onPushChange={pushChange}
+          onPushFinish={pushFinish}
+          loading={loading}
+        />
+        <ResponseLog logs={logs} onClear={clearLogs} />
+      </Space>
+    </>
   );
 }

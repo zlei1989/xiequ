@@ -11,7 +11,7 @@ import { useState, useCallback, useRef } from 'react';
 export type GpioState = {
   /** 数字传感器 — sensor_1(水浸1), sensor_2(水浸2)，值域 0/1 */
   digitalSensors: Record<string, number>;
-  /** 模拟传感器 — sensor_0(温度), sensor_3(负载电压), sensor_4(电源电压)，值域 0-1023 */
+  /** 模拟传感器 — sensor_0(温度), sensor_3(负载电压), sensor_4(电源电压)，值域 0-1024 */
   analogSensors: Record<string, number>;
   /** 按钮 — button_0~4，值域 0/1，默认 1（高电平） */
   buttons: Record<string, number>;
@@ -38,7 +38,7 @@ export type LogEntry = {
 
 const DEFAULT_GPIO: GpioState = {
   digitalSensors: { sensor_1: 0, sensor_2: 0 },
-  analogSensors: { sensor_0: 1827, sensor_3: 0, sensor_4: 355 },
+  analogSensors: { sensor_0: 1024, sensor_3: 0, sensor_4: 355 },
   buttons: { button_0: 1, button_1: 1, button_2: 1, button_3: 1, button_4: 1 },
   loads: { load_0: 0, load_1: 0, load_2: 0, load_3: 0 },
 };

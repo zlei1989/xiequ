@@ -8,6 +8,7 @@
 'use client';
 
 import {
+  AutoCenter,
   Form,
   Grid,
   Input,
@@ -15,6 +16,7 @@ import {
   Slider,
   Space,
   Switch,
+  Stepper,
 } from 'antd-mobile';
 import { useCallback, useEffect, useRef } from 'react';
 
@@ -111,7 +113,7 @@ export function DeviceForm({
   return (
     <>
       {/* ---- 设备标识 ---- */}
-      <Form layout="horizontal">
+      <Form>
         <Form.Header>设备标识</Form.Header>
         <Form.Item label="chipId">
           <Input
@@ -138,7 +140,7 @@ export function DeviceForm({
       </Form>
 
       {/* ---- 数字传感器 ---- */}
-      <Form layout="horizontal">
+      <Form>
         <Form.Header>数字传感器 (0/1)</Form.Header>
         {Object.entries(gpio.digitalSensors).map(([key, val]) => (
           <Form.Item
@@ -163,7 +165,7 @@ export function DeviceForm({
       </Form>
 
       {/* ---- 按钮 ---- */}
-      <Form layout="horizontal">
+      <Form>
         <Form.Header>按钮 (0/1，切为 0 后 2 秒自动回 1)</Form.Header>
         {Object.entries(gpio.buttons).map(([key, val]) => (
           <Form.Item
@@ -182,54 +184,44 @@ export function DeviceForm({
       </Form>
 
       {/* ---- 模拟传感器 ---- */}
-      <Form layout="horizontal">
-        <Form.Header>模拟传感器 (0-1023)</Form.Header>
+      <Form>
+        <Form.Header>模拟传感器 (0-1024)</Form.Header>
         {Object.entries(gpio.analogSensors).map(([key, val]) => (
+          // <Space direction="vertical" block>
           <Form.Item
             key={key}
             label={`${key} (${ANALOG_LABELS[key] ?? key})`}
           >
-            <Space direction="vertical" block>
-              <Input
-                value={String(val)}
-                onChange={(v) => {
-                  const num = Math.min(
-                    1023,
-                    Math.max(0, parseInt(v, 10) || 0),
-                  );
-                  onGpioChange({
-                    ...gpio,
-                    analogSensors: {
-                      ...gpio.analogSensors,
-                      [key]: num,
-                    },
-                  });
-                }}
-                type="number"
-              />
-              <Slider
-                min={0}
-                max={1023}
-                step={1}
-                value={val}
-                onChange={(v) => {
-                  const num = v as number;
-                  onGpioChange({
-                    ...gpio,
-                    analogSensors: {
-                      ...gpio.analogSensors,
-                      [key]: num,
-                    },
-                  });
-                }}
-              />
-            </Space>
+            <Grid columns={4} gap={12}>
+              <Grid.Item span={3}>
+                <Slider
+                  min={0}
+                  max={1024}
+                  step={1}
+                  value={val}
+                  onChange={(v) => {
+                    const num = v as number;
+                    onGpioChange({
+                      ...gpio,
+                      analogSensors: {
+                        ...gpio.analogSensors,
+                        [key]: num,
+                      },
+                    });
+                  }}
+                />
+              </Grid.Item>
+              <Grid.Item span={1}>
+                <Stepper step={1} defaultValue={val} />
+              </Grid.Item>
+
+            </Grid>
           </Form.Item>
         ))}
       </Form>
 
       {/* ---- 负载（纯展示） ---- */}
-      <Form layout="horizontal">
+      <Form>
         <Form.Header>负载</Form.Header>
         <Grid columns={2} gap={12}>
           {Object.entries(gpio.loads).map(([key, val]) => {
@@ -257,20 +249,24 @@ export function DeviceForm({
 
             return (
               <Grid.Item key={key}>
-                <ProgressCircle
-                  percent={pwmPercent}
-                  style={{
-                    '--fill-color': color,
-                    '--size': '64px',
-                    '--track-width': '4px',
-                  }}
-                >
-                  <span className="text-sm font-medium">{val}</span>
-                </ProgressCircle>
-                <Space direction="vertical" block>
-                  <span className="text-xs text-gray-500">{key}</span>
-                  <span className="text-xs text-gray-400">{label}</span>
-                </Space>
+                <AutoCenter>
+                  <Space direction="vertical" className="gap-0">
+                    <ProgressCircle
+                      percent={pwmPercent}
+                      style={{
+                        '--fill-color': color,
+                        '--size': '64px',
+                        '--track-width': '4px',
+                      }}
+                    >
+                      <span className="text-sm font-medium">{val}</span>
+                    </ProgressCircle>
+                    <Space>
+                      <span className="text-xs text-gray-500">{key}</span>
+                      <span className="text-xs text-gray-400">{label}</span>
+                    </Space>
+                  </Space>
+                </AutoCenter>
               </Grid.Item>
             );
           })}

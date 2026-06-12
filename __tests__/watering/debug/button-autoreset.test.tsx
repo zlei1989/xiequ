@@ -162,9 +162,9 @@ describe('按钮自动复位', () => {
 });
 
 describe('模拟传感器值 clamp', () => {
-  it('超出 1023 时 clamp 为 1023', () => {
-    const clamp = (v: number) => Math.min(1023, Math.max(0, v));
-    expect(clamp(2000)).toBe(1023);
+  it('超出 1024 时 clamp 为 1024', () => {
+    const clamp = (v: number) => Math.min(1024, Math.max(0, v));
+    expect(clamp(2000)).toBe(1024);
     expect(clamp(-5)).toBe(0);
     expect(clamp(512)).toBe(512);
   });
