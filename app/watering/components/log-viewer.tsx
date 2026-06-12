@@ -150,16 +150,16 @@ function getStepStatus(event: string): 'wait' | 'finish' | 'error' {
 /**
  * 判定组的整体状态
  *
- * 包含 finish/execute 且不含 offline/terminate → 已完成
- * 其他 → 异常
+ * 包含 finish 且不含 offline/terminate → 已完成
+ * execute 仅表示流程触发，不代表完成，不作为「已完成」的判定依据
  */
-function getGroupStatus(items: LogItem[]): { status: 'finish' | 'error'; label: string; color: string } {
-  const hasFinish = items.some((i) => i.event === 'finish' || i.event === 'execute');
+function getGroupStatus(items: LogItem[]): { label: string; color: string } {
+  const hasFinish = items.some((i) => i.event === 'finish');
   const hasAbnormal = items.some((i) => i.event === 'offline' || i.event === 'terminate');
   if (hasFinish && !hasAbnormal) {
-    return { status: 'finish', label: '已完成', color: 'success' };
+    return { label: '已完成', color: 'success' };
   }
-  return { status: 'error', label: '异常', color: 'danger' };
+  return { label: '异常', color: 'danger' };
 }
 
 /** 格式化时间为 HH:MM:SS */
