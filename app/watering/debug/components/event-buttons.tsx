@@ -128,7 +128,7 @@ export function EventButtons({
       >
         <NavBar onBack={closePopup}>bootstrap 参数</NavBar>
 
-        <Grid columns={1} gap={16} className="px-3 pb-6">
+        <Grid columns={1} gap={16}>
           <Grid.Item>
             <Form layout="horizontal">
               <Form.Item label="启动原因">
@@ -171,7 +171,7 @@ export function EventButtons({
       >
         <NavBar onBack={closePopup}>change 参数</NavBar>
 
-        <Grid columns={1} gap={16} className="px-3 pb-6">
+        <Grid columns={1} gap={16}>
           <Grid.Item>
             <Form layout="horizontal">
               <Form.Item label="变更类型">
