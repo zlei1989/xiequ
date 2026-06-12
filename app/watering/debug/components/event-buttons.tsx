@@ -11,7 +11,6 @@ import {
   Card,
   Form,
   NavBar,
-  Picker,
   Popup,
   Radio,
   Space,
@@ -19,7 +18,6 @@ import {
 } from 'antd-mobile';
 import { useState, useCallback } from 'react';
 
-import type { PickerValue } from 'antd-mobile/es/components/picker';
 import type { RadioValue } from 'antd-mobile/es/components/radio';
 
 const CHANGE_TYPES = [
@@ -30,12 +28,10 @@ const CHANGE_TYPES = [
   { label: 'step_interrupt (步骤中断)', value: 'step_interrupt' },
 ];
 
-const CAUSE_COLUMNS = [
-  [
-    { label: '0 (正常上电)', value: '0' },
-    { label: '2 (外部唤醒)', value: '2' },
-    { label: '4 (定时器唤醒)', value: '4' },
-  ],
+const CAUSE_OPTIONS = [
+  { label: '0 (正常上电)', value: '0' },
+  { label: '2 (外部唤醒)', value: '2' },
+  { label: '4 (定时器唤醒)', value: '4' },
 ];
 
 /** 当前弹出的面板类型 */
@@ -57,21 +53,17 @@ export function EventButtons({
   const [popupType, setPopupType] = useState<PopupType>(null);
   const [changeType, setChangeType] = useState<string>('step_begin');
   const [changeMessage, setChangeMessage] = useState('');
-  const [bootstrapCause, setBootstrapCause] = useState<PickerValue[]>(['0']);
+  const [bootstrapCause, setBootstrapCause] = useState<string>('0');
 
   const closePopup = useCallback(() => {
     setPopupType(null);
   }, []);
 
   /** bootstrap 确认：发送并关闭 */
-  const handleBootstrapConfirm = useCallback(
-    (val: PickerValue[]) => {
-      setBootstrapCause(val);
-      closePopup();
-      void onPushBootstrap(String(val[0]));
-    },
-    [closePopup, onPushBootstrap],
-  );
+  const handleBootstrapConfirm = useCallback(() => {
+    closePopup();
+    void onPushBootstrap(bootstrapCause);
+  }, [closePopup, onPushBootstrap, bootstrapCause]);
 
   /** change 确认：发送并关闭 */
   const handleChangeConfirm = useCallback(() => {
@@ -118,15 +110,45 @@ export function EventButtons({
         </div>
       </Card>
 
-      {/* ---- bootstrap Picker（自弹层，不套 Popup） ---- */}
-      <Picker
-        columns={CAUSE_COLUMNS}
+      {/* ---- bootstrap Popup ---- */}
+      <Popup
         visible={popupType === 'bootstrap'}
-        value={bootstrapCause}
-        onConfirm={handleBootstrapConfirm}
         onClose={closePopup}
-        title="启动原因 (cause)"
-      />
+        position="bottom"
+        bodyStyle={{ borderTopLeftRadius: 12, borderTopRightRadius: 12 }}
+      >
+        <NavBar onBack={closePopup}>bootstrap 参数</NavBar>
+
+        <div className="px-3 pb-6">
+          <Form layout="horizontal">
+            <Form.Item label="启动原因">
+              <Radio.Group
+                value={bootstrapCause}
+                onChange={(val: RadioValue) => {
+                  setBootstrapCause(String(val));
+                }}
+              >
+                <Space direction="vertical" block>
+                  {CAUSE_OPTIONS.map((item) => (
+                    <Radio key={item.value} value={item.value} block>
+                      {item.label}
+                    </Radio>
+                  ))}
+                </Space>
+              </Radio.Group>
+            </Form.Item>
+          </Form>
+
+          <Button
+            block
+            color="primary"
+            className="mt-4"
+            onClick={handleBootstrapConfirm}
+          >
+            确认发送
+          </Button>
+        </div>
+      </Popup>
 
       {/* ---- change Popup ---- */}
       <Popup
