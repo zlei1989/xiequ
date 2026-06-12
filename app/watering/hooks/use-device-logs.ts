@@ -32,6 +32,7 @@ export function useDeviceLogs(chipId: string) {
       setError(e);
       console.error('[Watering] 加载设备日志失败:', { chipId, error: err });
       if (err instanceof Error && err.stack) console.error(err.stack);
+      throw e; // re-throw 让调用方可显示 Toast
     } finally {
       setLoading(false);
     }

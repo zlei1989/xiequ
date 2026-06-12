@@ -59,6 +59,19 @@ export default function DeviceLogsPage({
     }
   }
 
+  /**
+   * 下拉刷新 / 重试加载 — load 失败时显示 Toast
+   *
+   * 首次加载失败由 ErrorBlock 处理（见 renderContent），不显示 Toast。
+   */
+  async function handleRefresh() {
+    try {
+      await load();
+    } catch {
+      Toast.show({ icon: 'fail', content: '刷新失败' });
+    }
+  }
+
   /** 渲染内容区：按状态分发 */
   function renderContent() {
     // 首次加载中
@@ -78,7 +91,12 @@ export default function DeviceLogsPage({
           title="加载失败"
           description={error.message}
         >
-          <a onClick={() => { void load(); }}>点击重试</a>
+          <span
+            className="cursor-pointer text-blue-500"
+            onClick={() => { void handleRefresh(); }}
+          >
+            点击重试
+          </span>
         </ErrorBlock>
       );
     }
@@ -95,8 +113,10 @@ export default function DeviceLogsPage({
 
     // 有日志数据 — 下拉刷新包裹
     return (
-      <PullToRefresh onRefresh={load}>
-        <LogViewer logs={logs} />
+      <PullToRefresh onRefresh={handleRefresh}>
+        <div className="px-4">
+          <LogViewer logs={logs} />
+        </div>
       </PullToRefresh>
     );
   }
