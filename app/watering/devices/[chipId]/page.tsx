@@ -70,7 +70,7 @@ export default function DeviceDetailPage({
           >
             保存
           </Button>
-          {/* eslint-disable-next-line @typescript-eslint/no-misused-promises -- antd Popconfirm onConfirm 内部支持 Promise 返回以显示 loading 状态 */}
+          {/* eslint-disable-next-line @typescript-eslint/no-misused-promises -- antd 支持 Promise */}
           <Popconfirm title="确认删除设备？不可恢复。" onConfirm={handleRemove}>
             <Button danger icon={<DeleteOutlined />}>
               删除

@@ -87,7 +87,10 @@ describe('lib/oss', () => {
       const adapter = getOssAdapter();
       // SDK 应该在首次调用 getSdk() 时初始化
       // getSdk() 为内部接口，测试中通过 as any 访问
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+      /* eslint-disable @typescript-eslint/no-explicit-any,
+        @typescript-eslint/no-unsafe-assignment,
+        @typescript-eslint/no-unsafe-call,
+        @typescript-eslint/no-unsafe-member-access */
       const sdk = (adapter as any).getSdk();
       expect(sdk).toBeDefined();
     });

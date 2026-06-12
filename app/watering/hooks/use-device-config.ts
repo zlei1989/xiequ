@@ -34,6 +34,7 @@ function parseJsonArray(v: unknown): unknown[] {
 /** 安全解析 voltage_config — 支持对象或 JSON 字符串两种格式 */
 function parseJsonVoltage(v: unknown): DeviceConfig['voltage'] {
   if (!v) return undefined;
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Array.isArray 运行时类型区分
   if (typeof v === 'object' && v !== null && !Array.isArray(v)) {
     const obj = v as Record<string, unknown>;
     if (typeof obj.sensor === 'string' && typeof obj.r1 === 'number' && typeof obj.r2 === 'number') {
@@ -44,7 +45,7 @@ function parseJsonVoltage(v: unknown): DeviceConfig['voltage'] {
     try {
        
       const parsed = JSON.parse(v) as Record<string, unknown>;
-      if (parsed && typeof parsed.sensor === 'string' && typeof parsed.r1 === 'number' && typeof parsed.r2 === 'number') {
+      if (typeof parsed.sensor === 'string' && typeof parsed.r1 === 'number' && typeof parsed.r2 === 'number') {
         return { sensor: parsed.sensor, r1: parsed.r1, r2: parsed.r2 };
       }
     } catch {

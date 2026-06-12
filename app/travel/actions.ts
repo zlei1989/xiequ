@@ -117,7 +117,11 @@ export async function createMoment(locationId: string, data: { date: string; tex
 }
 
 /** 编辑精彩瞬间 */
-export async function editMoment(locationId: string, momentId: string, data: { date?: string; text?: string }) {
+export async function editMoment(
+  locationId: string,
+  momentId: string,
+  data: { date?: string; text?: string },
+) {
   console.info('[Travel] editMoment:', locationId, momentId);
   const t0 = Date.now();
   try {

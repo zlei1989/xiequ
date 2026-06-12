@@ -63,7 +63,7 @@ export default function DeviceLogsPage({
           <Button icon={<ReloadOutlined />} onClick={() => { void load(); }} loading={loading}>
             刷新
           </Button>
-          {/* eslint-disable-next-line @typescript-eslint/no-misused-promises -- antd Popconfirm onConfirm 内部支持 Promise 返回以显示 loading 状态 */}
+          {/* eslint-disable-next-line @typescript-eslint/no-misused-promises -- antd 支持 Promise */}
           <Popconfirm title="确认清空日志？" onConfirm={handleClear}>
             <Button icon={<DeleteOutlined />} danger>
               清空

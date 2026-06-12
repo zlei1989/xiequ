@@ -157,7 +157,7 @@ export function DeviceCard({
           >
             配置
           </Button>
-          {/* eslint-disable @typescript-eslint/no-misused-promises -- antd Popconfirm onConfirm 支持 Promise */}
+          {/* eslint-disable @typescript-eslint/no-misused-promises -- antd 支持 Promise */}
           <Popconfirm title="确认清除设备状态？" onConfirm={onClickClear}>
             <Button type="text" size="small" icon={<DeleteOutlined />} danger />
           </Popconfirm>

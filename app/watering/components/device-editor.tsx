@@ -141,7 +141,7 @@ export function DeviceEditor({
 
   // ---- 步骤操作 ----
   function addStep() {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- processIndex 由调用方（仅 processIndex > -1 时可触发）保证有效
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- processIndex > -1 保证有效
     const proc = { ...form.processes[processIndex]! };
     const item: Step = {
       key: crypto.randomUUID(),
@@ -158,7 +158,7 @@ export function DeviceEditor({
   }
 
   function updateStep(index: number, updated: Step) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- processIndex 由调用方（步骤编辑器打开时）保证有效
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- 步骤编辑器打开时 processIndex 有效
     const proc = { ...form.processes[processIndex]! };
     const newSteps = [...proc.steps];
     newSteps[index] = updated;
@@ -167,7 +167,7 @@ export function DeviceEditor({
   }
 
   function deleteStep() {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- processIndex 由调用方（删除按钮仅在步骤编辑器打开时显示）保证有效
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- 步骤编辑器打开时 processIndex 有效
     const proc = { ...form.processes[processIndex]! };
     proc.steps = proc.steps.filter((_, i) => i !== stepIndex);
     updateProcess(processIndex, proc);
@@ -195,19 +195,19 @@ export function DeviceEditor({
       delay: 0,
       duration: 0,
     };
-    /* eslint-disable @typescript-eslint/no-non-null-assertion -- addInterrupt/updateInterrupt/deleteInterrupt 仅在中 断编辑器打开时调用，此时 processIndex 和 stepIndex 均有效 */
+    /* eslint-disable @typescript-eslint/no-non-null-assertion -- 中断编辑器打开时索引均有效 */
     const proc = { ...form.processes[processIndex]! };
     const step = { ...proc.steps[stepIndex]! };
     /* eslint-enable @typescript-eslint/no-non-null-assertion */
     step.interrupts = [...(step.interrupts || []), item];
     proc.steps[stepIndex] = step;
     updateProcess(processIndex, proc);
-    setInterruptIndex((step.interrupts || []).length - 1);
+    setInterruptIndex(step.interrupts.length - 1);
     setInterruptVisible(true);
   }
 
   function updateInterrupt(index: number, updated: Interrupt) {
-    /* eslint-disable @typescript-eslint/no-non-null-assertion -- 中断编辑器打开时 processIndex 和 stepIndex 均有效 */
+    /* eslint-disable @typescript-eslint/no-non-null-assertion -- 中断编辑器打开时各级索引有效 */
     const proc = { ...form.processes[processIndex]! };
     const step = { ...proc.steps[stepIndex]! };
     /* eslint-enable @typescript-eslint/no-non-null-assertion */
@@ -219,7 +219,7 @@ export function DeviceEditor({
   }
 
   function deleteInterrupt() {
-    /* eslint-disable @typescript-eslint/no-non-null-assertion -- 中断编辑器打开时 processIndex 和 stepIndex 均有效 */
+    /* eslint-disable @typescript-eslint/no-non-null-assertion -- 中断编辑器打开时各级索引有效 */
     const proc = { ...form.processes[processIndex]! };
     const step = { ...proc.steps[stepIndex]! };
     /* eslint-enable @typescript-eslint/no-non-null-assertion */
@@ -545,7 +545,7 @@ export function DeviceEditor({
           </Space>
         }
       >
-        {/* eslint-disable @typescript-eslint/no-non-null-assertion -- stepIndex > -1 && processIndex > -1 条件已保证 */}
+        {/* eslint-disable @typescript-eslint/no-non-null-assertion -- 条件已保证索引有效 */}
         {stepIndex > -1 && processIndex > -1 && (
           <ProcessStepEditor
             step={form.processes[processIndex]!.steps[stepIndex]!}
@@ -590,7 +590,7 @@ export function DeviceEditor({
         {interruptIndex > -1 &&
           stepIndex > -1 &&
           processIndex > -1 &&
-          /* eslint-disable @typescript-eslint/no-non-null-assertion -- interruptIndex/stepIndex/processIndex 三个条件已保证各级索引有效 */
+          /* eslint-disable @typescript-eslint/no-non-null-assertion -- 条件已保证各级索引有效 */
           form.processes[processIndex]!.steps[stepIndex]!.interrupts && (
           <ProcessInterruptEditor
             interrupt={

@@ -5,7 +5,8 @@
  * SQLite WASM 驱动返回类型不完整，所有原始行访问需用 any 类型中转，
  * 因此本文件全局禁用 no-unsafe-member-access 和 no-unsafe-assignment。
  */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 
 import { getDb } from '@/lib/db';
 import { newId } from '@/lib/utils';
@@ -350,7 +351,11 @@ export async function getDeviceLogs(chipId: string, limit = 100) {
  * SQLite WASM 驱动 API 为同步调用，但函数签名保持 async 以兼容上层契约。
  */
 // eslint-disable-next-line @typescript-eslint/require-await
-export async function writeDeviceLog(chipId: string, event: string, state?: Record<string, unknown>) {
+export async function writeDeviceLog(
+  chipId: string,
+  event: string,
+  state?: Record<string, unknown>,
+) {
   const db = getDb();
   db.prepare('INSERT INTO watering_logs (chip_id, event, state, created_time) VALUES (?, ?, ?, ?)').run([
     chipId,

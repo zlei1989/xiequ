@@ -43,7 +43,8 @@ export function getDb(): SQLiteDB {
     // DEBUG: 返回缓存实例（非生产打印指针地址辅助排查内存问题）
     if (process.env.NODE_ENV !== 'production') {
       // _ptr 是 node-sqlite3-wasm 内部属性，仅用于调试
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       console.log('[DB] Returning cached db instance, ptr:', (db as any)._ptr);
     }
     return db;
