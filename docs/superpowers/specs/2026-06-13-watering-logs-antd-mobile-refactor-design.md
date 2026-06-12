@@ -138,7 +138,7 @@ NavBar 右侧清空按钮
 
 | 条件 | 组 status | 说明 |
 |------|----------|------|
-| 包含 finish/execute 且不含 offline/terminate | 已完成（绿色） | 流程正常结束 |
+| 包含 finish 且不含 offline/terminate | 已完成（绿色） | 流程正常结束（execute 仅表触发，不作为完成判定依据） |
 | 其他 | 异常（红色） | 流程异常中断或未完成 |
 
 **事件级（Step 级别）**：

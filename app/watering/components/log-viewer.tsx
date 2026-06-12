@@ -174,6 +174,8 @@ function formatTime(isoString: string): string {
 /** ── 组件 ── */
 
 export function LogViewer({ logs }: { logs: LogItem[] }) {
+  // 防御性空检查 — page.tsx 虽然已经拦截了空数组，
+  // 但保留此检查确保 LogViewer 独立使用时仍有正确的空态展示。
   if (logs.length === 0) {
     return (
       <ErrorBlock
