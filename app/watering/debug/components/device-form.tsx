@@ -58,12 +58,13 @@ export function DeviceForm({
 
   /** 组件卸载时清除所有定时器 */
   useEffect(() => {
+    const timers = buttonTimers.current;
     return () => {
-      buttonTimers.current.forEach((t) => { clearTimeout(t); });
-      buttonTimers.current.clear();
+      timers.forEach((t) => { clearTimeout(t); });
+      timers.clear();
     };
-    // buttonTimers 是 ref，引用稳定，仅在挂载/卸载时执行
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // ref 引用稳定，仅在挂载/卸载时执行
+     
   }, []);
 
   /** 按钮值变更：若切为 0 则 2 秒后自动回 1 */
@@ -96,6 +97,8 @@ export function DeviceForm({
         clearButtonTimer(key);
       }
     },
+    // onGpioChange 是 React state setter，引用稳定，无需加入 deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [clearButtonTimer],
   );
 

@@ -68,7 +68,7 @@ export function useIotSimulator() {
    * 1. Base fields: macAddress, chipId
    * 2. Custom params: event, stateId, cause, type, message, etc.
    * 3. Component states:
-   *    buttons as sensor:button_x, digitalSensors and analogSensors as sensor:sensor_x, loads as load:load_x
+   *    buttons/digitalSensors/analogSensors as sensor:{key}, loads as load:{key}
    */
   const buildQuery = useCallback(
     (extra: Record<string, string> = {}): string => {
@@ -128,9 +128,9 @@ export function useIotSimulator() {
         // 自动更新 stateId — get-state 响应中 stateId 位于顶层，非 data 下
         if (endpoint === 'get-state') {
           try {
-            const json = JSON.parse(text);
-            if (json?.stateId) {
-              setIdentity((prev) => ({ ...prev, stateId: json.stateId }));
+            const json = JSON.parse(text) as Record<string, unknown>;
+            if (typeof json.stateId === 'string') {
+              setIdentity((prev) => ({ ...prev, stateId: json.stateId as string }));
             }
           } catch {
             // JSON 解析失败时忽略，stateId 保持旧值
