@@ -1,26 +1,36 @@
 /**
- * 模拟器事件按钮 — 触发 getState / pushBootstrap / pushChange / pushFinish
+ * 模拟器事件按钮 — 2×2 网格触发 getState / pushBootstrap / pushChange / pushFinish
+ *
+ * bootstrap 和 change 通过底部 Popup 选择参数后发送。
  */
 
 'use client';
 
-import { PlayCircleOutlined, CloudUploadOutlined } from '@ant-design/icons';
-import { Button, Space, Select, Input, Card } from 'antd';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
+import { Button, Card, Input, Picker, Popup } from 'antd-mobile';
 
-const CHANGE_TYPES = [
-  { value: 'step_ready', label: 'step_ready (步骤就绪)' },
-  { value: 'step_begin', label: 'step_begin (步骤开始)' },
-  { value: 'step_end', label: 'step_end (步骤正常结束)' },
-  { value: 'step_timeout', label: 'step_timeout (步骤超时)' },
-  { value: 'step_interrupt', label: 'step_interrupt (步骤中断)' },
+import type { PickerValue } from 'antd-mobile/es/components/picker';
+
+const CHANGE_TYPE_COLUMNS = [
+  [
+    { label: 'step_ready (步骤就绪)', value: 'step_ready' },
+    { label: 'step_begin (步骤开始)', value: 'step_begin' },
+    { label: 'step_end (步骤正常结束)', value: 'step_end' },
+    { label: 'step_timeout (步骤超时)', value: 'step_timeout' },
+    { label: 'step_interrupt (步骤中断)', value: 'step_interrupt' },
+  ],
 ];
 
-const CAUSE_OPTIONS = [
-  { value: '0', label: '0 (正常上电)' },
-  { value: '2', label: '2 (外部唤醒)' },
-  { value: '4', label: '4 (定时器唤醒)' },
+const CAUSE_COLUMNS = [
+  [
+    { label: '0 (正常上电)', value: '0' },
+    { label: '2 (外部唤醒)', value: '2' },
+    { label: '4 (定时器唤醒)', value: '4' },
+  ],
 ];
+
+/** 当前弹出的面板类型 */
+type PopupType = 'bootstrap' | 'change' | null;
 
 export function EventButtons({
   onGetState,
@@ -35,67 +45,126 @@ export function EventButtons({
   onPushFinish: () => Promise<void>;
   loading: boolean;
 }) {
-  const [changeType, setChangeType] = useState('step_begin');
+  const [popupType, setPopupType] = useState<PopupType>(null);
+  const [changeType, setChangeType] = useState<PickerValue[]>(['step_begin']);
   const [changeMessage, setChangeMessage] = useState('');
-  const [bootstrapCause, setBootstrapCause] = useState('0');
+  const [bootstrapCause, setBootstrapCause] = useState<PickerValue[]>(['0']);
+
+  const closePopup = useCallback(() => {
+    setPopupType(null);
+  }, []);
+
+  /** bootstrap 确认：发送并关闭 */
+  const handleBootstrapConfirm = useCallback(
+    (val: PickerValue[]) => {
+      setBootstrapCause(val);
+      closePopup();
+      void onPushBootstrap(String(val[0]));
+    },
+    [closePopup, onPushBootstrap],
+  );
+
+  /** change 确认：发送并关闭 */
+  const handleChangeConfirm = useCallback(() => {
+    closePopup();
+    void onPushChange(String(changeType[0]), changeMessage);
+  }, [closePopup, onPushChange, changeType, changeMessage]);
 
   return (
-    <Card title="模拟事件" size="small">
-      <Space wrap orientation="vertical" className="w-full">
-        <Space wrap>
+    <>
+      <Card title="模拟事件">
+        <div className="grid grid-cols-2 gap-2 px-2 pb-1">
           <Button
-            type="primary"
-            icon={<CloudUploadOutlined />}
+            block
+            color="primary"
+            loading={loading}
+            onClick={() => { setPopupType('bootstrap'); }}
+          >
+            bootstrap
+          </Button>
+          <Button
+            block
+            color="primary"
+            loading={loading}
             onClick={() => { void onGetState(); }}
-            loading={loading}
           >
-            getState (轮询)
+            getState
           </Button>
           <Button
-            icon={<PlayCircleOutlined />}
-            onClick={() => { void onPushBootstrap(bootstrapCause); }}
+            block
+            color="primary"
             loading={loading}
+            onClick={() => { setPopupType('change'); }}
           >
-            bootstrap (开机)
+            change
           </Button>
-          <Select
+          <Button
+            block
+            color="primary"
+            loading={loading}
+            onClick={() => { void onPushFinish(); }}
+          >
+            finish
+          </Button>
+        </div>
+      </Card>
+
+      {/* ---- bootstrap Popup ---- */}
+      <Popup
+        visible={popupType === 'bootstrap'}
+        onClose={closePopup}
+        position="bottom"
+        bodyStyle={{ borderTopLeftRadius: 12, borderTopRightRadius: 12 }}
+      >
+        <div className="px-3 pb-6 pt-4">
+          <h3 className="mb-3 text-center text-base font-medium">
+            bootstrap 参数
+          </h3>
+          <div className="mb-4 text-sm text-gray-500">启动原因 (cause)</div>
+          <Picker
+            columns={CAUSE_COLUMNS}
             value={bootstrapCause}
-            onChange={setBootstrapCause}
-            options={CAUSE_OPTIONS}
-            className="w-40"
+            onConfirm={handleBootstrapConfirm}
+            onCancel={closePopup}
           />
-        </Space>
+        </div>
+      </Popup>
 
-        <Space wrap>
-          <Button
-            icon={<PlayCircleOutlined />}
-            onClick={() => { void onPushChange(changeType, changeMessage); }}
-            loading={loading}
-          >
-            change (步骤变更)
-          </Button>
-          <Select
+      {/* ---- change Popup ---- */}
+      <Popup
+        visible={popupType === 'change'}
+        onClose={closePopup}
+        position="bottom"
+        bodyStyle={{ borderTopLeftRadius: 12, borderTopRightRadius: 12 }}
+      >
+        <div className="px-3 pb-6 pt-4">
+          <h3 className="mb-3 text-center text-base font-medium">
+            change 参数
+          </h3>
+          <div className="mb-2 text-sm text-gray-500">变更类型 (type)</div>
+          <Picker
+            columns={CHANGE_TYPE_COLUMNS}
             value={changeType}
-            onChange={setChangeType}
-            options={CHANGE_TYPES}
-            className="w-[220px]"
+            onSelect={(val) => { setChangeType(val); }}
           />
+          <div className="mb-2 mt-4 text-sm text-gray-500">
+            附加消息 (message)
+          </div>
           <Input
-            placeholder="message (可选)"
+            placeholder="可选"
             value={changeMessage}
-            onChange={(e) => { setChangeMessage(e.target.value); }}
-            className="w-[200px]"
+            onChange={(v) => { setChangeMessage(v); }}
           />
-        </Space>
-
-        <Button
-          icon={<PlayCircleOutlined />}
-          onClick={() => { void onPushFinish(); }}
-          loading={loading}
-        >
-          finish (流程完成)
-        </Button>
-      </Space>
-    </Card>
+          <Button
+            block
+            color="primary"
+            className="mt-4"
+            onClick={handleChangeConfirm}
+          >
+            确认发送
+          </Button>
+        </div>
+      </Popup>
+    </>
   );
 }
