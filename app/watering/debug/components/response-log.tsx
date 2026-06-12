@@ -1,12 +1,12 @@
 /**
  * 模拟器响应日志 — 展示每次请求的请求/响应详情
  *
- * 使用 antd-mobile Card + 自绘标签替换 antd Tag。
+ * 使用 antd-mobile 组件，Card 容器 + ErrorBlock 空态 + List 列表 + Tag 标签。
  */
 
 'use client';
 
-import { Button, Card } from 'antd-mobile';
+import { Button, Card, ErrorBlock, List, Tag } from 'antd-mobile';
 import { useState, useCallback } from 'react';
 
 import type { LogEntry } from '../hooks/use-iot-simulator';
@@ -14,10 +14,10 @@ import type { LogEntry } from '../hooks/use-iot-simulator';
 /** 方向标签配置 */
 const directionMeta: Record<
   LogEntry['direction'],
-  { label: string; color: string }
+  { label: string; color: 'primary' | 'success' }
 > = {
-  request: { label: 'REQ', color: '#1677ff' },
-  response: { label: 'RES', color: '#52c41a' },
+  request: { label: 'REQ', color: 'primary' },
+  response: { label: 'RES', color: 'success' },
 };
 
 /** URL 最大展示长度，超出则截断 */
@@ -39,14 +39,21 @@ export function ResponseLog({
         </Button>
       }
     >
-      <div className="max-h-[400px] overflow-y-auto rounded bg-gray-50 p-2 font-mono text-xs">
-        {logs.length === 0 && (
-          <div className="py-4 text-center text-gray-400">暂无请求</div>
-        )}
-        {logs.map((log) => (
-          <LogItem key={log.id} log={log} />
-        ))}
-      </div>
+      {logs.length === 0 ? (
+        <ErrorBlock status="empty" />
+      ) : (
+        <List
+          style={{
+            '--font-size': '12px',
+            maxHeight: 400,
+            overflowY: 'auto',
+          }}
+        >
+          {logs.map((log) => (
+            <LogItem key={log.id} log={log} />
+          ))}
+        </List>
+      )}
     </Card>
   );
 }
@@ -67,53 +74,53 @@ function LogItem({ log }: { log: LogEntry }) {
   const canExpand = log.url.length > URL_MAX_LENGTH;
 
   return (
-    <div className="mb-2 border-0 border-b border-solid border-gray-100 pb-2">
-      {/* 标签行 */}
-      <div className="flex items-center gap-1.5">
-        <span
-          className="inline-block rounded px-1.5 py-px text-[10px] font-medium text-white"
-          style={{ background: meta.color }}
-        >
+    <List.Item
+      prefix={
+        <Tag color={meta.color} fill="solid">
           {meta.label}
-        </span>
-        <span className="text-gray-400">{log.timestamp}</span>
-        {log.status !== undefined && (
-          <span
-            className={`inline-block rounded px-1.5 py-px text-[10px] font-medium text-white ${
-              log.status < 400 ? 'bg-green-500' : 'bg-red-500'
-            }`}
-          >
+        </Tag>
+      }
+      extra={
+        log.status !== undefined ? (
+          <Tag color={log.status < 400 ? 'success' : 'danger'}>
             {log.status}
-          </span>
-        )}
-        {log.error && (
-          <span className="inline-block rounded bg-red-500 px-1.5 py-px text-[10px] font-medium text-white">
+          </Tag>
+        ) : log.error ? (
+          <Tag color="danger" fill="solid">
             ERROR
-          </span>
-        )}
-      </div>
-
-      {/* URL（可展开） */}
-      <div
-        className={`mt-0.5 break-all text-gray-500 ${
-          canExpand ? 'cursor-pointer select-none' : ''
-        }`}
-        onClick={canExpand ? toggleExpand : undefined}
-      >
-        {urlTruncated}
-      </div>
-
-      {/* Body */}
+          </Tag>
+        ) : undefined
+      }
+      description={
+        <span
+          onClick={canExpand ? toggleExpand : undefined}
+          style={{
+            wordBreak: 'break-all',
+            cursor: canExpand ? 'pointer' : undefined,
+            userSelect: canExpand ? 'none' : undefined,
+          }}
+        >
+          {urlTruncated}
+        </span>
+      }
+      clickable={false}
+    >
+      <span style={{ color: 'var(--adm-color-weak)', fontSize: 11 }}>
+        {log.timestamp}
+      </span>
       {log.body && (
-        <pre className="mb-0 mt-1 overflow-x-auto text-[11px] text-gray-800">
+        <pre
+          style={{
+            margin: '4px 0 0',
+            overflowX: 'auto',
+            fontSize: 11,
+            fontFamily: 'monospace',
+            color: 'var(--adm-color-text)',
+          }}
+        >
           {log.body}
         </pre>
       )}
-
-      {/* Error */}
-      {log.error && (
-        <div className="mt-0.5 text-red-500">{log.error}</div>
-      )}
-    </div>
+    </List.Item>
   );
 }
