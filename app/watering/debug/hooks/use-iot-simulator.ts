@@ -9,8 +9,13 @@ import { useState, useCallback, useRef } from 'react';
 // ---- Types ----
 
 export type GpioState = {
+  /** 数字传感器 — sensor_1(水浸1), sensor_2(水浸2)，值域 0/1 */
+  digitalSensors: Record<string, number>;
+  /** 模拟传感器 — sensor_0(温度), sensor_3(负载电压), sensor_4(电源电压)，值域 0-1023 */
+  analogSensors: Record<string, number>;
+  /** 按钮 — button_0~4，值域 0/1，默认 1（高电平） */
   buttons: Record<string, number>;
-  sensors: Record<string, number>;
+  /** 负载 — load_0~3，由 Process 驱动，值域 0~255/1024 */
   loads: Record<string, number>;
 };
 
@@ -31,10 +36,10 @@ export type LogEntry = {
   error?: string;
 };
 
-// Default GPIO values matching the ESP32 firmware's 4-pump setup
 const DEFAULT_GPIO: GpioState = {
-  buttons: { button_0: 0, button_1: 0, button_2: 0, button_3: 0, button_4: 0 },
-  sensors: { sensor_0: 1827, sensor_1: 0, sensor_2: 0, sensor_3: 0, sensor_4: 355 },
+  digitalSensors: { sensor_1: 0, sensor_2: 0 },
+  analogSensors: { sensor_0: 1827, sensor_3: 0, sensor_4: 355 },
+  buttons: { button_0: 1, button_1: 1, button_2: 1, button_3: 1, button_4: 1 },
   loads: { load_0: 0, load_1: 0, load_2: 0, load_3: 0 },
 };
 
@@ -63,7 +68,7 @@ export function useIotSimulator() {
    * 1. Base fields: macAddress, chipId
    * 2. Custom params: event, stateId, cause, type, message, etc.
    * 3. Component states:
-   *    buttons as sensor:button_x, sensors as sensor:sensor_x, loads as load:load_x
+   *    buttons as sensor:button_x, digitalSensors and analogSensors as sensor:sensor_x, loads as load:load_x
    */
   const buildQuery = useCallback(
     (extra: Record<string, string> = {}): string => {
@@ -78,16 +83,19 @@ export function useIotSimulator() {
         }
       }
 
-      // Buttons: firmware sends them as sensor:button_x because
-      // they are registered as TYPE_SENSOR in Process
+      // 按钮以 sensor:button_x 发送（固件协议：注册为 TYPE_SENSOR）
       for (const [key, val] of Object.entries(gpio.buttons)) {
         params.set(`sensor:${key}`, String(val));
       }
-      // Sensors: sensor:sensor_x
-      for (const [key, val] of Object.entries(gpio.sensors)) {
+      // 数字传感器 sensor:sensor_x
+      for (const [key, val] of Object.entries(gpio.digitalSensors)) {
         params.set(`sensor:${key}`, String(val));
       }
-      // Loads: load:load_x
+      // 模拟传感器 sensor:sensor_x
+      for (const [key, val] of Object.entries(gpio.analogSensors)) {
+        params.set(`sensor:${key}`, String(val));
+      }
+      // 负载 load:load_x
       for (const [key, val] of Object.entries(gpio.loads)) {
         params.set(`load:${key}`, String(val));
       }
