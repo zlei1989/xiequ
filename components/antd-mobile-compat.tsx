@@ -26,7 +26,7 @@ export function AntdMobileCompat() {
       const root = createRoot(container);
       root.render(node);
       // 返回异步清理函数：antd-mobile 关闭弹窗时会调用此函数卸载组件
-      // eslint-disable-next-line @typescript-eslint/require-await -- antd-mobile UnmountType 要求返回 Promise<void>
+      // eslint-disable-next-line @typescript-eslint/require-await -- antd-mobile 要求 Promise<void>
       return async () => { root.unmount(); };
     });
   }, []);

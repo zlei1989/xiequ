@@ -21,7 +21,7 @@ function parseJsonArray(v: unknown): unknown[] {
   if (Array.isArray(v)) return v;
   if (typeof v === 'string') {
     try {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- JSON.parse 返回 any
+       
       const parsed: unknown = JSON.parse(v) as unknown;
       return Array.isArray(parsed) ? parsed : [];
     } catch {
@@ -42,7 +42,7 @@ function parseJsonVoltage(v: unknown): DeviceConfig['voltage'] {
   }
   if (typeof v === 'string') {
     try {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access -- JSON.parse 返回 any
+       
       const parsed = JSON.parse(v) as Record<string, unknown>;
       if (parsed && typeof parsed.sensor === 'string' && typeof parsed.r1 === 'number' && typeof parsed.r2 === 'number') {
         return { sensor: parsed.sensor, r1: parsed.r1, r2: parsed.r2 };

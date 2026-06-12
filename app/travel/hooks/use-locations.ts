@@ -13,13 +13,22 @@ import { fetchLocations, createLocation, editLocation, removeLocation } from '..
 
 import type { Location, Summary } from '../types';
 
+/** 新增位置时提交的表单数据 */
+type AddLocationInput = {
+  name: string;
+  address: string;
+  longitude: number;
+  latitude: number;
+  comments?: string;
+};
+
 /** 注入到 TravelContext 的数据类型 */
 export type TravelData = {
   locations: Location[];
   sortedLocations: Location[];
   summary: Summary;
   loading: boolean;
-  add: (data: { name: string; address: string; longitude: number; latitude: number; comments?: string }) => Promise<Location>;
+  add: (data: AddLocationInput) => Promise<Location>;
   update: (id: string, data: Partial<Location>) => Promise<Location>;
   remove: (id: string) => Promise<void>;
   load: () => Promise<void>;
@@ -72,7 +81,7 @@ export function useLocations(filter?: 'all' | 'checked' | 'uncheck') {
   /* eslint-enable react-hooks/set-state-in-effect */
 
   /** 新增位置：调用 Server Action 后追加到本地列表（乐观更新） */
-  const add = useCallback(async (data: { name: string; address: string; longitude: number; latitude: number; comments?: string }) => {
+  const add = useCallback(async (data: AddLocationInput) => {
     console.info('[Travel] 新增位置:', data.name);
     if (process.env.NODE_ENV !== 'production') console.debug('[Travel] createLocation 参数:', JSON.stringify(data));
     const t0 = Date.now();

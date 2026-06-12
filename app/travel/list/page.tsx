@@ -192,11 +192,11 @@ export default function LocationListPage() {
         onToggle={handleToggle}
         onDelete={handleDelete}
         onAddMoment={() => {
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- viewLocation 由 visible 条件保证非空
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- viewLocation 非空
           setEditMoment({ locationId: viewLocation!.id, moment: null });
         }}
         onEditMoment={(m) => {
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- viewLocation 由 visible 条件保证非空
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- viewLocation 非空
           setEditMoment({ locationId: viewLocation!.id, moment: m });
         }}
         onDeleteMoment={async (m) => {
