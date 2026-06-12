@@ -1,14 +1,23 @@
 /**
  * 设备日志页
  *
- * 展示设备的 IoT 通信日志，支持刷新和清空。
- * 日志数据由 services/db.ts 存储，不自动轮询（需要手动加载）。
+ * 展示设备 IoT 通信日志，支持下拉刷新和清空。
+ * 使用 antd-mobile NavBar + PullToRefresh + ErrorBlock 构建移动端友好界面。
+ * 日志数据由 services/db.ts 存储，不自动轮询。
  */
 
 'use client';
 
-import { ArrowLeftOutlined, ReloadOutlined, DeleteOutlined } from '@ant-design/icons';
-import { Button, Spin, Popconfirm, message } from 'antd';
+import {
+  NavBar,
+  PullToRefresh,
+  DotLoading,
+  ErrorBlock,
+  SafeArea,
+  Dialog,
+  Toast,
+} from 'antd-mobile';
+import { DeleteOutline } from 'antd-mobile-icons';
 import { useRouter } from 'next/navigation';
 import { use, useEffect } from 'react';
 
@@ -24,61 +33,90 @@ export default function DeviceLogsPage({
 }) {
   const { chipId } = use(params);
   const router = useRouter();
-  const { logs, loading, load, clear } = useDeviceLogs(chipId);
+  const { logs, loading, error, load, clear } = useDeviceLogs(chipId);
 
-  // 组件挂载时加载日志（不自动轮询，日志数据量大）
+  // 组件挂载时加载日志
   useEffect(() => {
     void load();
   }, [load]);
 
+  /** 清空日志：弹窗确认 → 执行清空 → Toast 提示 */
   async function handleClear() {
+    const confirmed = await Dialog.confirm({
+      title: '确认清空日志？',
+      content: '操作不可撤销',
+    });
+    if (!confirmed) return;
+
     try {
       await clear();
-      message.success('日志已清空');
+      Toast.show({ icon: 'success', content: '日志已清空' });
       await load();
     } catch (err: unknown) {
-      console.error('[Watering] 清空日志失败:', { chipId, message: err instanceof Error ? err.message : String(err), stack: err instanceof Error ? err.stack : undefined });
-      message.error(err instanceof Error ? err.message : String(err) || '清空日志失败');
+      const message = err instanceof Error ? err.message : '清空日志失败';
+      console.error('[Watering] 清空日志失败:', { chipId, message, stack: err instanceof Error ? err.stack : undefined });
+      Toast.show({ icon: 'fail', content: message });
     }
   }
 
-  return (
-    <div>
-      {/* 页面内顶栏 — 匹配 iot-wfm LogsView header extra */}
-      <div
-        className="mb-4 flex items-center justify-between border-0 border-b border-solid border-gray-100 bg-white px-4 py-3"
-      >
-        <Button icon={<ArrowLeftOutlined />} onClick={() => { router.back(); }}>
-          返回
-        </Button>
-        <div className="flex gap-2">
-          <Button icon={<ReloadOutlined />} onClick={() => { void load(); }} loading={loading}>
-            刷新
-          </Button>
-          {/* eslint-disable-next-line @typescript-eslint/no-misused-promises -- antd 支持 Promise */}
-          <Popconfirm title="确认清空日志？" onConfirm={handleClear}>
-            <Button icon={<DeleteOutlined />} danger>
-              清空
-            </Button>
-          </Popconfirm>
+  /** 渲染内容区：按状态分发 */
+  function renderContent() {
+    // 首次加载中
+    if (loading && logs.length === 0) {
+      return (
+        <div className="flex items-center justify-center py-24">
+          <DotLoading />
         </div>
-      </div>
+      );
+    }
 
-      {/* 设备名 — 匹配 LogsView 的 device-name */}
-      <div className="mb-4 px-4">
-        <h3 className="m-0 text-base">设备: {chipId}</h3>
-      </div>
+    // 首次加载失败
+    if (error && logs.length === 0) {
+      return (
+        <ErrorBlock
+          status="default"
+          title="加载失败"
+          description={error.message}
+        >
+          <a onClick={() => { void load(); }}>点击重试</a>
+        </ErrorBlock>
+      );
+    }
 
-      {/* 日志内容 */}
-      <div className="px-4">
-        {loading && logs.length === 0 ? (
-          <div className="py-12 text-center">
-            <Spin />
-          </div>
-        ) : (
-          <LogViewer logs={logs} />
-        )}
-      </div>
-    </div>
+    // 空数据
+    if (!loading && logs.length === 0) {
+      return (
+        <ErrorBlock
+          status="empty"
+          title="暂无日志"
+        />
+      );
+    }
+
+    // 有日志数据 — 下拉刷新包裹
+    return (
+      <PullToRefresh onRefresh={load}>
+        <LogViewer logs={logs} />
+      </PullToRefresh>
+    );
+  }
+
+  return (
+    <>
+      <SafeArea position="top" />
+      <NavBar
+        onBack={() => { router.back(); }}
+        right={
+          <DeleteOutline
+            fontSize={22}
+            className="text-gray-500"
+            onClick={() => { void handleClear(); }}
+          />
+        }
+      >
+        设备: {chipId}
+      </NavBar>
+      {renderContent()}
+    </>
   );
 }
