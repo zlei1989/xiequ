@@ -6,7 +6,7 @@
 
 'use client';
 
-import { NavBar } from 'antd-mobile';
+import { NavBar, NoticeBar } from 'antd-mobile';
 
 import { DeviceForm } from './components/device-form';
 import { EventButtons } from './components/event-buttons';
@@ -33,9 +33,10 @@ export default function DebugPage() {
       <NavBar back={null}>
         IoT 设备模拟器
       </NavBar>
-      <p className="-mt-2 mb-0 px-3 text-xs text-gray-500">
-        模拟 ESP32 设备发起 getState / pushState 请求，用于调试服务端设备协议
-      </p>
+      <NoticeBar
+        content="模拟 ESP32 设备发起 getState / pushState 请求，用于调试服务端设备协议"
+        color="default"
+      />
 
       <DeviceForm
         identity={identity}
