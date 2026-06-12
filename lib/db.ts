@@ -64,6 +64,10 @@ export function getDb(): SQLiteDB {
   try {
     db = new Database(DB_PATH);
     const elapsed = Date.now() - initStart;
+    // 设置忙等待超时：并发读写时等待最多 5 秒再报 "database is locked"
+    // SQLite 默认 busy_timeout=0（立即失败），WASM 单线程环境下多个
+    // Server Action 并发调用时极易触发，设置超时让 SQLite 自动重试
+    db.exec('PRAGMA busy_timeout = 5000');
     console.log(`[DB] Database initialized at ${DB_PATH} (${String(elapsed)}ms)`);
 
     // WAL 模式在 WASM (Emscripten VFS) 和只读文件系统中不受支持，
