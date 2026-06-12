@@ -9,6 +9,8 @@
 import { DotLoading, ErrorBlock, List, NavBar, Popup, SearchBar, Toast } from 'antd-mobile';
 import { useState } from 'react';
 
+import { useBackButton } from '@/lib/back-button';
+
 import { searchPlace } from '../services/amap';
 
 import type { AMapPoiItem } from '../services/amap';
@@ -33,6 +35,8 @@ export function SearchPopup({
     latitude: number;
   }) => void;
 }) {
+  useBackButton(visible, onClose);
+
   const [results, setResults] = useState<AMapPoiItem[]>([]);
   const [searching, setSearching] = useState(false);
 

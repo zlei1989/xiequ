@@ -10,6 +10,8 @@ import { Button, Card, Dialog, ErrorBlock, List, Popup, Space, Switch, Toast } f
 import { EditSOutline, AddOutline, DeleteOutline } from 'antd-mobile-icons';
 import { useState } from 'react';
 
+import { useBackButton } from '@/lib/back-button';
+
 import { CoverImage } from './cover-image';
 import { Section } from './section';
 import { UploadImage } from './upload-image';
@@ -50,13 +52,16 @@ export function LocationViewPopup({
   onEditMoment: (moment: Moment) => void;
   onDeleteMoment: (moment: Moment) => Promise<void>;
 }) {
+  useBackButton(visible, onClose);
+
+  // Date.now() 作为缓存破坏参数初始值，仅在组件挂载时调用一次
+  // eslint-disable-next-line react-hooks/purity
+  const [coverKey, setCoverKey] = useState(Date.now());
+
   if (!location) return null;
 
   // 在 null 检查后提取为 const，闭包中可安全使用 Location 类型
   const loc = location;
-  // Date.now() 作为缓存破坏参数初始值，仅在组件挂载时调用一次
-  // eslint-disable-next-line react-hooks/purity
-  const [coverKey, setCoverKey] = useState(Date.now());
   const coverUrl = `/travel/api/download?type=cover&id=${loc.id}&_t=${String(coverKey)}`;
 
   /**

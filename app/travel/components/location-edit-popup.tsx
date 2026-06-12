@@ -7,6 +7,8 @@
 import { Popup, Form, Input, TextArea, Button, Toast, NavBar } from 'antd-mobile';
 import { useState, useEffect } from 'react';
 
+import { useBackButton } from '@/lib/back-button';
+
 import type { Location } from '../types';
 
 /**
@@ -26,6 +28,8 @@ export function LocationEditPopup({
   onClose: () => void;
   onSave: (id: string, data: Partial<Location>) => Promise<Location>;
 }) {
+  useBackButton(visible, onClose);
+
   const [name, setName] = useState('');
   const [address, setAddress] = useState('');
   const [comments, setComments] = useState('');

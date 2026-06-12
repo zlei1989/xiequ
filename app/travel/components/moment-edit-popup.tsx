@@ -8,6 +8,8 @@ import { Popup, Form, TextArea, Button, Toast, NavBar, DatePicker } from 'antd-m
 import dayjs from 'dayjs';
 import { useState, useEffect } from 'react';
 
+import { useBackButton } from '@/lib/back-button';
+
 import type { Moment } from '../types';
 
 
@@ -45,6 +47,8 @@ export function MomentEditPopup({
   const [text, setText] = useState('');
   const [saving, setSaving] = useState(false);
   const [datePickerVisible, setDatePickerVisible] = useState(false);
+
+  useBackButton(visible, onClose);
 
   const isEdit = !!moment;
 
