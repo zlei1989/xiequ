@@ -43,10 +43,9 @@ export function ResponseLog({
         <ErrorBlock status="empty" />
       ) : (
         <List
+          className="max-h-[400px] overflow-y-auto text-xs"
           style={{
-            '--font-size': '12px',
-            maxHeight: 400,
-            overflowY: 'auto',
+            '--border-top': 'none',
           }}
         >
           {logs.map((log) => (
@@ -94,30 +93,18 @@ function LogItem({ log }: { log: LogEntry }) {
       description={
         <span
           onClick={canExpand ? toggleExpand : undefined}
-          style={{
-            wordBreak: 'break-all',
-            cursor: canExpand ? 'pointer' : undefined,
-            userSelect: canExpand ? 'none' : undefined,
-          }}
+          className={`break-all ${canExpand ? 'cursor-pointer select-none' : ''}`}
         >
           {urlTruncated}
         </span>
       }
       clickable={false}
     >
-      <span style={{ color: 'var(--adm-color-weak)', fontSize: 11 }}>
+      <span className="text-[11px] text-gray-400">
         {log.timestamp}
       </span>
       {log.body && (
-        <pre
-          style={{
-            margin: '4px 0 0',
-            overflowX: 'auto',
-            fontSize: 11,
-            fontFamily: 'monospace',
-            color: 'var(--adm-color-text)',
-          }}
-        >
+        <pre className="mb-0 mt-1 overflow-x-auto font-mono text-[11px] text-gray-800">
           {log.body}
         </pre>
       )}
