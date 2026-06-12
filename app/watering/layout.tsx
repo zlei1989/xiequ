@@ -24,27 +24,15 @@ export default function WateringLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
 
   return (
-    <Layout style={{ minHeight: '100vh' }}>
-      <Header
-        style={{
-          background: '#fff',
-          padding: '0 12px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-          borderBottom: '1px solid #f0f0f0',
-          position: 'sticky',
-          top: 0,
-          zIndex: 100,
-        }}
-      >
+    <Layout className="min-h-screen">
+      <Header className="bg-white px-3 flex items-center gap-2 border-0 border-b border-gray-100 border-solid sticky top-0 z-[100]">
         <Button
           type="text"
           icon={<HomeOutlined />}
           onClick={() => { router.push('/'); }}
           size="small"
         />
-        <span style={{ fontSize: 16, fontWeight: 500, flex: 1 }}>浇花帮手</span>
+        <span className="text-base font-medium flex-1">浇花帮手</span>
         {isDev && (
           <Button
             type={pathname.startsWith('/watering/debug') ? 'primary' : 'text'}
@@ -56,7 +44,7 @@ export default function WateringLayout({ children }: { children: ReactNode }) {
           </Button>
         )}
       </Header>
-      <Content style={{ background: '#f5f5f5', minHeight: 'calc(100vh - 48px)' }}>
+      <Content className="bg-gray-100" style={{ minHeight: 'calc(100vh - 48px)' }}>
         {children}
       </Content>
     </Layout>

@@ -74,7 +74,7 @@ export function Shell({ children }: { children: ReactNode }) {
           </span>
         }
       >
-        逆旅烟云
+        旅行计划
       </NavBar>
 
       <div style={{ flex: 1, overflow: 'auto' }}>{children}</div>

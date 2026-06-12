@@ -13,27 +13,25 @@ import { TravelOutline } from 'antd-mobile-icons';
 import { CompassOutline } from 'antd-mobile-icons';
 import { useRouter } from 'next/navigation';
 
-const iconStyle = { fontSize: 32 };
-
 /** 应用入口配置列表 */
 const apps = [
   {
-    title: '栽松偶书',
+    title: '浇花帮手',
     description: '每片松鳞张开的角度，都精确得像一本写给风的密信',
     href: '/watering',
-    icon: <EnvironmentOutline style={iconStyle} />,
+    icon: <EnvironmentOutline className="text-[32px]" />,
   },
   {
-    title: '逆旅烟云',
+    title: '旅行计划',
     description: ' 曾踏破千山明月，方知酒浊胜仙浆',
     href: '/travel',
-    icon: <TravelOutline style={iconStyle} />,
+    icon: <TravelOutline className="text-[32px]" />,
   },
   {
     title: '台岛遍历',
     description: '将二〇一六年的行迹，悉数检点，妥为收存',
     href: '/taiwan-1.8.4/index.html',
-    icon: <CompassOutline style={iconStyle} />,
+    icon: <CompassOutline className="text-[32px]" />,
   },
 ];
 
