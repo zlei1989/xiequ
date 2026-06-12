@@ -1,15 +1,25 @@
 /**
  * 模拟器事件按钮 — 2×2 网格触发 getState / pushBootstrap / pushChange / pushFinish
  *
- * bootstrap 和 change 通过底部 Popup 选择参数后发送。
+ * bootstrap 通过 Picker 选择参数后发送，change 通过 Popup 表单单选 + 多行输入。
  */
 
 'use client';
 
-import { Button, Card, Input, Picker, Popup } from 'antd-mobile';
+import {
+  Button,
+  Card,
+  Form,
+  Picker,
+  Popup,
+  Radio,
+  Space,
+  TextArea,
+} from 'antd-mobile';
 import { useState, useCallback } from 'react';
 
 import type { PickerValue } from 'antd-mobile/es/components/picker';
+import type { RadioValue } from 'antd-mobile/es/components/radio';
 
 const CHANGE_TYPES = [
   { label: 'step_ready (步骤就绪)', value: 'step_ready' },
@@ -44,7 +54,7 @@ export function EventButtons({
   loading: boolean;
 }) {
   const [popupType, setPopupType] = useState<PopupType>(null);
-  const [changeType, setChangeType] = useState<PickerValue[]>(['step_begin']);
+  const [changeType, setChangeType] = useState<string>('step_begin');
   const [changeMessage, setChangeMessage] = useState('');
   const [bootstrapCause, setBootstrapCause] = useState<PickerValue[]>(['0']);
 
@@ -65,7 +75,7 @@ export function EventButtons({
   /** change 确认：发送并关闭 */
   const handleChangeConfirm = useCallback(() => {
     closePopup();
-    void onPushChange(String(changeType[0]), changeMessage);
+    void onPushChange(changeType, changeMessage);
   }, [closePopup, onPushChange, changeType, changeMessage]);
 
   return (
@@ -128,32 +138,35 @@ export function EventButtons({
           <h3 className="mb-3 text-center text-base font-medium">
             change 参数
           </h3>
-          <div className="mb-2 text-sm text-gray-500">变更类型 (type)</div>
-          <div className="flex flex-col gap-1">
-            {CHANGE_TYPES.map((item) => (
-              <div
-                key={item.value}
-                className={`cursor-pointer rounded-md px-3 py-2 text-sm transition-colors ${
-                  changeType[0] === item.value
-                    ? 'bg-blue-50 text-blue-600'
-                    : 'text-gray-700 active:bg-gray-50'
-                }`}
-                onClick={() => {
-                  setChangeType([item.value]);
+
+          <Form layout="horizontal">
+            <Form.Item label="变更类型">
+              <Radio.Group
+                value={changeType}
+                onChange={(val: RadioValue) => {
+                  setChangeType(String(val));
                 }}
               >
-                {item.label}
-              </div>
-            ))}
-          </div>
-          <div className="mb-2 mt-4 text-sm text-gray-500">
-            附加消息 (message)
-          </div>
-          <Input
-            placeholder="可选"
-            value={changeMessage}
-            onChange={(v) => { setChangeMessage(v); }}
-          />
+                <Space direction="vertical" block>
+                  {CHANGE_TYPES.map((item) => (
+                    <Radio key={item.value} value={item.value} block>
+                      {item.label}
+                    </Radio>
+                  ))}
+                </Space>
+              </Radio.Group>
+            </Form.Item>
+
+            <Form.Item label="附加消息">
+              <TextArea
+                placeholder="可选"
+                value={changeMessage}
+                onChange={(v) => { setChangeMessage(v); }}
+                rows={3}
+              />
+            </Form.Item>
+          </Form>
+
           <Button
             block
             color="primary"
