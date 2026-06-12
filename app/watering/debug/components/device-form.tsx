@@ -7,11 +7,12 @@
 
 'use client';
 
-import { useCallback, useEffect, useRef } from 'react';
-import type { Dispatch, SetStateAction } from 'react';
 import { Card, Input, Switch } from 'antd-mobile';
+import { useCallback, useEffect, useRef } from 'react';
 
 import type { DeviceIdentity, GpioState } from '../hooks/use-iot-simulator';
+import type { Dispatch, SetStateAction } from 'react';
+
 
 /** 数字传感器 → 中文标签 */
 const DIGITAL_LABELS: Record<string, string> = {
@@ -20,8 +21,7 @@ const DIGITAL_LABELS: Record<string, string> = {
 };
 
 /** 模拟传感器 → 中文标签（Task 3 使用） */
-// @ts-expect-error TS6133 — Task 3 会在模拟传感器卡片中使用
-const ANALOG_LABELS: Record<string, string> = {
+export const ANALOG_LABELS: Record<string, string> = {
   sensor_0: '温度',
   sensor_3: '负载电压',
   sensor_4: '电源电压',

@@ -47,6 +47,8 @@ export function useMapTheme(map: AMap.Map | null): Theme | null {
       return () => { observer.disconnect(); };
     }, []),
     useCallback(() => readTheme(), []),
+    // SSR 快照：服务端无 DOM，始终返回 light
+    useCallback(() => 'light' as Theme, []),
   );
 
   // 当 map 实例或主题变化时，同步到地图样式
