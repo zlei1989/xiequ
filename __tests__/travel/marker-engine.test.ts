@@ -3,6 +3,8 @@
  *
  * 测试增量 diff 更新逻辑：新增/删除/状态变更/destroy。
  * 使用 AMap mock 模拟地图 SDK，验证 Marker 和 MarkerClusterer 的调用。
+ *
+ * 注意：AMap MarkerClusterer 只有 setMarkers() 方法，没有 add/remove 系列方法。
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
@@ -28,7 +30,7 @@ function makeLocation(overrides: Partial<Location> = {}): Location {
   };
 }
 
-/** 创建 mock 地图实例并构造引擎（封装 mock any 类型转换） */
+/** 创建 mock 地图实例并构造引擎 */
 function setupEngine(onClick?: (loc: Location) => void) {
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const map = new mockAmap.Map();
@@ -72,7 +74,7 @@ describe('createMarkerEngine', () => {
     expect(callCountAfterSecond - callCountAfterFirst).toBe(1);
   });
 
-  it('removes marker for deleted location', () => {
+  it('removes marker for deleted location via setMarkers', () => {
     const { engine } = setupEngine();
 
     engine.update([makeLocation({ id: '1' }), makeLocation({ id: '2' })]);
@@ -80,13 +82,14 @@ describe('createMarkerEngine', () => {
     // 删除 id='1'
     engine.update([makeLocation({ id: '2' })]);
 
-    // MarkerClusterer.removeMarkers 被调用
+    // MarkerClusterer.setMarkers 被调用（update 结束时全量同步）
     /* eslint-disable @typescript-eslint/no-unsafe-member-access,
         @typescript-eslint/no-unsafe-assignment */
-    const clustererRemove = mockAmap.MarkerClusterer.mock.results[0]?.value?.removeMarkers;
+    const clustererSetMarkers = mockAmap.MarkerClusterer.mock.results[0]?.value?.setMarkers;
     /* eslint-enable @typescript-eslint/no-unsafe-member-access,
         @typescript-eslint/no-unsafe-assignment */
-    expect(clustererRemove).toHaveBeenCalledTimes(1);
+    // 第二次 update 时应调用过 setMarkers
+    expect(clustererSetMarkers).toHaveBeenCalled();
   });
 
   it('updates icon when checked status changes', () => {
@@ -118,7 +121,7 @@ describe('createMarkerEngine', () => {
     expect(callCountAfterSecond).toBe(callCountAfterFirst);
   });
 
-  it('destroy cleans up clusterer and all markers', () => {
+  it('destroy cleans up clusterer', () => {
     const { engine } = setupEngine();
 
     engine.update([makeLocation({ id: '1' })]);

@@ -27,8 +27,6 @@ export function createAmapMock() {
   });
 
   const MarkerClusterer = createMockClass({
-    addMarkers: vi.fn(),
-    removeMarkers: vi.fn(),
     setMarkers: vi.fn(),
     destroy: vi.fn(),
   });
