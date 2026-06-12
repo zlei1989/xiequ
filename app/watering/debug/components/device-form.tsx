@@ -8,10 +8,10 @@
 'use client';
 
 import {
-  Card,
   Form,
   Grid,
   Input,
+  List,
   ProgressCircle,
   Slider,
   Space,
@@ -112,7 +112,7 @@ export function DeviceForm({
   return (
     <Space direction="vertical" block>
       {/* ---- 设备标识 ---- */}
-      <Card title="设备标识">
+      <List header="设备标识">
         <Form layout="horizontal">
           <Form.Item label="chipId">
             <Input
@@ -139,10 +139,10 @@ export function DeviceForm({
             />
           </Form.Item>
         </Form>
-      </Card>
+      </List>
 
       {/* ---- 数字传感器 ---- */}
-      <Card title="数字传感器 (0/1)">
+      <List header="数字传感器 (0/1)">
         <Form layout="horizontal">
           {Object.entries(gpio.digitalSensors).map(([key, val]) => (
             <Form.Item
@@ -165,10 +165,10 @@ export function DeviceForm({
             </Form.Item>
           ))}
         </Form>
-      </Card>
+      </List>
 
       {/* ---- 按钮 ---- */}
-      <Card title="按钮 (0/1，切为 0 后 2 秒自动回 1)">
+      <List header="按钮 (0/1，切为 0 后 2 秒自动回 1)">
         <Form layout="horizontal">
           {Object.entries(gpio.buttons).map(([key, val]) => (
             <Form.Item
@@ -185,10 +185,10 @@ export function DeviceForm({
             </Form.Item>
           ))}
         </Form>
-      </Card>
+      </List>
 
       {/* ---- 模拟传感器 ---- */}
-      <Card title="模拟传感器 (0-1023)">
+      <List header="模拟传感器 (0-1023)">
         <Form layout="horizontal">
           {Object.entries(gpio.analogSensors).map(([key, val]) => (
             <Form.Item
@@ -233,10 +233,10 @@ export function DeviceForm({
             </Form.Item>
           ))}
         </Form>
-      </Card>
+      </List>
 
       {/* ---- 负载（纯展示） ---- */}
-      <Card title="负载">
+      <List header="负载">
         <Grid columns={2} gap={12}>
           {Object.entries(gpio.loads).map(([key, val]) => {
             // 百分比计算：PWM 模式 val/255*100，1024=100%，0=0%
@@ -281,7 +281,7 @@ export function DeviceForm({
             );
           })}
         </Grid>
-      </Card>
+      </List>
     </Space>
   );
 }
