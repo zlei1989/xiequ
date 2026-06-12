@@ -37,7 +37,7 @@ export type LogItem = {
 };
 
 /** 按 stateId 分组，每组按时间排序（倒序：最新的 stateId 组在前，组内正序）*/
-function groupByStateId(logs: LogItem[]): Array<{ stateId: string; items: LogItem[] }> {
+export function groupByStateId(logs: LogItem[]): Array<{ stateId: string; items: LogItem[] }> {
   const map: Record<string, LogItem[]> = {};
   for (const log of logs) {
     const key = log.stateId || '_unknown';
@@ -65,7 +65,7 @@ function groupByStateId(logs: LogItem[]): Array<{ stateId: string; items: LogIte
 }
 
 /** 计算用时 */
-function formatDuration(items: LogItem[]): string {
+export function formatDuration(items: LogItem[]): string {
   if (items.length < 2) return '';
   const begin = new Date(items[0]?.createdTime ?? 0).getTime();
   const end = new Date(items[items.length - 1]?.createdTime ?? 0).getTime();
@@ -90,7 +90,7 @@ function hasExecute(items: LogItem[]): boolean {
 }
 
 /** 格式化日志消息 — 匹配 iot-wfm formatMessage */
-function formatMessage(item: LogItem): string {
+export function formatMessage(item: LogItem): string {
   if (item.message) return item.message;
   switch (item.event) {
     case 'bootstrap':
