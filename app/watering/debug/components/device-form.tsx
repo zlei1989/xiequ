@@ -58,19 +58,23 @@ export function DeviceForm({
 
   /** 组件卸载时清除所有定时器 */
   useEffect(() => {
-    const timers = buttonTimers.current;
     return () => {
-      timers.forEach((t) => { clearTimeout(t); });
-      timers.clear();
+      buttonTimers.current.forEach((t) => { clearTimeout(t); });
+      buttonTimers.current.clear();
     };
+    // buttonTimers 是 ref，引用稳定，仅在挂载/卸载时执行
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   /** 按钮值变更：若切为 0 则 2 秒后自动回 1 */
   const handleButtonChange = useCallback(
     (key: string, checked: boolean) => {
       const val = checked ? 1 : 0;
-      const newButtons = { ...gpio.buttons, [key]: val };
-      onGpioChange({ ...gpio, buttons: newButtons });
+      // 函数式更新避免 stale closure：React 18 自动批处理下多次 toggle 不会丢失
+      onGpioChange((prev) => ({
+        ...prev,
+        buttons: { ...prev.buttons, [key]: val },
+      }));
 
       // 如果切为 0，启动 2 秒定时器自动回 1
       if (val === 0) {
@@ -92,7 +96,7 @@ export function DeviceForm({
         clearButtonTimer(key);
       }
     },
-    [gpio, onGpioChange, clearButtonTimer],
+    [clearButtonTimer],
   );
 
   return (
