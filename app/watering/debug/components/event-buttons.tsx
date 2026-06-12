@@ -10,6 +10,7 @@ import {
   Button,
   Card,
   Form,
+  Grid,
   NavBar,
   Popup,
   Radio,
@@ -74,40 +75,48 @@ export function EventButtons({
   return (
     <>
       <Card title="模拟事件">
-        <div className="grid grid-cols-2 gap-2 px-2 pb-1">
-          <Button
-            block
-            color="primary"
-            loading={loading}
-            onClick={() => { setPopupType('bootstrap'); }}
-          >
-            bootstrap
-          </Button>
-          <Button
-            block
-            color="primary"
-            loading={loading}
-            onClick={() => { void onGetState(); }}
-          >
-            getState
-          </Button>
-          <Button
-            block
-            color="primary"
-            loading={loading}
-            onClick={() => { setPopupType('change'); }}
-          >
-            change
-          </Button>
-          <Button
-            block
-            color="primary"
-            loading={loading}
-            onClick={() => { void onPushFinish(); }}
-          >
-            finish
-          </Button>
-        </div>
+        <Grid columns={2} gap={8}>
+          <Grid.Item>
+            <Button
+              block
+              color="primary"
+              loading={loading}
+              onClick={() => { setPopupType('bootstrap'); }}
+            >
+              bootstrap
+            </Button>
+          </Grid.Item>
+          <Grid.Item>
+            <Button
+              block
+              color="primary"
+              loading={loading}
+              onClick={() => { void onGetState(); }}
+            >
+              getState
+            </Button>
+          </Grid.Item>
+          <Grid.Item>
+            <Button
+              block
+              color="primary"
+              loading={loading}
+              onClick={() => { setPopupType('change'); }}
+            >
+              change
+            </Button>
+          </Grid.Item>
+          <Grid.Item>
+            <Button
+              block
+              color="primary"
+              loading={loading}
+              onClick={() => { void onPushFinish(); }}
+            >
+              finish
+            </Button>
+          </Grid.Item>
+        </Grid>
       </Card>
 
       {/* ---- bootstrap Popup ---- */}
