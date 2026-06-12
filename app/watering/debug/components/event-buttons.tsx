@@ -128,35 +128,38 @@ export function EventButtons({
       >
         <NavBar onBack={closePopup}>bootstrap 参数</NavBar>
 
-        <div className="px-3 pb-6">
-          <Form layout="horizontal">
-            <Form.Item label="启动原因">
-              <Radio.Group
-                value={bootstrapCause}
-                onChange={(val: RadioValue) => {
-                  setBootstrapCause(String(val));
-                }}
-              >
-                <Space direction="vertical" block>
-                  {CAUSE_OPTIONS.map((item) => (
-                    <Radio key={item.value} value={item.value} block>
-                      {item.label}
-                    </Radio>
-                  ))}
-                </Space>
-              </Radio.Group>
-            </Form.Item>
-          </Form>
+        <Grid columns={1} gap={16} className="px-3 pb-6">
+          <Grid.Item>
+            <Form layout="horizontal">
+              <Form.Item label="启动原因">
+                <Radio.Group
+                  value={bootstrapCause}
+                  onChange={(val: RadioValue) => {
+                    setBootstrapCause(String(val));
+                  }}
+                >
+                  <Space direction="vertical" block>
+                    {CAUSE_OPTIONS.map((item) => (
+                      <Radio key={item.value} value={item.value} block>
+                        {item.label}
+                      </Radio>
+                    ))}
+                  </Space>
+                </Radio.Group>
+              </Form.Item>
+            </Form>
+          </Grid.Item>
 
-          <Button
-            block
-            color="primary"
-            className="mt-4"
-            onClick={handleBootstrapConfirm}
-          >
-            确认发送
-          </Button>
-        </div>
+          <Grid.Item>
+            <Button
+              block
+              color="primary"
+              onClick={handleBootstrapConfirm}
+            >
+              确认发送
+            </Button>
+          </Grid.Item>
+        </Grid>
       </Popup>
 
       {/* ---- change Popup ---- */}
@@ -168,44 +171,47 @@ export function EventButtons({
       >
         <NavBar onBack={closePopup}>change 参数</NavBar>
 
-        <div className="px-3 pb-6">
-          <Form layout="horizontal">
-            <Form.Item label="变更类型">
-              <Radio.Group
-                value={changeType}
-                onChange={(val: RadioValue) => {
-                  setChangeType(String(val));
-                }}
-              >
-                <Space direction="vertical" block>
-                  {CHANGE_TYPES.map((item) => (
-                    <Radio key={item.value} value={item.value} block>
-                      {item.label}
-                    </Radio>
-                  ))}
-                </Space>
-              </Radio.Group>
-            </Form.Item>
+        <Grid columns={1} gap={16} className="px-3 pb-6">
+          <Grid.Item>
+            <Form layout="horizontal">
+              <Form.Item label="变更类型">
+                <Radio.Group
+                  value={changeType}
+                  onChange={(val: RadioValue) => {
+                    setChangeType(String(val));
+                  }}
+                >
+                  <Space direction="vertical" block>
+                    {CHANGE_TYPES.map((item) => (
+                      <Radio key={item.value} value={item.value} block>
+                        {item.label}
+                      </Radio>
+                    ))}
+                  </Space>
+                </Radio.Group>
+              </Form.Item>
 
-            <Form.Item label="附加消息">
-              <TextArea
-                placeholder="可选"
-                value={changeMessage}
-                onChange={(v) => { setChangeMessage(v); }}
-                rows={3}
-              />
-            </Form.Item>
-          </Form>
+              <Form.Item label="附加消息">
+                <TextArea
+                  placeholder="可选"
+                  value={changeMessage}
+                  onChange={(v) => { setChangeMessage(v); }}
+                  rows={3}
+                />
+              </Form.Item>
+            </Form>
+          </Grid.Item>
 
-          <Button
-            block
-            color="primary"
-            className="mt-4"
-            onClick={handleChangeConfirm}
-          >
-            确认发送
-          </Button>
-        </div>
+          <Grid.Item>
+            <Button
+              block
+              color="primary"
+              onClick={handleChangeConfirm}
+            >
+              确认发送
+            </Button>
+          </Grid.Item>
+        </Grid>
       </Popup>
     </>
   );
