@@ -84,8 +84,6 @@ function handlePopstate(): void {
  * @param onClose  - 关闭弹窗的回调函数
  */
 export function useBackButton(visible: boolean, onClose: () => void): void {
-  // entry 在 visible 变为 true 时创建，cleanup 时从栈中移除
-  const entryRef = useRef<StackEntry | null>(null);
   // 始终持有最新 onClose，避免闭包过期
   const onCloseRef = useRef(onClose);
   // 在 effect 中同步最新回调（React 19 禁止 render 期间访问 ref）
@@ -98,7 +96,6 @@ export function useBackButton(visible: boolean, onClose: () => void): void {
 
     // 创建 entry 并入栈
     const entry: StackEntry = { id: Symbol(), onCloseRef };
-    entryRef.current = entry;
     stack.push(entry);
 
     // 首个弹窗：注入占位状态 + 注册全局 popstate 监听器
