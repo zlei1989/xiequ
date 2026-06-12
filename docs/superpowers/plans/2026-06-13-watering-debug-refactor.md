@@ -4,7 +4,7 @@
 
 **Goal:** 将 `app/watering/debug` 的 antd (desktop) 组件替换为 antd-mobile，重构 GPIO 传感器分类（数字/模拟），Button 自动复位逻辑，负载 ProgressCircle 纯展示。
 
-**Architecture:** 文件结构不变，逐文件重构：hook 数据模型 → device-form (5个GPIO卡片) → event-buttons (2×2网格+Popup) → response-log。最后补测试和验证。
+**Architecture:** 文件结构不变，逐文件重构：hook 数据模型 → device-form (5个GPIO卡片) → event-buttons (Grid 2×2 + Popup/Form/Radio.Group) → response-log → page.tsx (NavBar+NoticeBar)。最后补测试和验证。SQLite 加 busy_timeout 防并发锁。
 
 **Tech Stack:** antd-mobile 5.42.3, React 19, TypeScript, Tailwind CSS, vitest
 
@@ -1064,3 +1064,38 @@ npm run test
 git add -A
 git commit -m "chore: format + check 通过，最终验证"
 ```
+
+---
+
+## 实施偏差记录
+
+实施过程中根据实际组件行为和 UI 一致性需求，对计划做了以下调整：
+
+### event-buttons.tsx
+
+| 计划 | 实际 | 原因 |
+|------|------|------|
+| bootstrap 用 `<Picker>` 自弹层 | 改为 `<Popup>` + `<NavBar>` + `<Form>` + `<Radio.Group>` + footer `<Button>` | 与 change 统一风格；Picker 自带弹层嵌套 Popup 会双层叠加 |
+| change 用 `<Picker>` 选 type | 改为 `<Radio.Group>` | 同上，避免弹层冲突 |
+| change 用 `<Input>` 填 message | 改为 `<TextArea rows={3}>` | 多行输入框更符合消息语义 |
+| 弹层内容用 `<div>` + `className` 包裹 | 改为 `<Form footer={Button}>` | 全部使用 antd-mobile 组件，去掉 className 手写样式 |
+| 按钮网格用 `<div className="grid">` | 改为 `<Grid columns={2} gap={8}>` | 统一使用 antd-mobile 组件 |
+| bootstrap/change 确认用 `onConfirm` 回调 | 改为 Form footer 中的 `<Button onClick>` | Form footer 是 antd-mobile 推荐的表单提交样式 |
+
+### page.tsx
+
+| 计划 | 实际 | 原因 |
+|------|------|------|
+| 标题用 `<h4>` + `<p>` (Tailwind) | 改为 `<NavBar back={null}>` + `<NoticeBar>` | 统一使用 antd-mobile 组件 |
+
+### lib/db.ts
+
+| 计划 | 实际 | 原因 |
+|------|------|------|
+| 未涉及 | 新增 `PRAGMA busy_timeout = 5000` | 开发时 SQLite WASM 并发读写频繁报 "database is locked" |
+
+### handleButtonChange
+
+| 计划 | 实际 | 原因 |
+|------|------|------|
+| 立即更新用 `onGpioChange({...gpio, ...})` | 改为函数式 `onGpioChange((prev) => ({...prev, ...}))` | React 18 自动批处理下多次 toggle 会丢更新 |

@@ -64,7 +64,18 @@ const DEFAULT_GPIO: GpioState = {
 
 ## 5. 页面布局与组件映射
 
-页面纵向排列 7 个卡片，顺序如下：
+页面纵向排列，标题区 + 7 个卡片：
+
+### 5.0 页面标题
+
+```
+┌─ IoT 设备模拟器 ──────────────────┐  ← NavBar back={null}
+│ 模拟 ESP32 设备发起 getState / ... │  ← NoticeBar color="default"
+└────────────────────────────────────┘
+```
+
+- 标题：antd-mobile `<NavBar back={null}>`
+- 副标题：antd-mobile `<NoticeBar color="default">`
 
 ### 5.1 设备标识
 
@@ -147,7 +158,7 @@ const DEFAULT_GPIO: GpioState = {
 ```
 ┌─ 模拟事件 ────────────────────────────┐
 │  ┌──────────┐  ┌──────────┐          │
-│  │bootstrap │  │ getState │          │
+│  │bootstrap │  │ getState │          │  ← Grid columns={2}
 │  └──────────┘  └──────────┘          │
 │  ┌──────────┐  ┌──────────┐          │
 │  │  change  │  │  finish  │          │
@@ -155,11 +166,26 @@ const DEFAULT_GPIO: GpioState = {
 └────────────────────────────────────────┘
 ```
 
-- 组件：antd-mobile `<Button>` 2×2 网格
-- **bootstrap** — 点击弹出 `<Popup>` 内含 `<Picker>` 选 cause（0=正常上电/2=外部唤醒/4=定时器），确认后发送
-- **getState** — 直接发送，无参数
-- **change** — 点击弹出 `<Popup>` 内含 `<Picker>` 选 type（step_ready/step_begin/step_end/step_timeout/step_interrupt）+ `<Input>` 填 message（可选），确认后发送
-- **finish** — 直接发送，无参数
+- 按钮网格：antd-mobile `<Grid columns={2} gap={8}>` + `<Grid.Item>`
+- **getState / finish** — 直接发送，无参数
+- **bootstrap / change** — 弹出底部 `<Popup>`，内部结构统一：
+
+```
+┌─ ← bootstrap 参数 ─────────────────┐  ← NavBar onBack={closePopup}
+│                                     │
+│  启动原因                            │  ← Form layout="horizontal"
+│  ○ 0 (正常上电)                      │    Radio.Group + Space vertical
+│  ○ 2 (外部唤醒)                      │
+│  ○ 4 (定时器唤醒)                    │
+│                                     │
+│  ┌──────────────────────────────┐   │
+│  │          确认发送              │   │  ← Form footer Button
+│  └──────────────────────────────┘   │
+└─────────────────────────────────────┘
+```
+
+- **bootstrap 参数** — `Radio.Group` 选 cause，通过 `<Form footer={Button}>` 确认发送
+- **change 参数** — `Radio.Group` 选 type + `TextArea` 填 message，通过 `<Form footer={Button}>` 确认发送
 
 ### 5.7 请求日志
 
@@ -207,8 +233,13 @@ const DEFAULT_GPIO: GpioState = {
 ## 9. 实施顺序
 
 1. 调整 `use-iot-simulator.ts` 数据模型（GpioState 类型 + buildQuery）
-2. 重构 `device-form.tsx`（5 个 GPIO 卡片）
-3. 重构 `event-buttons.tsx`（2×2 网格 + Popup/Picker）
-4. 重构 `response-log.tsx`（替换 Tag）
-5. 编写测试
-6. `npm run format` → `npm run check` → 修复 → 测试通过
+2. 重构 `device-form.tsx`（5 个 GPIO 卡片 — 设备标识、数字、模拟、按钮、负载）
+3. 重构 `event-buttons.tsx`（Grid 2×2 按钮 + Popup/Form/Radio.Group）
+4. 重构 `response-log.tsx`（自绘标签 + URL 截断展开）
+5. 重构 `page.tsx`（NavBar + NoticeBar 标题）
+6. 编写测试（按钮复位 + clamp）
+7. `npm run format` → `npm run check` → 修复 → `npm run test` 通过
+
+## 10. 附加修复
+
+- `lib/db.ts` — SQLite WASM 设置 `PRAGMA busy_timeout = 5000`，防止并发读写 "database is locked"
