@@ -1,7 +1,8 @@
 /**
  * log-card 工具函数单元测试
  *
- * 测试 groupByStateId / formatDuration / formatMessage 三个纯函数。
+ * 测试 groupByStateId / formatDuration / formatSimpleDuration / formatMessage /
+ * formatCause / extractProcessNames / countSteps / calcSleepDuration。
  */
 
 import { describe, it, expect } from 'vitest';
@@ -9,7 +10,12 @@ import { describe, it, expect } from 'vitest';
 import {
   groupByStateId,
   formatDuration,
+  formatSimpleDuration,
   formatMessage,
+  formatCause,
+  extractProcessNames,
+  countSteps,
+  calcSleepDuration,
 } from '@/app/watering/components/log-card';
 import type { LogItem } from '@/app/watering/components/log-card';
 
@@ -19,6 +25,7 @@ function makeLog(overrides: Partial<LogItem> = {}): LogItem {
     event: 'execute',
     createdTime: '2026-06-13T10:00:00.000Z',
     stateId: 'state_001',
+    voltage: 3.7,
     ...overrides,
   };
 }
@@ -48,7 +55,6 @@ describe('groupByStateId', () => {
     const result = groupByStateId(logs);
     expect(result).toHaveLength(1);
     expect(result[0]?.stateId).toBe('s1');
-    // 组内正序
     expect(result[0]?.items.map((i) => i.createdTime)).toEqual([
       '2026-06-13T10:00:01.000Z',
       '2026-06-13T10:00:02.000Z',
@@ -58,22 +64,18 @@ describe('groupByStateId', () => {
 
   it('不同 stateId 分组，组间按最新事件倒序', () => {
     const logs = [
-      // group_A 最新 10:00:05
       makeLog({ createdTime: '2026-06-13T10:00:01.000Z', stateId: 'group_A' }),
       makeLog({ createdTime: '2026-06-13T10:00:05.000Z', stateId: 'group_A' }),
-      // group_B 最新 10:00:10
       makeLog({ createdTime: '2026-06-13T10:00:10.000Z', stateId: 'group_B' }),
       makeLog({ createdTime: '2026-06-13T10:00:08.000Z', stateId: 'group_B' }),
     ];
     const result = groupByStateId(logs);
     expect(result).toHaveLength(2);
-    // group_B 最新时间更晚，应排在前面
     expect(result[0]?.stateId).toBe('group_B');
     expect(result[1]?.stateId).toBe('group_A');
   });
 
   it('缺失 stateId 归入 _unknown 组', () => {
-    // 构造两条明确没有 stateId 的日志
     const items = [
       makeLog({ createdTime: '2026-06-13T10:00:01.000Z', stateId: undefined }),
       makeLog({ createdTime: '2026-06-13T10:00:02.000Z', stateId: undefined }),
@@ -86,7 +88,7 @@ describe('groupByStateId', () => {
 });
 
 // ================================================================
-// formatDuration
+// formatDuration & formatSimpleDuration
 // ================================================================
 
 describe('formatDuration', () => {
@@ -95,46 +97,36 @@ describe('formatDuration', () => {
     expect(formatDuration([makeLog()])).toBe('');
   });
 
-  it('小于 60 秒仅显示秒数', () => {
+  it('小于 60 秒返回"刚刚"', () => {
     const items = [
       makeLog({ createdTime: '2026-06-13T10:00:00.000Z' }),
       makeLog({ createdTime: '2026-06-13T10:00:45.000Z' }),
     ];
-    expect(formatDuration(items)).toBe('45秒');
+    expect(formatDuration(items)).toBe('刚刚');
   });
 
-  it('60~3600 秒以分秒格式显示', () => {
+  it('60 秒 ~ 1 小时返回"X分钟"', () => {
     const items = [
       makeLog({ createdTime: '2026-06-13T10:00:00.000Z' }),
-      makeLog({ createdTime: '2026-06-13T10:03:25.000Z' }),
+      makeLog({ createdTime: '2026-06-13T10:03:00.000Z' }),
     ];
-    // 3分25秒 = 205秒
-    expect(formatDuration(items)).toBe('3分25秒');
+    expect(formatDuration(items)).toBe('3分钟');
   });
 
-  it('超过 3600 秒以时分秒格式显示', () => {
+  it('1 小时 ~ 1 天返回"X小时"', () => {
     const items = [
       makeLog({ createdTime: '2026-06-13T10:00:00.000Z' }),
-      makeLog({ createdTime: '2026-06-13T12:05:30.000Z' }),
+      makeLog({ createdTime: '2026-06-13T15:30:00.000Z' }),
     ];
-    // 2小时5分30秒 = 7530秒
-    expect(formatDuration(items)).toBe('2时5分30秒');
+    expect(formatDuration(items)).toBe('5小时');
   });
 
-  it('刚好 60 秒边界仍显示秒数（严格 >60 才进分秒分支）', () => {
+  it('≥1 天返回"X天"', () => {
     const items = [
       makeLog({ createdTime: '2026-06-13T10:00:00.000Z' }),
-      makeLog({ createdTime: '2026-06-13T10:01:00.000Z' }),
+      makeLog({ createdTime: '2026-06-15T10:00:00.000Z' }),
     ];
-    expect(formatDuration(items)).toBe('60秒');
-  });
-
-  it('刚好 3600 秒边界走分秒格式（严格 >3600 才进时分秒分支）', () => {
-    const items = [
-      makeLog({ createdTime: '2026-06-13T10:00:00.000Z' }),
-      makeLog({ createdTime: '2026-06-13T11:00:00.000Z' }),
-    ];
-    expect(formatDuration(items)).toBe('60分0秒');
+    expect(formatDuration(items)).toBe('2天');
   });
 });
 
@@ -153,9 +145,9 @@ describe('formatMessage', () => {
     expect(formatMessage(item)).toBe('设备开机');
   });
 
-  it('bootstrap 事件带 cause', () => {
-    const item = makeLog({ event: 'bootstrap', cause: '定时重启' });
-    expect(formatMessage(item)).toBe('设备(原因:定时重启)开机');
+  it('bootstrap 事件带 cause="4" 映射为定时唤醒', () => {
+    const item = makeLog({ event: 'bootstrap', cause: '4' });
+    expect(formatMessage(item)).toBe('定时唤醒开机');
   });
 
   it('execute 事件带 process.name', () => {
@@ -163,34 +155,168 @@ describe('formatMessage', () => {
     expect(formatMessage(item)).toBe('执行流程: 浇花流程A');
   });
 
-  it('execute 事件无 process 对象', () => {
+  it('execute 事件无 process', () => {
     const item = makeLog({ event: 'execute' });
-    // 无 process 字段，显示 "执行流程"
     expect(formatMessage(item)).toBe('执行流程');
   });
 
-  it('terminate 事件格式化', () => {
+  it('terminate 事件', () => {
     const item = makeLog({ event: 'terminate' });
     expect(formatMessage(item)).toBe('终止流程');
   });
 
-  it('finish 事件格式化', () => {
+  it('finish 事件', () => {
     const item = makeLog({ event: 'finish' });
     expect(formatMessage(item)).toBe('完成流程');
   });
 
-  it('offline 事件格式化', () => {
-    const item = makeLog({ event: 'offline' });
-    expect(formatMessage(item)).toBe('设备离线');
+  it('change 事件（无 message）', () => {
+    const item = makeLog({ event: 'change' });
+    expect(formatMessage(item)).toBe('流程状态变更');
   });
 
-  it('未知事件类型返回事件名原文', () => {
+  it('heartbeat 事件', () => {
+    const item = makeLog({ event: 'heartbeat' });
+    expect(formatMessage(item)).toBe('心跳');
+  });
+
+  it('未知事件返回原文', () => {
     const item = makeLog({ event: 'custom_event' });
     expect(formatMessage(item)).toBe('custom_event');
   });
+});
 
-  it('change 事件（无预定义标签）返回原文', () => {
-    const item = makeLog({ event: 'change' });
-    expect(formatMessage(item)).toBe('change');
+// ================================================================
+// formatCause
+// ================================================================
+
+describe('formatCause', () => {
+  it('"0" 映射为正常上电', () => {
+    expect(formatCause('0')).toBe('正常上电');
+  });
+
+  it('"2" 映射为外部唤醒', () => {
+    expect(formatCause('2')).toBe('外部唤醒');
+  });
+
+  it('"4" 映射为定时唤醒', () => {
+    expect(formatCause('4')).toBe('定时唤醒');
+  });
+
+  it('未知值返回空字符串', () => {
+    expect(formatCause('99')).toBe('');
+  });
+
+  it('undefined 返回空字符串', () => {
+    expect(formatCause(undefined)).toBe('');
+  });
+});
+
+// ================================================================
+// extractProcessNames
+// ================================================================
+
+describe('extractProcessNames', () => {
+  it('空数组返回空列表', () => {
+    expect(extractProcessNames([])).toEqual([]);
+  });
+
+  it('从 change 事件 message 提取流程名', () => {
+    const items: LogItem[] = [
+      makeLog({ event: 'change', message: '{processName:浇花}流程的{stepName:浇水}{stepId:0}环节开始执行。负载{componentKey:load_0}{value:200}已打开。' }),
+    ];
+    expect(extractProcessNames(items)).toEqual(['浇花']);
+  });
+
+  it('多个同名流程去重', () => {
+    const items: LogItem[] = [
+      makeLog({ event: 'change', message: '{processName:浇花}流程的{stepName:浇水}环节开始执行。' }),
+      makeLog({ event: 'change', message: '{processName:浇花}流程的{stepName:浇水}环节结束。' }),
+    ];
+    expect(extractProcessNames(items)).toEqual(['浇花']);
+  });
+
+  it('多个不同流程按首次出现顺序排列', () => {
+    const items: LogItem[] = [
+      makeLog({ event: 'change', message: '{processName:浇花}流程的{stepName:浇水}环节开始执行。' }),
+      makeLog({ event: 'change', message: '{processName:施肥}流程的{stepName:施肥}环节开始执行。' }),
+      makeLog({ event: 'change', message: '{processName:浇花}流程的{stepName:浇水}环节结束。' }),
+    ];
+    expect(extractProcessNames(items)).toEqual(['浇花', '施肥']);
+  });
+
+  it('无 message 的 change 事件被跳过', () => {
+    const items: LogItem[] = [
+      makeLog({ event: 'change', message: undefined }),
+    ];
+    expect(extractProcessNames(items)).toEqual([]);
+  });
+
+  it('非 change 事件被忽略', () => {
+    const items: LogItem[] = [
+      makeLog({ event: 'bootstrap', message: '{processName:浇花}...' }),
+    ];
+    expect(extractProcessNames(items)).toEqual([]);
+  });
+});
+
+// ================================================================
+// countSteps
+// ================================================================
+
+describe('countSteps', () => {
+  it('空数组返回 0', () => {
+    expect(countSteps([])).toBe(0);
+  });
+
+  it('统计 change 事件数', () => {
+    const items: LogItem[] = [
+      makeLog({ event: 'bootstrap' }),
+      makeLog({ event: 'change' }),
+      makeLog({ event: 'change' }),
+      makeLog({ event: 'finish' }),
+    ];
+    expect(countSteps(items)).toBe(2);
+  });
+
+  it('无 change 事件返回 0', () => {
+    const items: LogItem[] = [
+      makeLog({ event: 'bootstrap' }),
+      makeLog({ event: 'finish' }),
+    ];
+    expect(countSteps(items)).toBe(0);
+  });
+});
+
+// ================================================================
+// calcSleepDuration
+// ================================================================
+
+describe('calcSleepDuration', () => {
+  it('首条日志返回 0', () => {
+    const current = makeLog({ createdTime: '2026-06-13T10:00:00.000Z' });
+    expect(calcSleepDuration(current, [current])).toBe(0);
+  });
+
+  it('计算与前一条日志的时间差', () => {
+    const prev = makeLog({ createdTime: '2026-06-13T08:00:00.000Z' });
+    const current = makeLog({ createdTime: '2026-06-13T10:00:00.000Z' });
+    const allLogs = [current, prev];
+    expect(calcSleepDuration(current, allLogs)).toBe(7200);
+  });
+
+  it('多条日志只取时间最近的前一条', () => {
+    const oldest = makeLog({ createdTime: '2026-06-13T06:00:00.000Z' });
+    const prev = makeLog({ createdTime: '2026-06-13T08:00:00.000Z' });
+    const current = makeLog({ createdTime: '2026-06-13T10:00:00.000Z' });
+    const allLogs = [current, prev, oldest];
+    expect(calcSleepDuration(current, allLogs)).toBe(7200);
+  });
+
+  it('后于当前时间的日志被忽略', () => {
+    const current = makeLog({ createdTime: '2026-06-13T10:00:00.000Z' });
+    const future = makeLog({ createdTime: '2026-06-13T12:00:00.000Z' });
+    const allLogs = [future, current];
+    expect(calcSleepDuration(current, allLogs)).toBe(0);
   });
 });

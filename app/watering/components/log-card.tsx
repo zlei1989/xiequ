@@ -117,7 +117,6 @@ export function formatDuration(items: LogItem[]): string {
  * 格式化秒数为中文简化形式
  *
  * 用于流程用时和休眠时长。
- * 返回 '' 表示时长不足 1 分钟（休眠场景不显示）。
  */
 export function formatSimpleDuration(seconds: number): string {
   if (seconds < 60) return '刚刚';
@@ -155,7 +154,7 @@ export function formatMessage(item: LogItem): string {
   if (item.message) return item.message;
   switch (item.event) {
     case 'bootstrap':
-      return item.cause ? `设备(${item.cause})开机` : '设备开机';
+      return item.cause ? `${formatCause(item.cause)}开机` : '设备开机';
     case 'execute':
       return `执行流程${item.process?.name ? `: ${item.process.name}` : ''}`;
     case 'terminate':
@@ -174,8 +173,7 @@ export function formatMessage(item: LogItem): string {
 /**
  * 从一组日志中提取流程名列表
  *
- * 遍历所有 change 事件的 message，从 "{processName:浇花}流程的..." 格式中提取 processName。
- * 去重后按首次出现顺序排列。
+ * 遍历所有 change 事件的 message，从中提取 processName，去重按首次出现排序。
  */
 export function extractProcessNames(items: LogItem[]): string[] {
   const names: string[] = [];
@@ -203,7 +201,7 @@ export function countSteps(items: LogItem[]): number {
  * 计算休眠时长（秒）
  *
  * 返回当前 bootstrap 事件与前一条日志的时间差。
- * 无法计算时返回 0（首条日志无前一条）。
+ * 无法计算时返回 0。
  */
 export function calcSleepDuration(currentLog: LogItem, allLogs: LogItem[]): number {
   const currentTime = new Date(currentLog.createdTime).getTime();
@@ -265,11 +263,54 @@ function formatTime(isoString: string): string {
   });
 }
 
+/**
+ * 渲染 bootstrap 步骤的增强描述
+ *
+ * 格式：{唤醒原因} · 休眠 {X小时} · {电压}V
+ */
+function renderBootstrapDescription(
+  item: LogItem,
+  allLogs: LogItem[],
+): string {
+  const parts: string[] = [];
+  const stateObj = item.state as Record<string, unknown> | undefined;
+  const causeLabel = formatCause(String(stateObj?.cause ?? ''));
+  if (causeLabel) parts.push(causeLabel);
+  const sleepSec = calcSleepDuration(item, allLogs);
+  if (sleepSec >= 60) {
+    parts.push(`休眠 ${formatSimpleDuration(sleepSec)}`);
+  }
+  if (item.voltage && item.voltage > 0) {
+    parts.push(`${String(item.voltage)}V`);
+  }
+  return parts.join(' · ');
+}
+
 /** ── 组件 ── */
 
 export function LogCard({ group }: { group: LogGroup }) {
   const groupStatus = getGroupStatus(group.items);
   const duration = hasExecute(group.items) ? formatDuration(group.items) : null;
+
+  // 摘要行数据
+  const processNames = extractProcessNames(group.items);
+  const stepCount = countSteps(group.items);
+  const summaryVoltage = group.items.find((i) => i.voltage && i.voltage > 0)?.voltage;
+
+  const summaryParts: string[] = [];
+  if (processNames.length > 0) {
+    summaryParts.push(processNames.join('、'));
+  }
+  if (stepCount > 0) {
+    summaryParts.push(`共 ${String(stepCount)} 个步骤`);
+  }
+  if (duration) {
+    summaryParts.push(duration);
+  }
+  if (summaryVoltage && summaryVoltage > 0) {
+    summaryParts.push(`${String(summaryVoltage)}V`);
+  }
+  const summaryText = summaryParts.join(' · ');
 
   return (
     <Card
@@ -279,14 +320,21 @@ export function LogCard({ group }: { group: LogGroup }) {
         </Tag>
       }
       key={group.stateId}
-      title={`State ID: ${group.stateId}`}
+      title={`第 ${group.stateId} 批次运行`}
     >
+      {summaryText && (
+        <div className="mb-2 text-xs text-gray-400">
+          {summaryText}
+        </div>
+      )}
       <Steps direction="vertical">
         {group.items.map((item, idx) => (
           <Steps.Step
             description={
               <span className="text-[13px] text-gray-700">
-                {formatMessage(item)}
+                {item.event === 'bootstrap'
+                  ? renderBootstrapDescription(item, group.items)
+                  : formatMessage(item)}
               </span>
             }
             key={`${group.stateId}-${idx}`}
@@ -296,6 +344,18 @@ export function LogCard({ group }: { group: LogGroup }) {
                 <Tag color={eventColors[item.event] || 'default'}>
                   {eventLabels[item.event] || item.event}
                 </Tag>
+                {item.event === 'change' && (() => {
+                  const stateObj = item.state as Record<string, unknown> | undefined;
+                  const changeType = String(stateObj?.type ?? '');
+                  if (changeType && changeTypeLabels[changeType]) {
+                    return (
+                      <Tag color={changeTypeColors[changeType] || 'default'}>
+                        {changeTypeLabels[changeType]}
+                      </Tag>
+                    );
+                  }
+                  return null;
+                })()}
                 <span className="text-xs text-gray-400">
                   {formatTime(item.createdTime)}
                 </span>
