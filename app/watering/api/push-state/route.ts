@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getDeviceConfig, saveDeviceConfig, getDeviceState, saveDeviceState, writeDeviceLog, updateTick } from "@/app/watering/services/db";
+import { getDeviceConfig, saveDeviceConfig, getDeviceState, saveDeviceState, writeDeviceLog, updateTick, calcVoltage } from "@/app/watering/services/db";
 import { newId } from "@/lib/utils";
 
 export async function GET(request: NextRequest) {
@@ -25,12 +25,16 @@ export async function GET(request: NextRequest) {
     }
   });
 
+  // 获取设备配置用于电压计算（bootstrap 分支内可能重新获取/创建）
+  const config = await getDeviceConfig(chipId);
+  const voltage = calcVoltage(config?.voltage, gpioState.sensors);
+
   // 处理事件
   switch (event) {
     case "bootstrap": {
-      // 首次上线，创建默认配置（如不存在）
       let config = await getDeviceConfig(chipId);
       if (!config) {
+        console.info('[Watering] bootstrap 自动创建默认配置', { chipId });
         config = {
           chipId,
           name: `IOT-${chipId}`,
@@ -57,7 +61,6 @@ export async function GET(request: NextRequest) {
           lastWriteTime: new Date().toISOString(),
         };
       }
-      // 合并 GPIO 状态
       Object.assign(state, {
         sensors: gpioState.sensors,
         loads: gpioState.loads,
@@ -66,14 +69,23 @@ export async function GET(request: NextRequest) {
       });
       await saveDeviceState(state);
 
-      // 记录日志
-      await writeDeviceLog(chipId, "bootstrap", { macAddress, cause: searchParams.get("cause") || "" });
-      if (state.switch === "on" && state.process) {
-        await writeDeviceLog(chipId, "execute", { stateId: state.stateId, index: state.index });
+      const bootstrapVoltage = calcVoltage(config.voltage, gpioState.sensors);
+      await writeDeviceLog(chipId, 'bootstrap', macAddress, { cause: searchParams.get('cause') || '', sensors: gpioState.sensors, loads: gpioState.loads }, bootstrapVoltage, state.stateId);
+      if (state.switch === 'on' && state.process) {
+        await writeDeviceLog(chipId, 'execute', macAddress, { index: state.index }, bootstrapVoltage, state.stateId);
       }
       break;
     }
+    case "change": {
+      const stateId = searchParams.get('stateId') || '';
+      const type = searchParams.get('type') || '';
+      const message = searchParams.get('message') || '';
+      const changeVoltage = calcVoltage(config?.voltage, gpioState.sensors);
+      await writeDeviceLog(chipId, 'change', macAddress, { sensors: gpioState.sensors, loads: gpioState.loads, type }, changeVoltage, stateId, message);
+      break;
+    }
     case "finish": {
+      console.info('[Watering] finish 清除执行状态', { chipId });
       const state = await getDeviceState(chipId);
       if (state && state.switch !== "off") {
         state.switch = "off";
@@ -84,16 +96,12 @@ export async function GET(request: NextRequest) {
         state.lastWriteTime = new Date().toISOString();
         await saveDeviceState(state);
       }
-      await writeDeviceLog(chipId, "finish", { macAddress });
+      const finishVoltage = calcVoltage(config?.voltage, gpioState.sensors);
+      await writeDeviceLog(chipId, 'finish', macAddress, undefined, finishVoltage, state?.stateId);
       break;
     }
     default: {
-      // 普通状态上报
-      await writeDeviceLog(chipId, event || "heartbeat", {
-        macAddress,
-        sensors: gpioState.sensors,
-        loads: gpioState.loads,
-      });
+      await writeDeviceLog(chipId, event || 'heartbeat', macAddress, { sensors: gpioState.sensors, loads: gpioState.loads }, voltage);
       break;
     }
   }
