@@ -36,18 +36,18 @@ export const TripMap = forwardRef<
     onRouteMarkerClick?: (marker: RouteMarker) => void;
   }
 >(function TripMap(
-  {
-    locations,
-    onMarkerClick,
-    className,
-    style,
-    routeMode = false,
-    polylines,
-    routeMarkers,
-    onRouteMarkerClick,
-  },
-  ref,
-) {
+      {
+        locations,
+        onMarkerClick,
+        className,
+        style,
+        routeMode = false,
+        polylines,
+        routeMarkers,
+        onRouteMarkerClick,
+      },
+      ref,
+    ) {
       const containerRef = useRef<HTMLDivElement>(null);
       const mapRef = useRef<AMap.Map | null>(null);
       const engineRef = useRef<ReturnType<typeof createMarkerEngine> | null>(null);
@@ -173,7 +173,7 @@ export const TripMap = forwardRef<
         }
 
         engineRef.current.update(locations);
-      }, [locations, mapReady, onMarkerClick]);
+      }, [locations, mapReady, onMarkerClick, routeMode]);
 
       /** 路线标注和连线渲染 effect（仅在 routeMode 时生效） */
       useEffect(() => {
@@ -193,14 +193,15 @@ export const TripMap = forwardRef<
 
         // 创建路线标注（带编号）
         if (routeMarkers && routeMarkers.length > 0) {
-          for (let i = 0; i < routeMarkers.length; i++) {
-            const rm = routeMarkers[i]!;
-            const marker = new window.AMap!.Marker({
+          let index = 0;
+          for (const rm of routeMarkers) {
+            const i = index++;
+            const marker = new window.AMap.Marker({
               position: [rm.longitude, rm.latitude],
               title: rm.name,
               label: {
                 content: `<div style="background:#1677ff;color:#fff;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:bold">${String(i + 1)}</div>`,
-                offset: new window.AMap!.Pixel(-10, -10),
+                offset: new window.AMap.Pixel(-10, -10),
               },
             });
             marker.on('click', () => {
@@ -214,7 +215,7 @@ export const TripMap = forwardRef<
         // 创建连线
         if (polylines && polylines.length > 0) {
           for (const pl of polylines) {
-            const polyline = new window.AMap!.Polyline({
+            const polyline = new window.AMap.Polyline({
               path: pl.path,
               strokeColor: pl.color || '#1677ff',
               strokeWeight: 3,

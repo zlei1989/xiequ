@@ -48,12 +48,19 @@ describe('buildRoutes', () => {
   });
 
   it('returns empty array when location moments is undefined', () => {
-    const locs = [
-      makeLocation({ id: '1', name: '故宫', longitude: 116.4, latitude: 39.9 }),
-    ];
-    // makeLocation 默认 moments 为 {}，这里显式传 undefined
-    locs[0]!.moments = undefined;
-    expect(buildRoutes(locs)).toEqual([]);
+    // 直接构造 Location 而非使用 makeLocation，使 moments 为 undefined
+    const loc: Location = {
+      id: '1',
+      name: '故宫',
+      address: '北京市东城区',
+      longitude: 116.4,
+      latitude: 39.9,
+      checked: true,
+      comments: '',
+      deleted: false,
+      createdTime: '2026-01-01',
+    };
+    expect(buildRoutes([loc])).toEqual([]);
   });
 
   it('returns empty array when all locations are deleted', () => {

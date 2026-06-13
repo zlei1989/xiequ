@@ -70,15 +70,20 @@ function groupByDateGap(entries: MomentEntry[]): MomentEntry[][] {
   if (entries.length === 0) return [];
 
   const groups: MomentEntry[][] = [];
-  let current: MomentEntry[] = [entries[0]!];
+  const first = entries[0];
+  if (!first) return groups;
+  let current: MomentEntry[] = [first];
 
   for (let i = 1; i < entries.length; i++) {
-    const diff = dateDiff(entries[i - 1]!.date, entries[i]!.date);
+    const prev = entries[i - 1];
+    const curr = entries[i];
+    if (!prev || !curr) continue;
+    const diff = dateDiff(prev.date, curr.date);
     if (diff >= 2) {
       groups.push(current);
-      current = [entries[i]!];
+      current = [curr];
     } else {
-      current.push(entries[i]!);
+      current.push(curr);
     }
   }
   groups.push(current);

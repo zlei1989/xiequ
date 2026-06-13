@@ -10,12 +10,13 @@
 import { NavBar, Popup } from 'antd-mobile';
 import { useCallback, useState } from 'react';
 
-import { useMoments } from '../hooks/use-moments';
 import { useTravelContext } from '../hooks/use-locations';
-import { TripMap } from './trip-map';
+import { useMoments } from '../hooks/use-moments';
+
+import { LocationEditPopup } from './location-edit-popup';
 import { LocationViewPopup } from './location-view-popup';
 import { MomentEditPopup } from './moment-edit-popup';
-import { LocationEditPopup } from './location-edit-popup';
+import { TripMap } from './trip-map';
 
 import type { Route, RouteMarker, Location, Moment } from '../types';
 
