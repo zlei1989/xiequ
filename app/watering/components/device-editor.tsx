@@ -1,37 +1,64 @@
-"use client";
+/**
+ * 设备编辑器 — 主编辑器，管理设备基本设置、流程、步骤、中断、定时任务的 CRUD
+ *
+ * 使用 antd-mobile Popup + NavBar + List 构建移动端界面。
+ * 通过 saveRef 将 handleSave 暴露给父组件 Header 的保存按钮。
+ * 5 层嵌套 Popup（设备→流程→步骤→中断 + 定时 + 电压），
+ * 均接入 useBackButton 返回键栈支持。
+ */
 
-import { useState, useEffect } from "react";
+'use client';
+
+import { useState, useEffect } from 'react';
 import {
   Input,
-  InputNumber,
+  Stepper,
   Switch,
   Button,
-  Table,
-  Drawer,
-  Popconfirm,
-  message,
-  Space,
-} from "antd";
+  List,
+  Popup,
+  NavBar,
+  Dialog,
+  Toast,
+  Picker,
+  Selector,
+  ErrorBlock,
+  SwipeAction,
+} from 'antd-mobile';
 import {
-  PlusOutlined,
-  EditOutlined,
-  DeleteOutlined,
-  CloseOutlined,
-  SaveOutlined,
-} from "@ant-design/icons";
-import type { DeviceConfig, Process, Step, Interrupt, Schedule } from "../types";
-import type { GpioInfo } from "../hooks/use-device-config";
-import { ProcessEditor } from "./process-editor";
-import { ProcessStepEditor } from "./process-step-editor";
-import { ProcessInterruptEditor } from "./process-interrupt-editor";
-import { ScheduleEditor } from "./schedule-editor";
-import { VoltageConfigDrawer } from "./voltage-config-drawer";
+  AddOutline,
+  DeleteOutline,
+} from 'antd-mobile-icons';
+import { useBackButton } from '@/lib/back-button';
+import type { DeviceConfig, Process, Step, Interrupt, Schedule, VoltageConfig } from '../types';
+import type { GpioInfo } from '../hooks/use-device-config';
+import { ProcessEditor } from './process-editor';
+import { ProcessStepEditor } from './process-step-editor';
+import { ProcessInterruptEditor } from './process-interrupt-editor';
+import { ScheduleEditor } from './schedule-editor';
+
+/** 带 key 的扩展类型（运行时由 crypto.randomUUID() 生成，不存入数据库，仅供 antd Table rowKey 使用） */
+interface WithKey { key?: string; }
+
+/**
+ * 为对象附加运行时 key
+ *
+ * Process/Step/Interrupt/Schedule 类型定义不含 key 字段，
+ * 但子编辑器中的 antd Table 需要 rowKey=key。
+ * 通过此辅助函数在不改变类型定义的前提下附加 key。
+ */
+function attachKey<T>(obj: T): T & WithKey {
+  return Object.assign(obj as Record<string, unknown>, { key: crypto.randomUUID() }) as T & WithKey;
+}
+
+/** 电压检测配置默认值 */
+const DEFAULT_R1 = 30000; // 30kΩ
+const DEFAULT_R2 = 10000; // 10kΩ
 
 export function DeviceEditor({
   config,
   gpio,
   onSave,
-  onRemove,
   saveRef,
 }: {
   config: DeviceConfig;
@@ -41,14 +68,9 @@ export function DeviceEditor({
   saveRef: React.MutableRefObject<() => Promise<void>>;
 }) {
   const [form, setForm] = useState<DeviceConfig>(config);
-  const [saving, setSaving] = useState(false);
+  // onRemove 由父组件 Header 的删除按钮调用，当前编辑器内部不直接使用
 
-  // 将 handleSave 暴露给父组件 Header 的保存按钮
-  useEffect(() => {
-    saveRef.current = handleSave;
-  });
-
-  // ---- 嵌套 Drawer 状态（匹配 IotEditor 的 visible refs）----
+  // ---- 嵌套 Popup 状态（原 Drawer 的 visible refs）----
   const [processVisible, setProcessVisible] = useState(false);
   const [processIndex, setProcessIndex] = useState(-1);
 
@@ -63,9 +85,15 @@ export function DeviceEditor({
 
   const [voltageVisible, setVoltageConfigVisible] = useState(false);
 
-  // ---- 保存 ----
+  // ---- 返回键栈接入 ----
+  useBackButton(processVisible, () => { setProcessVisible(false); });
+  useBackButton(stepVisible, () => { setStepVisible(false); });
+  useBackButton(interruptVisible, () => { setInterruptVisible(false); });
+  useBackButton(scheduleVisible, () => { setScheduleVisible(false); });
+  useBackButton(voltageVisible, () => { setVoltageConfigVisible(false); });
+
+  // ---- 保存（声明在前，供 useEffect 引用）----
   async function handleSave() {
-    setSaving(true);
     try {
       await onSave({
         name: form.name,
@@ -77,30 +105,32 @@ export function DeviceEditor({
         schedules: form.schedules,
         voltage: form.voltage,
       });
-      message.success("保存成功");
-    } catch (err: any) {
-      message.error(err.message || "保存失败");
-    } finally {
-      setSaving(false);
+      Toast.show({ icon: 'success', content: '保存成功' });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : '保存失败';
+      Toast.show({ icon: 'fail', content: msg });
     }
   }
 
+  // ---- 将 handleSave 暴露给父组件 Header 的保存按钮 ----
+  useEffect(() => {
+    saveRef.current = handleSave;
+  });
+
   // ---- 流程操作 ----
   function addProcess() {
-    const item: Process = {
-      key: crypto.randomUUID(),
-      name: "新流程",
+    const item = attachKey<Process>({
+      name: '新流程',
       steps: [
-        {
-          key: crypto.randomUUID(),
-          name: "新步骤",
-          component: gpio.loads[0] ?? "load_0",
+        attachKey<Step>({
+          name: '新步骤',
+          component: gpio.loads[0] ?? 'load_0',
           value: { begin: 255, end: 0 },
           timeout: 600000,
           interrupts: [],
-        },
+        }),
       ],
-    };
+    });
     const newProcesses = [...form.processes, item];
     setForm({ ...form, processes: newProcesses });
     // 自动打开编辑
@@ -114,6 +144,18 @@ export function DeviceEditor({
     setForm({ ...form, processes: newProcesses });
   }
 
+  /** 从列表中删除指定流程（SwipeAction 触发） */
+  function deleteProcessFromList(index: number) {
+    const newProcesses = form.processes.filter((_, i) => i !== index);
+    setForm({ ...form, processes: newProcesses });
+    // 若删除的是当前打开的流程，关闭 Popup
+    if (index === processIndex) {
+      setProcessVisible(false);
+      setProcessIndex(-1);
+    }
+  }
+
+  /** 从 Popup 中删除当前打开的流程 */
   function deleteProcess() {
     const newProcesses = form.processes.filter((_, i) => i !== processIndex);
     setForm({ ...form, processes: newProcesses });
@@ -124,14 +166,13 @@ export function DeviceEditor({
   // ---- 步骤操作 ----
   function addStep() {
     const proc = { ...form.processes[processIndex] };
-    const item: Step = {
-      key: crypto.randomUUID(),
-      name: "新步骤",
-      component: gpio.loads[0] ?? "load_0",
+    const item = attachKey<Step>({
+      name: '新步骤',
+      component: gpio.loads[0] ?? 'load_0',
       value: { begin: 0, end: 0 },
       timeout: 600000,
       interrupts: [],
-    };
+    });
     proc.steps = [...proc.steps, item];
     updateProcess(processIndex, proc);
     setStepIndex(proc.steps.length - 1);
@@ -156,18 +197,17 @@ export function DeviceEditor({
 
   // ---- 中断操作 ----
   function addInterrupt() {
-    const item: Interrupt = {
-      key: crypto.randomUUID(),
-      name: "新中断",
-      component: gpio.sensors[0] ?? "sensor_0",
+    const item = attachKey<Interrupt>({
+      name: '新中断',
+      component: gpio.sensors[0] ?? 'sensor_0',
       state: 0,
-      signalType: "digital",   // 默认数字信号
-      logic: ">",              // 默认大于
+      signalType: 'digital',   // 默认数字信号
+      logic: '>',              // 默认大于
       threshold: 0,            // 默认阈值 0
       intercept: 100,
       delay: 0,
       duration: 0,
-    };
+    });
     const proc = { ...form.processes[processIndex] };
     const step = { ...proc.steps[stepIndex] };
     step.interrupts = [...(step.interrupts || []), item];
@@ -199,13 +239,12 @@ export function DeviceEditor({
 
   // ---- 定时操作 ----
   function addSchedule() {
-    const item: Schedule = {
-      key: crypto.randomUUID(),
-      type: "day",
+    const item = attachKey<Schedule>({
+      type: 'day',
       value: 8 * 3600 * 1000,
       interval: 1,
       process: 0,
-    };
+    });
     const newSchedules = [...form.schedules, item];
     setForm({ ...form, schedules: newSchedules });
     setScheduleIndex(newSchedules.length - 1);
@@ -218,6 +257,18 @@ export function DeviceEditor({
     setForm({ ...form, schedules: newSchedules });
   }
 
+  /** 从列表中删除指定定时任务（SwipeAction 触发） */
+  function deleteScheduleFromList(index: number) {
+    const newSchedules = form.schedules.filter((_, i) => i !== index);
+    setForm({ ...form, schedules: newSchedules });
+    // 若删除的是当前打开的定时任务，关闭 Popup
+    if (index === scheduleIndex) {
+      setScheduleVisible(false);
+      setScheduleIndex(-1);
+    }
+  }
+
+  /** 从 Popup 中删除当前打开的定时任务 */
   function deleteSchedule() {
     const newSchedules = form.schedules.filter((_, i) => i !== scheduleIndex);
     setForm({ ...form, schedules: newSchedules });
@@ -225,393 +276,461 @@ export function DeviceEditor({
     setScheduleIndex(-1);
   }
 
-  // ---- 流程表格列 ----
-  const processColumns = [
-    { title: "#", dataIndex: "_idx", width: 40, render: (_: any, __: any, index: number) => index + 1 },
-    { title: "名称", dataIndex: "name", key: "name" },
-    {
-      title: "",
-      key: "actions",
-      width: 60,
-      render: (_: any, record: Process, index: number) => (
-        <Button
-          type="text"
-          size="small"
-          icon={<EditOutlined />}
-          onClick={() => {
-            setProcessIndex(index);
-            setProcessVisible(true);
-          }}
-        />
-      ),
-    },
-  ];
+  // ---- 定时时间格式化 ----
+  function formatScheduleTime(record: Schedule): string {
+    if (record.type === 'day') {
+      const h = Math.floor(record.value / 3600000);
+      const m = Math.floor((record.value % 3600000) / 60000);
+      return `每天 ${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+    }
+    return `${record.type} ${record.value}`;
+  }
 
-  // ---- 定时表格列 ----
-  const scheduleColumns = [
-    { title: "#", dataIndex: "_idx", width: 40, render: (_: any, __: any, index: number) => index + 1 },
-    {
-      title: "时间",
-      key: "time",
-      render: (_: any, record: Schedule) => {
-        if (record.type === "day") {
-          const h = Math.floor(record.value / 3600000);
-          const m = Math.floor((record.value % 3600000) / 60000);
-          return `每天 ${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
-        }
-        return `${record.type} ${record.value}`;
-      },
-    },
-    { title: "间隔", dataIndex: "interval", key: "interval" },
-    {
-      title: "",
-      key: "actions",
-      width: 60,
-      render: (_: any, record: Schedule, index: number) => (
-        <Button
-          type="text"
-          size="small"
-          icon={<EditOutlined />}
-          onClick={() => {
-            setScheduleIndex(index);
-            setScheduleVisible(true);
-          }}
-        />
-      ),
-    },
-  ];
+  // ---- 电压检测配置 Popup 状态 ----
+  const voltageConfig = form.voltage || { sensor: gpio.sensors[0] || 'sensor_0', r1: DEFAULT_R1, r2: DEFAULT_R2 };
+
+  function updateVoltage(partial: Partial<VoltageConfig>) {
+    const merged = { ...voltageConfig, ...partial };
+    setForm({ ...form, voltage: merged });
+  }
+
+  // ---- 确认删除的通用辅助 ----
+  function confirmDelete(title: string, onConfirm: () => void) {
+    Dialog.confirm({
+      title,
+      onConfirm,
+    });
+  }
 
   return (
-    <div style={{ padding: "0 16px" }}>
-      {/* ---- 基本设置表单（匹配 IeForm）---- */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 16 }}>
-        <div>
-          <label style={{ fontSize: 13, color: "#666", marginBottom: 4, display: "block" }}>
-            设备名称
-          </label>
+    <div style={{ padding: '0 16px' }}>
+      {/* ======== 基本设置 ======== */}
+      <List header="基本设置">
+        {/* 设备名称 */}
+        <List.Item title="设备名称">
           <Input
-            value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
             placeholder="输入设备名称"
+            value={form.name}
+            onChange={(v) => setForm({ ...form, name: v })}
           />
-        </div>
+        </List.Item>
 
-        <div>
-          <label style={{ fontSize: 13, color: "#666", marginBottom: 4, display: "block" }}>
-            空闲睡眠
-          </label>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <Switch
-              checked={form.idleSleep}
-              onChange={(v) => setForm({ ...form, idleSleep: v })}
-            />
-            <span style={{ fontSize: 12, color: "#999" }}>
-              {form.idleSleep ? "设备将不接受实时控制，仅执行计划任务，达到省电目的" : ""}
-            </span>
-          </div>
-        </div>
+        {/* 空闲睡眠 */}
+        <List.Item
+          title="空闲睡眠"
+          description={form.idleSleep ? '设备将不接受实时控制，仅执行计划任务，达到省电目的' : ''}
+        >
+          <Switch
+            checked={form.idleSleep}
+            onChange={(checked) => setForm({ ...form, idleSleep: checked })}
+          />
+        </List.Item>
 
+        {/* 空闲超时 */}
         {form.idleSleep && (
-          <div>
-            <label style={{ fontSize: 13, color: "#666", marginBottom: 4, display: "block" }}>
-              空闲超时（毫秒）
-            </label>
-            <InputNumber
+          <List.Item title="空闲超时（毫秒）">
+            <Stepper
               value={form.idleTimeout}
-              onChange={(v) => setForm({ ...form, idleTimeout: v ?? 30000 })}
-              step={1000}
+              onChange={(v) => setForm({ ...form, idleTimeout: v })}
+              max={86400000}
               min={0}
-              style={{ width: "100%" }}
+              step={1000}
             />
-          </div>
+          </List.Item>
         )}
 
-        <div>
-          <label style={{ fontSize: 13, color: "#666", marginBottom: 4, display: "block" }}>
-            开机执行
-          </label>
-          <select
-            value={form.bootExec}
-            onChange={(e) =>
-              setForm({ ...form, bootExec: Number(e.target.value) })
-            }
-            style={{ width: "100%", padding: "4px 8px", fontSize: 14, borderRadius: 6, border: "1px solid #d9d9d9" }}
-          >
-            <option value={-1}>无</option>
-            {form.processes.map((p, i) => (
-              <option key={i} value={i}>
-                {p.name}
-              </option>
-            ))}
-          </select>
-        </div>
+        {/* 开机执行 */}
+        <List.Item
+          title="开机执行"
+          extra={form.bootExec >= 0 && form.processes[form.bootExec] ? form.processes[form.bootExec].name : '无'}
+          clickable
+          onClick={() => {
+            const options = [
+              { label: '无', value: '-1' },
+              ...form.processes.map((p, i) => ({ label: p.name, value: String(i) })),
+            ];
+            Picker.prompt({
+              columns: [options],
+              defaultValue: [String(form.bootExec)],
+              onConfirm: (val) => {
+                if (val && val.length > 0 && typeof val[0] === 'string') {
+                  setForm({ ...form, bootExec: Number(val[0]) });
+                }
+              },
+            });
+          }}
+        />
 
-        <div>
-          <label style={{ fontSize: 13, color: "#666", marginBottom: 4, display: "block" }}>
-            延迟执行（毫秒）
-          </label>
-          <InputNumber
+        {/* 延迟执行 */}
+        <List.Item title="延迟执行（毫秒）">
+          <Stepper
             value={form.execDelay}
-            onChange={(v) => setForm({ ...form, execDelay: v ?? 0 })}
-            step={1000}
+            onChange={(v) => setForm({ ...form, execDelay: v })}
             min={0}
+            step={1000}
             disabled={form.bootExec < 0}
-            style={{ width: "100%" }}
           />
-        </div>
-      </div>
+        </List.Item>
+      </List>
 
-      {/* ---- 电压检测配置 ---- */}
+      {/* ======== 电压检测配置摘要栏 ======== */}
       <div
         style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 16,
-          padding: "8px 12px",
-          background: "#fafafa",
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          margin: '12px 0',
+          padding: '8px 12px',
+          background: '#fafafa',
           borderRadius: 6,
-          border: "1px solid #f0f0f0",
+          border: '1px solid #f0f0f0',
         }}
       >
         <div>
           <span style={{ fontSize: 13, fontWeight: 500 }}>电压检测配置</span>
           {form.voltage ? (
-            <span style={{ fontSize: 12, color: "#999", marginLeft: 8 }}>
+            <span style={{ fontSize: 12, color: '#999', marginLeft: 8 }}>
               {form.voltage.sensor} · R1={form.voltage.r1}Ω · R2={form.voltage.r2}Ω
             </span>
           ) : (
-            <span style={{ fontSize: 12, color: "#ccc", marginLeft: 8 }}>
+            <span style={{ fontSize: 12, color: '#ccc', marginLeft: 8 }}>
               未配置
             </span>
           )}
         </div>
         <Button
-          type="link"
           size="small"
-          icon={<EditOutlined />}
+          fill="none"
           onClick={() => setVoltageConfigVisible(true)}
         >
-          {form.voltage ? "修改" : "配置"}
+          {form.voltage ? '修改' : '配置'}
         </Button>
       </div>
 
-      {/* ---- 流程表格（匹配 IeForm 的流程 el-table）---- */}
-      <div style={{ marginBottom: 16 }}>
-        <h4 style={{ margin: "0 0 8px", fontSize: 14 }}>功能</h4>
-        <Table
-          dataSource={form.processes}
-          columns={processColumns}
-          rowKey="key"
-          pagination={false}
-          size="small"
-          bordered
-        />
-        <Button
-          type="dashed"
-          icon={<PlusOutlined />}
-          onClick={addProcess}
-          block
-          style={{ marginTop: 8 }}
-        >
-          添加
-        </Button>
-      </div>
+      {/* ======== 功能列表 ======== */}
+      <List header="功能">
+        {form.processes.length === 0 ? (
+          <ErrorBlock status="empty" title="暂无功能" description="点击下方按钮添加功能流程" />
+        ) : (
+          form.processes.map((proc, index) => (
+            <SwipeAction
+              key={(proc as WithKey).key ?? index}
+              rightActions={[
+                {
+                  key: 'delete',
+                  text: '删除',
+                  color: 'danger',
+                  onClick: () => {
+                    confirmDelete('确认删除此流程？', () => { deleteProcessFromList(index); });
+                  },
+                },
+              ]}
+            >
+              <List.Item
+                clickable
+                prefix={`${index + 1}.`}
+                onClick={() => {
+                  setProcessIndex(index);
+                  setProcessVisible(true);
+                }}
+              >
+                {proc.name}
+              </List.Item>
+            </SwipeAction>
+          ))
+        )}
+      </List>
+      <Button
+        block
+        onClick={addProcess}
+        style={{ margin: '8px 0 16px' }}
+      >
+        <AddOutline style={{ marginRight: 4 }} /> 添加
+      </Button>
 
-      {/* ---- 定时表格（匹配 IeForm 的定时 el-table）---- */}
-      <div style={{ marginBottom: 16 }}>
-        <h4 style={{ margin: "0 0 8px", fontSize: 14 }}>计划任务</h4>
-        <Table
-          dataSource={form.schedules}
-          columns={scheduleColumns}
-          rowKey="key"
-          pagination={false}
-          size="small"
-          bordered
-        />
-        <Button
-          type="dashed"
-          icon={<PlusOutlined />}
-          onClick={addSchedule}
-          block
-          style={{ marginTop: 8 }}
-        >
-          添加
-        </Button>
-      </div>
+      {/* ======== 计划任务列表 ======== */}
+      <List header="计划任务">
+        {form.schedules.length === 0 ? (
+          <ErrorBlock status="empty" title="暂无计划任务" description="点击下方按钮添加定时任务" />
+        ) : (
+          form.schedules.map((sch, index) => (
+            <SwipeAction
+              key={(sch as WithKey).key ?? index}
+              rightActions={[
+                {
+                  key: 'delete',
+                  text: '删除',
+                  color: 'danger',
+                  onClick: () => {
+                    confirmDelete('确认删除此定时任务？', () => { deleteScheduleFromList(index); });
+                  },
+                },
+              ]}
+            >
+              <List.Item
+                clickable
+                prefix={`${index + 1}.`}
+                description={`间隔 ${sch.interval} 天`}
+                extra={sch.process < form.processes.length ? form.processes[sch.process]?.name ?? '' : ''}
+                onClick={() => {
+                  setScheduleIndex(index);
+                  setScheduleVisible(true);
+                }}
+              >
+                {formatScheduleTime(sch)}
+              </List.Item>
+            </SwipeAction>
+          ))
+        )}
+      </List>
+      <Button
+        block
+        onClick={addSchedule}
+        style={{ margin: '8px 0 16px' }}
+      >
+        <AddOutline style={{ marginRight: 4 }} /> 添加
+      </Button>
 
       {/* ============================================
-          嵌套 Drawer 层（匹配 IotEditor 的嵌套 el-drawer）
+          嵌套 Popup 层（原 Drawer 层）
           ============================================ */}
 
-      {/* 流程编辑 Drawer (80%) */}
-      <Drawer
-        title="编辑流程"
-        placement="bottom"
-        size="80%"
-        open={processVisible}
+      {/* 流程编辑 Popup (80vh) */}
+      <Popup
+        visible={processVisible}
+        position="bottom"
+        bodyStyle={{ height: '80vh' }}
         onClose={() => setProcessVisible(false)}
-        destroyOnClose
-        extra={
-          <Space>
-            <Popconfirm title="确认删除此流程？" onConfirm={deleteProcess}>
-              <Button icon={<DeleteOutlined />} danger size="small">
-                删除
-              </Button>
-            </Popconfirm>
-            <Button
-              icon={<CloseOutlined />}
-              onClick={() => setProcessVisible(false)}
-              size="small"
-            >
-              关闭
-            </Button>
-          </Space>
-        }
       >
-        {processIndex > -1 && (
-          <ProcessEditor
-            process={form.processes[processIndex]}
-            gpio={gpio}
-            onChange={(updated) => updateProcess(processIndex, updated)}
-            onRemove={deleteProcess}
-            onEditStep={(stepIdx) => {
-              setStepIndex(stepIdx);
-              setStepVisible(true);
-            }}
-            onAddStep={addStep}
-          />
-        )}
-      </Drawer>
-
-      {/* 步骤编辑 Drawer (75%) */}
-      <Drawer
-        title="编辑步骤"
-        placement="bottom"
-        size="75%"
-        open={stepVisible}
-        onClose={() => setStepVisible(false)}
-        destroyOnClose
-        extra={
-          <Space>
-            <Popconfirm title="确认删除此步骤？" onConfirm={deleteStep}>
-              <Button icon={<DeleteOutlined />} danger size="small">
-                删除
-              </Button>
-            </Popconfirm>
-            <Button
-              icon={<CloseOutlined />}
-              onClick={() => setStepVisible(false)}
-              size="small"
-            >
-              关闭
-            </Button>
-          </Space>
-        }
-      >
-        {stepIndex > -1 && processIndex > -1 && (
-          <ProcessStepEditor
-            step={form.processes[processIndex].steps[stepIndex]}
-            gpio={gpio}
-            onChange={(updated) => updateStep(stepIndex, updated)}
-            onRemove={deleteStep}
-            onEditInterrupt={(intIdx) => {
-              setInterruptIndex(intIdx);
-              setInterruptVisible(true);
-            }}
-            onAddInterrupt={addInterrupt}
-          />
-        )}
-      </Drawer>
-
-      {/* 中断编辑 Drawer (70%) */}
-      <Drawer
-        title="编辑中断"
-        placement="bottom"
-        size="70%"
-        open={interruptVisible}
-        onClose={() => setInterruptVisible(false)}
-        destroyOnClose
-        extra={
-          <Space>
-            <Popconfirm title="确认删除此中断？" onConfirm={deleteInterrupt}>
-              <Button icon={<DeleteOutlined />} danger size="small">
-                删除
-              </Button>
-            </Popconfirm>
-            <Button
-              icon={<CloseOutlined />}
-              onClick={() => setInterruptVisible(false)}
-              size="small"
-            >
-              关闭
-            </Button>
-          </Space>
-        }
-      >
-        {interruptIndex > -1 &&
-          stepIndex > -1 &&
-          processIndex > -1 &&
-          form.processes[processIndex].steps[stepIndex].interrupts && (
-            <ProcessInterruptEditor
-              interrupt={
-                form.processes[processIndex].steps[stepIndex].interrupts![
-                  interruptIndex
-                ]
-              }
+        <NavBar
+          onBack={() => setProcessVisible(false)}
+          right={
+            <DeleteOutline
+              style={{ fontSize: 20, cursor: 'pointer' }}
+              onClick={() => {
+                confirmDelete('确认删除此流程？', deleteProcess);
+              }}
+            />
+          }
+        >
+          编辑流程
+        </NavBar>
+        <div style={{ padding: '0 16px', overflowY: 'auto', height: 'calc(80vh - 45px)' }}>
+          {processIndex > -1 && (
+            <ProcessEditor
+              process={form.processes[processIndex]}
               gpio={gpio}
-              onChange={(updated) => updateInterrupt(interruptIndex, updated)}
-              onRemove={deleteInterrupt}
+              onChange={(updated) => updateProcess(processIndex, updated)}
+              onRemove={deleteProcess}
+              onEditStep={(stepIdx) => {
+                setStepIndex(stepIdx);
+                setStepVisible(true);
+              }}
+              onAddStep={addStep}
             />
           )}
-      </Drawer>
+        </div>
+      </Popup>
 
-      {/* 定时编辑 Drawer (70%) */}
-      <Drawer
-        title="编辑定时任务"
-        placement="bottom"
-        size="70%"
-        open={scheduleVisible}
-        onClose={() => setScheduleVisible(false)}
-        destroyOnClose
-        extra={
-          <Space>
-            <Popconfirm title="确认删除此定时任务？" onConfirm={deleteSchedule}>
-              <Button icon={<DeleteOutlined />} danger size="small">
-                删除
-              </Button>
-            </Popconfirm>
-            <Button
-              icon={<CloseOutlined />}
-              onClick={() => setScheduleVisible(false)}
-              size="small"
-            >
-              关闭
-            </Button>
-          </Space>
-        }
+      {/* 步骤编辑 Popup (75vh) */}
+      <Popup
+        visible={stepVisible}
+        position="bottom"
+        bodyStyle={{ height: '75vh' }}
+        onClose={() => setStepVisible(false)}
       >
-        {scheduleIndex > -1 && (
-          <ScheduleEditor
-            schedules={[form.schedules[scheduleIndex]]}
-            processes={form.processes}
-            onChange={(updated) => {
-              if (updated.length > 0) {
-                updateSchedule(scheduleIndex, updated[0]);
-              }
-            }}
-          />
-        )}
-      </Drawer>
+        <NavBar
+          onBack={() => setStepVisible(false)}
+          right={
+            <DeleteOutline
+              style={{ fontSize: 20, cursor: 'pointer' }}
+              onClick={() => {
+                confirmDelete('确认删除此步骤？', deleteStep);
+              }}
+            />
+          }
+        >
+          编辑步骤
+        </NavBar>
+        <div style={{ padding: '0 16px', overflowY: 'auto', height: 'calc(75vh - 45px)' }}>
+          {stepIndex > -1 && processIndex > -1 && (
+            <ProcessStepEditor
+              step={form.processes[processIndex].steps[stepIndex]}
+              gpio={gpio}
+              onChange={(updated) => updateStep(stepIndex, updated)}
+              onRemove={deleteStep}
+              onEditInterrupt={(intIdx) => {
+                setInterruptIndex(intIdx);
+                setInterruptVisible(true);
+              }}
+              onAddInterrupt={addInterrupt}
+            />
+          )}
+        </div>
+      </Popup>
 
-      {/* 电压检测配置 Drawer (60%) */}
-      <VoltageConfigDrawer
-        open={voltageVisible}
-        voltage={form.voltage}
-        sensors={gpio.sensors}
-        onChange={(vc) => setForm({ ...form, voltage: vc })}
+      {/* 中断编辑 Popup (70vh) */}
+      <Popup
+        visible={interruptVisible}
+        position="bottom"
+        bodyStyle={{ height: '70vh' }}
+        onClose={() => setInterruptVisible(false)}
+      >
+        <NavBar
+          onBack={() => setInterruptVisible(false)}
+          right={
+            <DeleteOutline
+              style={{ fontSize: 20, cursor: 'pointer' }}
+              onClick={() => {
+                confirmDelete('确认删除此中断？', deleteInterrupt);
+              }}
+            />
+          }
+        >
+          编辑中断
+        </NavBar>
+        <div style={{ padding: '0 16px', overflowY: 'auto', height: 'calc(70vh - 45px)' }}>
+          {interruptIndex > -1 &&
+            stepIndex > -1 &&
+            processIndex > -1 &&
+            form.processes[processIndex].steps[stepIndex].interrupts && (
+              <ProcessInterruptEditor
+                interrupt={
+                  form.processes[processIndex].steps[stepIndex].interrupts![
+                    interruptIndex
+                  ]
+                }
+                gpio={gpio}
+                onChange={(updated) => updateInterrupt(interruptIndex, updated)}
+                onRemove={deleteInterrupt}
+              />
+            )}
+        </div>
+      </Popup>
+
+      {/* 定时编辑 Popup (70vh) */}
+      <Popup
+        visible={scheduleVisible}
+        position="bottom"
+        bodyStyle={{ height: '70vh' }}
+        onClose={() => setScheduleVisible(false)}
+      >
+        <NavBar
+          onBack={() => setScheduleVisible(false)}
+          right={
+            <DeleteOutline
+              style={{ fontSize: 20, cursor: 'pointer' }}
+              onClick={() => {
+                confirmDelete('确认删除此定时任务？', deleteSchedule);
+              }}
+            />
+          }
+        >
+          编辑定时任务
+        </NavBar>
+        <div style={{ padding: '0 16px', overflowY: 'auto', height: 'calc(70vh - 45px)' }}>
+          {scheduleIndex > -1 && (
+            <ScheduleEditor
+              schedules={[form.schedules[scheduleIndex]]}
+              processes={form.processes}
+              onChange={(updated) => {
+                if (updated.length > 0) {
+                  updateSchedule(scheduleIndex, updated[0]);
+                }
+              }}
+            />
+          )}
+        </div>
+      </Popup>
+
+      {/* 电压检测配置 Popup (60vh) */}
+      <Popup
+        visible={voltageVisible}
+        position="bottom"
+        bodyStyle={{ height: '60vh' }}
         onClose={() => setVoltageConfigVisible(false)}
-      />
+      >
+        <NavBar onBack={() => setVoltageConfigVisible(false)}>
+          电压检测配置
+        </NavBar>
+        <div style={{ padding: '0 16px', overflowY: 'auto', height: 'calc(60vh - 45px)' }}>
+          <List>
+            {/* 传感器选择 */}
+            <List.Item title="电压检测传感器">
+              {gpio.sensors.length > 0 ? (
+                <Selector
+                  options={gpio.sensors.map((s) => ({ label: s, value: s }))}
+                  value={[voltageConfig.sensor]}
+                  onChange={(vals) => {
+                    if (vals.length > 0) {
+                      updateVoltage({ sensor: vals[0]! });
+                    }
+                  }}
+                />
+              ) : (
+                <ErrorBlock
+                  status="empty"
+                  title="无可用传感器"
+                  description="请等待设备上报 GPIO 状态"
+                />
+              )}
+            </List.Item>
+            <List.Item
+              title="电压检测传感器"
+              description="选择用于电压检测的 ADC 传感器引脚"
+            >
+              {/* 说明由 description 承载 */}
+              <span />
+            </List.Item>
+
+            {/* R1 电阻值 */}
+            <List.Item title="R1 电阻值（Ω）" description="分压电阻 R1，上拉至被测电压。默认 30kΩ">
+              <Stepper
+                value={voltageConfig.r1}
+                onChange={(v) => updateVoltage({ r1: v })}
+                min={0}
+                step={1000}
+              />
+            </List.Item>
+
+            {/* R2 电阻值 */}
+            <List.Item title="R2 电阻值（Ω）" description="分压电阻 R2，下拉至 GND。默认 10kΩ">
+              <Stepper
+                value={voltageConfig.r2}
+                onChange={(v) => updateVoltage({ r2: v })}
+                min={0}
+                step={1000}
+              />
+            </List.Item>
+
+            {/* 电压计算公式说明 */}
+            <List.Item>
+              <div
+                style={{
+                  background: '#f6f8fa',
+                  border: '1px solid #e8e8e8',
+                  borderRadius: 6,
+                  padding: '12px 16px',
+                  fontSize: 12,
+                  color: '#666',
+                  width: '100%',
+                }}
+              >
+                <div style={{ fontWeight: 600, marginBottom: 4 }}>计算公式</div>
+                <div>
+                  V<sub>实际</sub> = V<sub>传感器</sub> × (R1 + R2) / R2
+                </div>
+                <div style={{ marginTop: 4 }}>
+                  当前分压比:{' '}
+                  {voltageConfig.r1 > 0 && voltageConfig.r2 > 0
+                    ? `${((voltageConfig.r1 + voltageConfig.r2) / voltageConfig.r2).toFixed(2)}`
+                    : '—'}
+                </div>
+              </div>
+            </List.Item>
+          </List>
+        </div>
+      </Popup>
     </div>
   );
 }
