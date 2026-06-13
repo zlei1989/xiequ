@@ -1,5 +1,5 @@
 /**
- * 旅行计划列表页
+ * 旅行收藏页
  *
  * 以列表形式展示位置，支持搜索过滤、下拉刷新。
  * 切换"待去→已去"时自动创建一条当天日期的精彩瞬间记录。
@@ -11,19 +11,19 @@
 import { PullToRefresh, List, DotLoading, ErrorBlock, Toast, SearchBar } from 'antd-mobile';
 import { useState, useEffect, useMemo } from 'react';
 
-import { createMoment } from '../actions';
-import { LocationEditPopup } from '../components/location-edit-popup';
-import { LocationListItem } from '../components/location-list-item';
-import { LocationViewPopup } from '../components/location-view-popup';
-import { MomentEditPopup } from '../components/moment-edit-popup';
-import { SearchPopup } from '../components/search-popup';
-import { useTravelContext } from '../hooks/use-locations';
-import { useMoments } from '../hooks/use-moments';
-import { filterLocations } from '../lib/filter-locations';
+import { createMoment } from '../../actions';
+import { LocationEditPopup } from '../../components/location-edit-popup';
+import { LocationListItem } from '../../components/location-list-item';
+import { LocationViewPopup } from '../../components/location-view-popup';
+import { MomentEditPopup } from '../../components/moment-edit-popup';
+import { SearchPopup } from '../../components/search-popup';
+import { useTravelContext } from '../../hooks/use-locations';
+import { useMoments } from '../../hooks/use-moments';
+import { filterLocations } from '../../lib/filter-locations';
 
-import type { Location, Moment } from '../types';
+import type { Location, Moment } from '../../types';
 
-export default function LocationListPage() {
+export default function FavouritesPage() {
   const { sortedLocations, loading, add, update, remove, load } =
     useTravelContext();
 
