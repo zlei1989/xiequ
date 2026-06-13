@@ -1,6 +1,6 @@
 # 谐趣
 
-个人生活工具集，基于 [Next.js](https://nextjs.org) 构建的 Web 应用。
+我的生活工具集，基于 [Next.js](https://nextjs.org) 构建的 Web 应用。
 
 ## 功能模块
 
@@ -24,16 +24,18 @@
 
 ### 旅行计划
 
-地图标注与旅行收藏：
+地图标注、路线规划与旅行收藏：
 
 - 地点标记与管理（名称、坐标、分类、状态）
 - 旅行瞬间记录（图片上传、文字描述）
-- 高德地图集成（定位、搜索）
+- 路线自动聚合生成（基于时间间隔和最近邻算法，从地点+瞬间动态构建）
+- 路线地图弹层（带编号标注点 + 高德驾车路线连线）
+- 高德地图集成（定位、搜索、驾车路线规划）
 - 腾讯云 COS 图片存储
 
 ### 台岛遍历
 
-2016 年台湾行迹的静态存档页面，存放于 `public/taiwan-1.8.4/`。
+二零一六年台湾行迹的静态存档页面，存放于 `public/taiwan-1.8.4/`。
 
 ## 技术栈
 
@@ -111,13 +113,18 @@ npm run dev
 │   │   ├── services/       # 数据库操作、IoT 协议实现
 │   │   └── types.ts        # 类型定义
 │   └── travel/             # 旅行计划模块
-│       ├── actions.ts      # Server Actions
-│       ├── api/            # API 路由（图片下载）
-│       ├── components/     # UI 组件
-│       ├── hooks/          # 自定义 Hooks
-│       ├── lib/            # 工具函数
-│       ├── services/       # 高德地图、OSS
-│       └── types.ts        # 类型定义
+│       ├── page.tsx         # 地图主页
+│       ├── layout.tsx       # 模块布局（Context 注入）
+│       ├── list/            # 地点列表页
+│       ├── routes/          # 路线列表页
+│       ├── actions.ts       # Server Actions
+│       ├── api/download/    # 图片下载 API
+│       ├── components/      # UI 组件（地图、弹层、列表项等）
+│       ├── hooks/           # 自定义 Hooks（路线、驾车、地图主题等）
+│       ├── lib/             # 路线构建、地点过滤
+│       ├── services/        # 高德地图、OSS、标注引擎
+│       ├── types.ts         # 类型定义
+│       └── types/           # 第三方类型声明（amap.d.ts）
 ├── components/             # 共享组件（SSR 兼容层等）
 ├── lib/                    # 共享库（数据库连接、COS 客户端、工具函数）
 ├── __tests__/              # 测试文件
