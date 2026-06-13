@@ -9,7 +9,7 @@
 import { Button, Card, ErrorBlock, List, Tag } from 'antd-mobile';
 import { useState, useCallback } from 'react';
 
-import type { LogEntry } from '../debug/hooks/use-iot-simulator';
+import type { LogEntry } from '../hooks/use-iot-simulator';
 
 /** 方向标签配置 */
 const directionMeta: Record<

@@ -11,10 +11,9 @@ import { useRouter } from 'next/navigation';
 
 import { DebugButtonCard } from '../components/debug-button-card';
 import { DebugForm } from '../components/debug-form';
+import { DebugLoadCard } from '../components/debug-load-card';
 import { DebugResponseList } from '../components/debug-response-list';
-
-import { DebugLoadCard } from './components/debug-load-card';
-import { useIotSimulator } from './hooks/use-iot-simulator';
+import { useIotSimulator } from '../hooks/use-iot-simulator';
 
 export default function DebugPage() {
   const {

@@ -17,7 +17,7 @@ import {
 } from 'antd-mobile';
 import { useCallback, useEffect, useRef } from 'react';
 
-import type { DeviceIdentity, GpioState } from '../debug/hooks/use-iot-simulator';
+import type { DeviceIdentity, GpioState } from '../hooks/use-iot-simulator';
 import type { Dispatch, SetStateAction } from 'react';
 
 /** 数字传感器 → 中文标签 */
