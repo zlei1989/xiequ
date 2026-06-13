@@ -16,6 +16,11 @@ import { useTravelContext } from '../hooks/use-locations';
 
 import type { Summary } from '../types';
 
+/** 路由路径常量，多处引用避免硬编码字符串 */
+const TRAVEL_BASE_PATH = '/travel';
+const TRAVEL_LIST_PATH = '/travel/list';
+const TRAVEL_ROUTES_PATH = '/travel/routes';
+
 /**
  * 渲染已去/待去/总计三列统计卡片和完成进度条
  *
@@ -89,22 +94,44 @@ export function Shell({ children }: { children: ReactNode }) {
       case 'add':
         window.dispatchEvent(new CustomEvent('travel:open-search'));
         break;
+      case 'my-location':
+        /** 通过 URL 参数触发地图页 GPS 定位居中（地图页 useEffect 已监听该参数） */
+        router.replace(`${TRAVEL_BASE_PATH}?center=my-location`);
+        break;
     }
   }
+
+  /**
+   * 根据当前 tab 决定 ActionSheet 菜单项
+   *
+   * 地图 tab：增加"我的位置"快捷定位；路线 tab：仅保留概览
+   */
+  const actions = (() => {
+    if (pathname === TRAVEL_ROUTES_PATH) {
+      return [{ key: 'overview', text: '概览' }];
+    }
+    const base = [
+      { key: 'overview', text: '概览' },
+      { key: 'all', text: '显示全部' },
+      { key: 'checked', text: '筛选已去' },
+      { key: 'uncheck', text: '筛选待去' },
+      { key: 'add', text: '添加位置' },
+    ];
+    if (pathname === TRAVEL_BASE_PATH) {
+      return [...base, { key: 'my-location', text: '我的位置' }];
+    }
+    return base;
+  })();
 
   return (
     <div className="flex h-screen flex-col">
       <SafeArea position="top" />
       <NavBar
         backIcon={
-          <span className="flex justify-end text-2xl">
-            <AppstoreOutline />
-          </span>
+          <AppstoreOutline />
         }
         right={
-          <span className="flex justify-end text-2xl">
-            <MoreOutline onClick={() => { setActionVisible(true); }} />
-          </span>
+          <MoreOutline onClick={() => { setActionVisible(true); }} className="text-2xl" />
         }
         onBack={() => { router.push('/'); }}
       >
@@ -114,9 +141,9 @@ export function Shell({ children }: { children: ReactNode }) {
       <div className="flex-1 overflow-auto">{children}</div>
 
       <TabBar safeArea activeKey={pathname} onChange={(key) => { router.push(key); }}>
-        <TabBar.Item icon={<EnvironmentOutline />} key="/travel" title="地图" />
-        <TabBar.Item icon={<StarOutline />} key="/travel/list" title="收藏" />
-        <TabBar.Item icon={<TravelOutline />} key="/travel/routes" title="路线" />
+        <TabBar.Item icon={<EnvironmentOutline />} key={TRAVEL_BASE_PATH} title="地图" />
+        <TabBar.Item icon={<StarOutline />} key={TRAVEL_LIST_PATH} title="收藏" />
+        <TabBar.Item icon={<TravelOutline />} key={TRAVEL_ROUTES_PATH} title="路线" />
       </TabBar>
 
       <SafeArea position="bottom" />
@@ -124,13 +151,7 @@ export function Shell({ children }: { children: ReactNode }) {
       <ActionSheet
         closeOnAction
         safeArea
-        actions={[
-          { key: 'overview', text: '概览' },
-          { key: 'all', text: '显示全部' },
-          { key: 'checked', text: '筛选已去' },
-          { key: 'uncheck', text: '筛选待去' },
-          { key: 'add', text: '添加位置' },
-        ]}
+        actions={actions}
         visible={actionVisible}
         onAction={handleAction}
         onClose={() => { setActionVisible(false); }}
