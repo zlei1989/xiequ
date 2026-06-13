@@ -38,6 +38,11 @@ const eslintConfig = tseslint.config(
       "@stylistic/jsx-quotes": ["warn", "prefer-double"],
       "@stylistic/max-len": ["warn", { code: 100, ignoreStrings: true, ignoreTemplateLiterals: true }],
       "@stylistic/eol-last": ["warn", "always"],
+      "@stylistic/jsx-sort-props": ["warn", {
+        callbacksLast: true,
+        shorthandFirst: true,
+        ignoreCase: true,
+      }],
     },
   },
   // import-x 排序规则 — 初始 warn
