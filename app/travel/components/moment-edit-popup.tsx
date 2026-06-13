@@ -98,7 +98,7 @@ export function MomentEditPopup({
 
   return (
     <Popup
-      bodyClassName="rounded-t-2xl min-h-[40vh] max-h-[75vh] overflow-auto"
+      bodyClassName="min-h-[50vh] max-h-[75vh] overflow-auto"
       closeOnMaskClick={true}
       position="bottom"
       visible={visible}

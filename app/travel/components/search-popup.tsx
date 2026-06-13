@@ -67,7 +67,7 @@ export function SearchPopup({
 
   return (
     <Popup
-      bodyClassName="min-h-[60vh] max-h-[75vh] overflow-auto"
+      bodyClassName="min-h-[50vh] max-h-[75vh] overflow-auto"
       closeOnMaskClick={true}
       position="bottom"
       visible={visible}

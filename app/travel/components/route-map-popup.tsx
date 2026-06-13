@@ -9,6 +9,7 @@
 'use client';
 
 import { DotLoading, NavBar, Popup, Toast } from 'antd-mobile';
+import { UnorderedListOutline } from 'antd-mobile-icons';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useBackButton } from '@/lib/back-button';
@@ -145,21 +146,18 @@ export function RouteMapPopup({
   return (
     <>
       <Popup
-        bodyStyle={{ height: '80vh' }}
+        bodyStyle={{ height: '75vh' }}
+        closeOnMaskClick={true}
         position="bottom"
         visible={visible}
         onClose={onClose}
+        onMaskClick={onClose}
       >
         <NavBar
           right={
             route.entries.length > 0 ? (
-              <span
-                className="cursor-pointer text-sm"
-                style={{ color: 'var(--adm-color-primary)' }}
-                onClick={() => { setShowEntryList(true); }}
-              >
-                列表
-              </span>
+              <UnorderedListOutline  style={{ color: 'var(--adm-color-primary)' }}
+                onClick={() => { setShowEntryList(true); }} />
             ) : null
           }
           onBack={onClose}
@@ -193,16 +191,13 @@ export function RouteMapPopup({
 
       {/* 位置列表面板 */}
       <Popup
-        bodyStyle={{ width: '60vw' }}
+        bodyStyle={{ width: '75vw' }}
+        closeOnMaskClick={true}
         position="right"
         visible={showEntryList}
         onClose={() => { setShowEntryList(false); }}
+        onMaskClick={() => { setShowEntryList(false); }}
       >
-        <NavBar
-          onBack={() => { setShowEntryList(false); }}
-        >
-          位置列表
-        </NavBar>
         <div className="overflow-y-auto" style={{ height: 'calc(100% - 45px)' }}>
           {groupedEntries.size === 0 ? (
             <div

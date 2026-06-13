@@ -130,6 +130,7 @@ export function EventButtons({
         position="bottom"
         visible={popupType === 'bootstrap'}
         onClose={closePopup}
+        onMaskClick={closePopup}
       >
         <NavBar onBack={closePopup}>bootstrap 参数</NavBar>
 
@@ -170,6 +171,7 @@ export function EventButtons({
         position="bottom"
         visible={popupType === 'change'}
         onClose={closePopup}
+        onMaskClick={closePopup}
       >
         <NavBar onBack={closePopup}>change 参数</NavBar>
 

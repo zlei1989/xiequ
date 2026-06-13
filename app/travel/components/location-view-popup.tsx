@@ -99,7 +99,7 @@ export function LocationViewPopup({
 
   return (
     <Popup
-      bodyClassName="rounded-t-2xl max-h-[75vh] overflow-auto"
+      bodyStyle={{ height: '75vh' }}
       closeOnMaskClick={true}
       position="bottom"
       visible={visible}

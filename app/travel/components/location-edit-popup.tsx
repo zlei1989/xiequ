@@ -69,35 +69,36 @@ export function LocationEditPopup({
 
   return (
     <Popup
-      visible={visible}
-      onMaskClick={onClose}
-      onClose={onClose}
+      bodyClassName="min-h-[50vh] max-h-[75vh] overflow-auto"
+      closeOnMaskClick={true}
       position="bottom"
-      bodyClassName="rounded-t-2xl min-h-[50vh] max-h-[75vh] overflow-auto"
+      visible={visible}
+      onClose={onClose}
+      onMaskClick={onClose}
     >
       <NavBar
-        onBack={onClose}
         right={
-          <Button color="primary" size="small" loading={saving} onClick={handleSave}>
+          <Button color="primary" loading={saving} size="small" onClick={handleSave}>
             保存
           </Button>
         }
+        onBack={onClose}
       >
         编辑位置
       </NavBar>
-      <Form layout="vertical" className="px-4">
+      <Form className="px-4" layout="vertical">
         <Form.Item label="名称">
-          <Input value={name} onChange={setName} placeholder="位置名称" />
+          <Input placeholder="位置名称" value={name} onChange={setName} />
         </Form.Item>
         <Form.Item label="地址">
-          <Input value={address} onChange={setAddress} placeholder="地址" />
+          <Input placeholder="地址" value={address} onChange={setAddress} />
         </Form.Item>
         <Form.Item label="备注">
           <TextArea
-            value={comments}
-            onChange={setComments}
             placeholder="备注"
             rows={3}
+            value={comments}
+            onChange={setComments}
           />
         </Form.Item>
       </Form>
