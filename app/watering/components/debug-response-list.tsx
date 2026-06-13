@@ -89,13 +89,13 @@ function LogItem({ log }: { log: LogEntry }) {
             {log.status}
           </Tag>
         ) : log.error ? (
-          <Tag color="danger" fill="solid">
+          <Tag color="danger">
             ERROR
           </Tag>
         ) : undefined
       }
       prefix={
-        <Tag color={meta.color} fill="solid">
+        <Tag color={meta.color}>
           {meta.label}
         </Tag>
       }

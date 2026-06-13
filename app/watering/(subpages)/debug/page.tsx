@@ -44,7 +44,7 @@ export default function DebugPage() {
         onGpioChange={setGpio}
         onIdentityChange={setIdentity}
       />
-      <div className="flex flex-col gap-4 p-4">
+      <div className="flex flex-col gap-3 p-3">
         <DebugLoadCard loads={gpio.loads} />
         <DebugButtonCard
           loading={loading}

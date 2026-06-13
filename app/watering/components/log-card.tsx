@@ -196,7 +196,7 @@ export function LogCard({ logs }: { logs: LogItem[] }) {
         return (
           <Card
             extra={
-              <Tag color={groupStatus.color} fill="solid">
+              <Tag color={groupStatus.color}>
                 {groupStatus.label}
               </Tag>
             }
@@ -215,7 +215,7 @@ export function LogCard({ logs }: { logs: LogItem[] }) {
                   status={getStepStatus(item.event)}
                   title={
                     <Space align="center">
-                      <Tag color={eventColors[item.event] || 'default'} fill="solid">
+                      <Tag color={eventColors[item.event] || 'default'}>
                         {eventLabels[item.event] || item.event}
                       </Tag>
                       <span className="text-xs text-gray-400">
