@@ -50,7 +50,7 @@ export default function DebugPage() {
         />
         <DebugResponseList logs={logs} onClear={clearLogs} />
       </div>
-    </>)
+    </>);
   }
 
   return (
