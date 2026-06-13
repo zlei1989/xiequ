@@ -10,12 +10,12 @@
 import { PullToRefresh, List, ErrorBlock, DotLoading } from 'antd-mobile';
 import { useState } from 'react';
 
-import { RouteListItem } from '../components/route-list-item';
-import { RouteMapPopup } from '../components/route-map-popup';
-import { useTravelContext } from '../hooks/use-locations';
-import { useRoutes } from '../hooks/use-routes';
+import { RouteListItem } from '../../components/route-list-item';
+import { RouteMapPopup } from '../../components/route-map-popup';
+import { useTravelContext } from '../../hooks/use-locations';
+import { useRoutes } from '../../hooks/use-routes';
 
-import type { Route } from '../types';
+import type { Route } from '../../types';
 
 export default function RoutesPage() {
   const { loading, load, locations } = useTravelContext();
