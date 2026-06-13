@@ -37,6 +37,8 @@ export const TripMap = forwardRef<
     onRouteMarkerClick?: (marker: RouteMarker) => void;
     /** 路线标注更新后自动适配视野以包含所有标注（仅 routeMode 时生效） */
     fitViewOnUpdate?: boolean;
+    /** 当前激活的标注 locationId（用于高亮，仅在 routeMode 时生效） */
+    activeMarkerId?: string;
   }
 >(function TripMap(
       {
@@ -49,6 +51,7 @@ export const TripMap = forwardRef<
         routeMarkers,
         onRouteMarkerClick,
         fitViewOnUpdate = false,
+        activeMarkerId,
       },
       ref,
     ) {
@@ -197,25 +200,16 @@ export const TripMap = forwardRef<
 
         // 创建路线标注（带编号，图标样式参考地图页标注）
         if (routeMarkers && routeMarkers.length > 0) {
-          const color = getAdmColor('--adm-color-primary', '#1677ff');
           let index = 0;
           for (const rm of routeMarkers) {
             const i = index++;
-            // 生成带编号的圆形 SVG 图标，与地图页标注保持一致的视觉风格
-            const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24">
-              <circle cx="12" cy="12" r="11" fill="${color}" stroke="white" stroke-width="2"/>
-              <text x="12" y="17" text-anchor="middle" fill="white" font-size="11" font-weight="bold" font-family="Arial,sans-serif">${String(i + 1)}</text>
-            </svg>`;
-            const icon = new window.AMap.Icon({
-              image: `data:image/svg+xml;charset=utf-8,${svg.replace(/#/g, '%23')}`,
-              size: [24, 24],
-              imageSize: [24, 24],
-            });
             const marker = new window.AMap.Marker({
               position: [rm.longitude, rm.latitude],
               title: rm.name,
-              icon,
-              offset: new window.AMap.Pixel(-12, -12),
+              label: {
+                content: `<div style="background:${rm.locationId === activeMarkerId ? getAdmColor('--adm-color-warning', '#ffc107') : '#1677ff'};color:#fff;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:bold">${String(i + 1)}</div>`,
+                offset: new window.AMap.Pixel(-12, -12),
+              },
             });
             marker.on('click', () => {
               onRouteMarkerClick?.(rm);
@@ -244,7 +238,7 @@ export const TripMap = forwardRef<
         if (fitViewOnUpdate && routeMarkersRef.current.length > 0) {
           map.setFitView(routeMarkersRef.current, false, [48, 48, 48, 48]);
         }
-      }, [routeMode, routeMarkers, polylines, mapReady, onRouteMarkerClick, fitViewOnUpdate]);
+      }, [routeMode, routeMarkers, polylines, mapReady, onRouteMarkerClick, fitViewOnUpdate, activeMarkerId]);
 
       /** 重试加载 —— 递增 retryKey 触发 effect 重新执行 */
       function handleRetry() {
