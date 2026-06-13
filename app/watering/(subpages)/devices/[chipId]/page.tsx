@@ -12,8 +12,8 @@ import { Spin, Button, Popconfirm, message } from 'antd';
 import { useRouter } from 'next/navigation';
 import { use, useRef } from 'react';
 
-import { DeviceEditor } from '../../components/device-editor';
-import { useDeviceConfig } from '../../hooks/use-device-config';
+import { DeviceEditor } from '../../../components/device-editor';
+import { useDeviceConfig } from '../../../hooks/use-device-config';
 
 /** 设备详情页 */
 export default function DeviceDetailPage({
