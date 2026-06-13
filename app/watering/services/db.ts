@@ -353,7 +353,6 @@ export function calcVoltage(
  * SQLite WASM 驱动 API 为同步调用，但函数签名保持 async 以兼容上层契约。
  * voltage 从设备配置的电压分压公式计算，未配置时为 0。
  */
- 
 export async function writeDeviceLog(
   chipId: string,
   event: string,
@@ -363,11 +362,11 @@ export async function writeDeviceLog(
   stateId?: string,
   message?: string,
 ) {
-  const db = await getDb();
+  const db = getDb();
   db.prepare(`
     INSERT INTO watering_logs (chip_id, mac_address, event, state_id, message, state, voltage, created_time)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-  `).run([
+  `).run(
     chipId,
     macAddress,
     event,
@@ -376,7 +375,7 @@ export async function writeDeviceLog(
     state ? JSON.stringify(state) : null,
     voltage ?? 0,
     new Date().toISOString(),
-  ]);
+  );
 }
 
 /**
