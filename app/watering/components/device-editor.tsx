@@ -495,9 +495,7 @@ export function DeviceEditor({
               icon={<CloseOutlined />}
               onClick={() => { setProcessVisible(false); }}
               size="small"
-            >
-              关闭
-            </Button>
+            />
           </Space>
         }
       >
@@ -537,9 +535,7 @@ export function DeviceEditor({
               icon={<CloseOutlined />}
               onClick={() => { setStepVisible(false); }}
               size="small"
-            >
-              关闭
-            </Button>
+            />
           </Space>
         }
       >
@@ -579,9 +575,7 @@ export function DeviceEditor({
               icon={<CloseOutlined />}
               onClick={() => { setInterruptVisible(false); }}
               size="small"
-            >
-              关闭
-            </Button>
+            />
           </Space>
         }
       >
@@ -623,9 +617,7 @@ export function DeviceEditor({
               icon={<CloseOutlined />}
               onClick={() => { setScheduleVisible(false); }}
               size="small"
-            >
-              关闭
-            </Button>
+            />
           </Space>
         }
       >

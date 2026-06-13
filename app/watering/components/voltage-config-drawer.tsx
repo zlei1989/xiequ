@@ -68,9 +68,7 @@ export function VoltageConfigDrawer({
           icon={<CloseOutlined />}
           onClick={handleClose}
           size="small"
-        >
-          关闭
-        </Button>
+        />
       }
     >
       <div className="flex flex-col gap-4">

@@ -152,7 +152,6 @@ export function RouteMapPopup({
       >
         <NavBar
           onBack={onClose}
-          back="关闭"
           right={
             route.entries.length > 0 ? (
               <span
@@ -201,7 +200,6 @@ export function RouteMapPopup({
       >
         <NavBar
           onBack={() => { setShowEntryList(false); }}
-          back="关闭"
         >
           位置列表
         </NavBar>
