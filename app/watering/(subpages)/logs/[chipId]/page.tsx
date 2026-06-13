@@ -22,8 +22,8 @@ import { DeleteOutline } from 'antd-mobile-icons';
 import { useRouter } from 'next/navigation';
 import { use, useEffect } from 'react';
 
-import { LogCard } from '../../components/log-card';
-import { useDeviceLogs } from '../../hooks/use-device-logs';
+import { LogCard } from '../../../components/log-card';
+import { useDeviceLogs } from '../../../hooks/use-device-logs';
 
 /** 设备日志页 */
 export default function DeviceLogsPage({
