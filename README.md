@@ -45,7 +45,7 @@
 | 运行时   | React 19                                    |
 | 语言     | TypeScript                                  |
 | UI       | antd 6 + antd-mobile 5                      |
-| 样式     | CSS（`normalize.css` + antd 内置样式）       |
+| 样式     | Tailwind CSS + `normalize.css` + antd 内置样式 |
 | 数据库   | SQLite（node-sqlite3-wasm，WASM）           |
 | 对象存储 | 腾讯云 COS                                  |
 | 地图     | 高德地图 API                                |

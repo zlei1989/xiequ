@@ -1,3 +1,5 @@
+@import 'normalize.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -25,6 +27,17 @@ body {
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
   color: var(--foreground);
   background: var(--background);
+}
+
+/**
+ * 修复 antd-mobile Card header 中 Tailwind justify-center 不生效的问题。
+ *
+ * .adm-card-header 默认 justify-content: space-between，与 .justify-center 同级优先级，
+ * 但 antd CSS 在 Tailwind utilities 之后加载，导致 space-between 覆盖 center。
+ * 此处使用双类选择器提升优先级（0-2-0 > 0-1-0）。
+ */
+.adm-card-header.justify-center {
+  justify-content: center;
 }
 
 /* 避免 AMap 初始化时 canvas 未绘制导致白色闪烁。

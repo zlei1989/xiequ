@@ -17,7 +17,6 @@ import { Geist, Geist_Mono } from 'next/font/google';
 
 import 'antd-mobile/es/global';
 import './globals.css';
-import 'normalize.css';
 import { AntdMobileCompat } from '../components/antd-mobile-compat';
 import { PwaRegister } from '../components/pwa-register';
 
