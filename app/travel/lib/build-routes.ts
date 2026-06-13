@@ -171,6 +171,7 @@ function buildMarkers(entries: MomentEntry[]): RouteMarker[] {
  * 4. 每组内：时间优先排序 + 同日按最近邻排序
  * 5. 每组内：地点去重，构建 RouteMarker
  * 6. 过滤 days <= 2 的路线
+ * 7. 按开始时间降序排列
  */
 export function buildRoutes(locations: Location[]): Route[] {
   const entries = extractMoments(locations);
