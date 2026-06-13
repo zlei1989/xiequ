@@ -18,7 +18,6 @@ const eventLabels: Record<string, string> = {
   terminate: '终止',
   change: '变更',
   heartbeat: '心跳',
-  offline: '离线',
 };
 
 const eventColors: Record<string, string> = {
@@ -28,7 +27,24 @@ const eventColors: Record<string, string> = {
   terminate: 'danger',
   change: 'primary',
   heartbeat: 'default',
-  offline: 'default',
+};
+
+/** 变更类型中文标签 */
+export const changeTypeLabels: Record<string, string> = {
+  step_ready: '步骤就绪',
+  step_begin: '步骤开始',
+  step_end: '步骤结束',
+  step_timeout: '步骤超时',
+  step_interrupt: '步骤中断',
+};
+
+/** 变更类型 Tag 颜色 */
+export const changeTypeColors: Record<string, string> = {
+  step_ready: 'default',
+  step_begin: 'primary',
+  step_end: 'success',
+  step_timeout: 'warning',
+  step_interrupt: 'danger',
 };
 
 /** ── 类型 ── */
@@ -36,9 +52,14 @@ const eventColors: Record<string, string> = {
 export type LogItem = {
   event: string;
   createdTime: string;
+  /** 剩余结构化数据：cause, type, sensors, loads, process, index */
   state?: unknown;
+  macAddress?: string;
   stateId?: string;
+  /** 设备生成的中文描述（change 事件） */
   message?: string;
+  /** 写日志时的设备电压，未配置时为 0 */
+  voltage?: number;
   process?: { name?: string };
   cause?: string;
 };
@@ -79,24 +100,46 @@ export function groupByStateId(logs: LogItem[]): Array<{ stateId: string; items:
     });
 }
 
-/** 计算用时 */
+/**
+ * 格式化时长为中文简化形式
+ *
+ * 规则：<1 分钟 → 刚刚，<1 小时 → X 分钟，<1 天 → X 小时，≥1 天 → X 天
+ */
 export function formatDuration(items: LogItem[]): string {
   if (items.length < 2) return '';
   const begin = new Date(items[0]?.createdTime ?? 0).getTime();
   const end = new Date(items[items.length - 1]?.createdTime ?? 0).getTime();
   const seconds = Math.round((end - begin) / 1000);
-  if (seconds > 3600) {
-    const h = Math.floor(seconds / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-    const s = seconds % 60;
-    return `${String(h)}时${String(m)}分${String(s)}秒`;
-  }
-  if (seconds > 60) {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${String(m)}分${String(s)}秒`;
-  }
-  return `${String(seconds)}秒`;
+  return formatSimpleDuration(seconds);
+}
+
+/**
+ * 格式化秒数为中文简化形式
+ *
+ * 用于流程用时和休眠时长。
+ * 返回 '' 表示时长不足 1 分钟（休眠场景不显示）。
+ */
+export function formatSimpleDuration(seconds: number): string {
+  if (seconds < 60) return '刚刚';
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${String(minutes)}分钟`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${String(hours)}小时`;
+  const days = Math.floor(hours / 24);
+  return `${String(days)}天`;
+}
+
+/** 唤醒原因值到中文标签的映射 */
+const causeLabels: Record<string, string> = {
+  '0': '正常上电',
+  '2': '外部唤醒',
+  '4': '定时唤醒',
+};
+
+/** 将 cause 数字映射为中文标签，未知值返回空字符串 */
+export function formatCause(cause: string | undefined): string {
+  if (!cause) return '';
+  return causeLabels[cause] || '';
 }
 
 /** 判断是否包含执行事件 */
@@ -112,18 +155,67 @@ export function formatMessage(item: LogItem): string {
   if (item.message) return item.message;
   switch (item.event) {
     case 'bootstrap':
-      return `设备${item.cause ? `(原因:${item.cause})` : ''}开机`;
+      return item.cause ? `设备(${item.cause})开机` : '设备开机';
     case 'execute':
       return `执行流程${item.process?.name ? `: ${item.process.name}` : ''}`;
     case 'terminate':
       return '终止流程';
     case 'finish':
       return '完成流程';
-    case 'offline':
-      return '设备离线';
+    case 'change':
+      return '流程状态变更';
+    case 'heartbeat':
+      return '心跳';
     default:
       return item.event;
   }
+}
+
+/**
+ * 从一组日志中提取流程名列表
+ *
+ * 遍历所有 change 事件的 message，从 "{processName:浇花}流程的..." 格式中提取 processName。
+ * 去重后按首次出现顺序排列。
+ */
+export function extractProcessNames(items: LogItem[]): string[] {
+  const names: string[] = [];
+  for (const item of items) {
+    if (item.event !== 'change') continue;
+    const msg = item.message;
+    if (!msg) continue;
+    const match = msg.match(/\{processName:([^}]+)\}/);
+    if (match && match[1]) {
+      const name = match[1];
+      if (!names.includes(name)) {
+        names.push(name);
+      }
+    }
+  }
+  return names;
+}
+
+/** 统计 change 事件数（即步骤总数） */
+export function countSteps(items: LogItem[]): number {
+  return items.filter((i) => i.event === 'change').length;
+}
+
+/**
+ * 计算休眠时长（秒）
+ *
+ * 返回当前 bootstrap 事件与前一条日志的时间差。
+ * 无法计算时返回 0（首条日志无前一条）。
+ */
+export function calcSleepDuration(currentLog: LogItem, allLogs: LogItem[]): number {
+  const currentTime = new Date(currentLog.createdTime).getTime();
+  let prevTime = 0;
+  for (const log of allLogs) {
+    const t = new Date(log.createdTime).getTime();
+    if (t < currentTime && t > prevTime) {
+      prevTime = t;
+    }
+  }
+  if (prevTime === 0) return 0;
+  return Math.round((currentTime - prevTime) / 1000);
 }
 
 /**
@@ -141,7 +233,6 @@ function getStepStatus(event: string): 'wait' | 'finish' | 'error' {
     case 'change':
       return 'finish';
     case 'terminate':
-    case 'offline':
       return 'error';
     case 'heartbeat':
       return 'wait';
@@ -153,12 +244,12 @@ function getStepStatus(event: string): 'wait' | 'finish' | 'error' {
 /**
  * 判定组的整体状态
  *
- * 包含 finish 且不含 offline/terminate → 已完成
+ * 包含 finish 且不含 terminate → 已完成
  * execute 仅表示流程触发，不代表完成，不作为「已完成」的判定依据
  */
 function getGroupStatus(items: LogItem[]): { label: string; color: string } {
   const hasFinish = items.some((i) => i.event === 'finish');
-  const hasAbnormal = items.some((i) => i.event === 'offline' || i.event === 'terminate');
+  const hasAbnormal = items.some((i) => i.event === 'terminate');
   if (hasFinish && !hasAbnormal) {
     return { label: '已完成', color: 'success' };
   }
