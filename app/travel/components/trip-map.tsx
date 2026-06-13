@@ -15,6 +15,7 @@ import { forwardRef, useImperativeHandle, useEffect, useRef, useState } from 're
 import { readTheme, STYLE_MAP, useMapTheme } from '../hooks/use-map-theme';
 import { loadAmap } from '../services/amap';
 import { createMarkerEngine } from '../services/marker-engine';
+import { createNumberedMarkerIcon } from '../services/marker-style';
 
 import type { Location, RouteMarker } from '../types';
 import type { CSSProperties } from 'react';
@@ -34,6 +35,8 @@ export const TripMap = forwardRef<
     routeMarkers?: RouteMarker[];
     /** 路线标注点击回调（routeMode 时使用） */
     onRouteMarkerClick?: (marker: RouteMarker) => void;
+    /** 当前激活的标注 locationId（routeMode 时高亮） */
+    activeMarkerId?: string;
   }
 >(function TripMap(
       {
@@ -45,6 +48,7 @@ export const TripMap = forwardRef<
         polylines,
         routeMarkers,
         onRouteMarkerClick,
+        activeMarkerId,
       },
       ref,
     ) {
@@ -191,18 +195,17 @@ export const TripMap = forwardRef<
         }
         polylinesRef.current = [];
 
-        // 创建路线标注（带编号）
+        // 创建路线标注（带编号的双圈 SVG 图标，与地图页标注样式统一）
         if (routeMarkers && routeMarkers.length > 0) {
           let index = 0;
           for (const rm of routeMarkers) {
             const i = index++;
+            const isActive = rm.locationId === activeMarkerId;
             const marker = new window.AMap.Marker({
               position: [rm.longitude, rm.latitude],
               title: rm.name,
-              label: {
-                content: `<div style="background:#1677ff;color:#fff;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:bold">${String(i + 1)}</div>`,
-                offset: new window.AMap.Pixel(-10, -10),
-              },
+              icon: new window.AMap.Icon(createNumberedMarkerIcon(i + 1, isActive)),
+              offset: new window.AMap.Pixel(-14, -14),
             });
             marker.on('click', () => {
               onRouteMarkerClick?.(rm);
@@ -226,7 +229,7 @@ export const TripMap = forwardRef<
             polylinesRef.current.push(polyline);
           }
         }
-      }, [routeMode, routeMarkers, polylines, mapReady, onRouteMarkerClick]);
+      }, [routeMode, routeMarkers, polylines, mapReady, onRouteMarkerClick, activeMarkerId]);
 
       /** 重试加载 —— 递增 retryKey 触发 effect 重新执行 */
       function handleRetry() {
