@@ -8,7 +8,7 @@
 'use client';
 
 import { ActionSheet, Dialog, NavBar, SafeArea, TabBar } from 'antd-mobile';
-import { EnvironmentOutline, MoreOutline, StarOutline, AppstoreOutline } from 'antd-mobile-icons';
+import { EnvironmentOutline, MoreOutline, StarOutline, AppstoreOutline, TravelOutline } from 'antd-mobile-icons';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, type ReactNode } from 'react';
 
@@ -82,6 +82,7 @@ export function Shell({ children }: { children: ReactNode }) {
       <TabBar activeKey={pathname} onChange={(key) => { router.push(key); }} safeArea>
         <TabBar.Item key="/travel" icon={<EnvironmentOutline />} title="地图" />
         <TabBar.Item key="/travel/list" icon={<StarOutline />} title="收藏" />
+        <TabBar.Item key="/travel/routes" icon={<TravelOutline />} title="路线" />
       </TabBar>
 
       <SafeArea position="bottom" />
