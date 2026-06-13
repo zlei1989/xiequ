@@ -7,6 +7,8 @@
 import { CloseOutlined } from '@ant-design/icons';
 import { Drawer, Select, InputNumber, Button, Space } from 'antd';
 
+import { useBackButton } from '@/lib/back-button';
+
 import type { VoltageConfig } from '../types';
 
 interface VoltageConfigDrawerProps {
@@ -33,6 +35,8 @@ export function VoltageConfigDrawer({
   onClose,
 }: VoltageConfigDrawerProps) {
   const config = voltage || { sensor: sensors[0] || 'sensor_0', r1: DEFAULT_R1, r2: DEFAULT_R2 };
+
+  useBackButton(open, onClose);
 
   function update(partial: Partial<VoltageConfig>) {
     onChange({ ...config, ...partial });
