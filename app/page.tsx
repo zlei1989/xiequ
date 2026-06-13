@@ -7,7 +7,7 @@
 
 'use client';
 
-import { List } from 'antd-mobile';
+import { List, NavBar } from 'antd-mobile';
 import { EnvironmentOutline } from 'antd-mobile-icons';
 import { TravelOutline } from 'antd-mobile-icons';
 import { CompassOutline } from 'antd-mobile-icons';
@@ -51,6 +51,7 @@ export default function Home() {
 
   return (
     <>
+      <NavBar back={null}>谐趣</NavBar>
       <List>
         {apps.map((app) => (
           <List.Item

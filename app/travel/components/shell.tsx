@@ -7,14 +7,44 @@
 
 'use client';
 
-import { ActionSheet, Dialog, NavBar, SafeArea, TabBar } from 'antd-mobile';
+import { ActionSheet, Card, Dialog, Grid, NavBar, ProgressBar, SafeArea, TabBar } from 'antd-mobile';
 import { EnvironmentOutline, MoreOutline, StarOutline, AppstoreOutline, TravelOutline } from 'antd-mobile-icons';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, type ReactNode } from 'react';
 
 import { useTravelContext } from '../hooks/use-locations';
 
-import { Stats } from './stats';
+import type { Summary } from '../types';
+
+/**
+ * 渲染已去/待去/总计三列统计卡片和完成进度条
+ *
+ * 独立为模块级组件而非内联，避免每次 Shell 渲染时重复创建。
+ */
+function Stats({ summary }: { summary: Summary }) {
+  return (
+    <>
+      <Grid columns={3} gap={8}>
+        <Grid.Item>
+          {/** 居中显示标题和数值；数字需转为字符串以便 React 渲染 */}
+          <Card bodyClassName="text-center" headerClassName="justify-center" title="已去">{String(summary.checkedCount)}</Card>
+        </Grid.Item>
+        <Grid.Item>
+          <Card bodyClassName="text-center" headerClassName="justify-center" title="待去">{String(summary.uncheckCount)}</Card>
+        </Grid.Item>
+        <Grid.Item>
+          <Card bodyClassName="text-center" headerClassName="justify-center" title="总计">{String(summary.count)}</Card>
+        </Grid.Item>
+      </Grid>
+      <Card
+        extra={`${String(summary.checkedPercentage)}%`}
+        title="完成进度"
+      >
+        <ProgressBar percent={summary.checkedPercentage} />
+      </Card>
+    </>
+  );
+}
 
 /**
  * 旅行模块外层布局，组合 NavBar + TabBar + ActionSheet
@@ -66,7 +96,11 @@ export function Shell({ children }: { children: ReactNode }) {
     <div className="flex h-screen flex-col">
       <SafeArea position="top" />
       <NavBar
-        backIcon={<AppstoreOutline />}
+        backIcon={
+          <span className="flex justify-end text-2xl">
+            <AppstoreOutline />
+          </span>
+        }
         right={
           <span className="flex justify-end text-2xl">
             <MoreOutline onClick={() => { setActionVisible(true); }} />
