@@ -1,7 +1,7 @@
 /**
  * 旅行计划模块类型定义
  *
- * 核心实体：Location（位置）、Moment（精彩瞬间）、Summary（概览统计）。
+ * 核心实体：Location（位置）、Moment（精彩瞬间）、Summary（概览统计）、Route（路线）、RouteMarker（路线标注）。
  * 数据持久化在腾讯云 COS，通过 OSS 适配器读写。
  */
 
