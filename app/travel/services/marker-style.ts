@@ -30,18 +30,24 @@ export function getAdmColor(varName: string, fallback: string): string {
 }
 
 /**
- * 生成圆形标记 SVG data URL
+ * 将 SVG 内容编码为 data URL
  *
- * 对 SVG 内容中 # 字符编码（%23），防止在部分环境（如移动端 WebView）
+ * 对 # 字符编码（%23），防止在部分环境（如移动端 WebView）
  * 中被误解析为 URL fragment，导致图标加载失败。
+ */
+function encodeSvgDataUrl(svg: string): string {
+  return `data:image/svg+xml;charset=utf-8,${svg.replace(/#/g, '%23')}`;
+}
+
+/**
+ * 生成圆形标记 SVG data URL
  */
 function createSvgDataUrl(fillColor: string): string {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${ICON_SIZE}" height="${ICON_SIZE}">
   <circle cx="12" cy="12" r="11" fill="${fillColor}" stroke="white" stroke-width="2"/>
   <circle cx="12" cy="12" r="4" fill="white"/>
 </svg>`;
-  // 对 URL 中有特殊含义的字符编码，保证 data URL 在各种环境下正确解析
-  return `data:image/svg+xml;charset=utf-8,${svg.replace(/#/g, '%23')}`;
+  return encodeSvgDataUrl(svg);
 }
 
 /** 标注状态 */
@@ -76,14 +82,14 @@ export function createMarkerIcon(status: MarkerStatus) {
  */
 export function createNumberedMarkerIcon(num: number, isActive: boolean) {
   const varName = isActive ? '--adm-color-warning' : '--adm-color-primary';
-  const fallback = isActive ? '#ffc107' : '#1677ff';
+  const fallback = isActive ? '#ff8f1f' : '#1677ff';
   const color = getAdmColor(varName, fallback);
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${NUMBERED_ICON_SIZE}" height="${NUMBERED_ICON_SIZE}">
   <circle cx="14" cy="14" r="13" fill="${color}" stroke="white" stroke-width="2"/>
   <text x="14" y="14" text-anchor="middle" dominant-baseline="central" fill="white" font-size="12" font-weight="bold">${String(num)}</text>
 </svg>`;
   return {
-    image: `data:image/svg+xml;charset=utf-8,${svg.replace(/#/g, '%23')}`,
+    image: encodeSvgDataUrl(svg),
     size: [NUMBERED_ICON_SIZE, NUMBERED_ICON_SIZE] as [number, number],
     imageSize: [NUMBERED_ICON_SIZE, NUMBERED_ICON_SIZE] as [number, number],
   };

@@ -54,7 +54,7 @@ describe('createNumberedMarkerIcon', () => {
   it('returns icon config with warning color for active marker', () => {
     const icon = createNumberedMarkerIcon(1, true);
     expect(icon.image).toContain('data:image/svg+xml');
-    expect(icon.image).toContain('%23ffc107'); // warning fallback
+    expect(icon.image).toContain('%23ff8f1f'); // warning fallback
     expect(icon.size).toEqual([28, 28]);
     expect(icon.imageSize).toEqual([28, 28]);
   });
@@ -73,6 +73,14 @@ describe('createNumberedMarkerIcon', () => {
     expect(decoded).toContain('r="13"');
     expect(decoded).toContain('<text');
     expect(decoded).toContain('>5<');
+  });
+
+  it('renders multi-digit number correctly', () => {
+    const icon = createNumberedMarkerIcon(12, false);
+    const decoded = decodeURIComponent(
+      icon.image.replace('data:image/svg+xml;charset=utf-8,', ''),
+    );
+    expect(decoded).toContain('>12<');
   });
 
   it('encodes # in colors to %23', () => {
