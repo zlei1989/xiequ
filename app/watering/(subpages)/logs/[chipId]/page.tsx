@@ -22,7 +22,7 @@ import { DeleteOutline } from 'antd-mobile-icons';
 import { useRouter } from 'next/navigation';
 import { use, useEffect } from 'react';
 
-import { LogCard } from '../../../components/log-card';
+import { LogCard, groupByStateId, type LogGroup } from '../../../components/log-card';
 import { useDeviceLogs } from '../../../hooks/use-device-logs';
 
 /** 设备日志页 */
@@ -105,11 +105,14 @@ export default function DeviceLogsPage({
       );
     }
 
-    // 有日志数据 — 下拉刷新包裹
+    // 有日志数据 — 下拉刷新包裹，按 stateId 分组后逐个渲染卡片
+    const groups: LogGroup[] = groupByStateId(logs);
     return (
       <PullToRefresh onRefresh={handleRefresh}>
         <List>
-          <LogCard logs={logs} />
+          {groups.map((group) => (
+            <LogCard group={group} key={group.stateId} />
+          ))}
         </List>
       </PullToRefresh>
     );
