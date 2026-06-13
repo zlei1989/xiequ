@@ -81,15 +81,17 @@ npm run dev
 
 ### 其他命令
 
-| 命令              | 说明           |
-| ----------------- | -------------- |
-| `npm run dev`      | 启动开发服务器 |
-| `npm run build`    | 生产环境构建   |
-| `npm start`        | 启动生产服务器 |
-| `npm run deploy`   | 部署到腾讯云   |
-| `npm run lint`     | ESLint 检查    |
-| `npm run test`     | 运行测试       |
-| `npm run test:watch` | 监视模式测试 |
+| 命令                 | 说明                              |
+| -------------------- | --------------------------------- |
+| `npm run dev`        | 启动开发服务器                    |
+| `npm run format`     | ESLint 自动修复（提交前执行）     |
+| `npm run check`      | TypeScript 类型检查 + Lint 检查   |
+| `npm run lint`       | ESLint 检查                       |
+| `npm run test`       | 运行测试                          |
+| `npm run test:watch` | 监视模式测试                      |
+| `npm run build`      | 生产环境构建                      |
+| `npm start`          | 启动生产服务器                    |
+| `npm run deploy`     | 部署到腾讯云                      |
 
 ## 项目结构
 
@@ -128,9 +130,3 @@ npm run dev
 ## 数据库
 
 应用启动时通过 `instrumentation.ts` 自动初始化 SQLite 数据库表，无需手动建表。数据库文件默认位于 `data/app.db`，可通过 `DB_PATH` 环境变量自定义路径。数据库驱动为 `node-sqlite3-wasm`（WASM 模式运行）。
-
-### 浇花模块表
-
-- `watering_devices` — 设备配置（流程、定时、电压等）
-- `watering_device_state` — 设备运行时状态
-- `watering_logs` — 设备事件日志
