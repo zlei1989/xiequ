@@ -11,6 +11,8 @@
 import { DotLoading, NavBar, Popup, Toast } from 'antd-mobile';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import { useBackButton } from '@/lib/back-button';
+
 import { useDrivingRoute } from '../hooks/use-driving-route';
 import { useTravelContext } from '../hooks/use-locations';
 import { useMoments } from '../hooks/use-moments';
@@ -31,6 +33,8 @@ export function RouteMapPopup({
   visible: boolean;
   onClose: () => void;
 }) {
+  useBackButton(visible, onClose);
+
   const { locations, update, remove } = useTravelContext();
 
   // 位置详情弹层
@@ -46,6 +50,8 @@ export function RouteMapPopup({
 
   /** 位置列表面板是否打开 */
   const [showEntryList, setShowEntryList] = useState(false);
+
+  useBackButton(showEntryList, () => { setShowEntryList(false); });
 
   /** 当前高亮的标注 locationId */
   const [activeLocationId, setActiveLocationId] = useState<string | null>(null);
