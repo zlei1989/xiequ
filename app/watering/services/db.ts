@@ -312,7 +312,7 @@ export async function getDeviceLogs(chipId: string, limit = 100) {
   const db = await getDb();
   const rows = db.prepare(
     "SELECT id, chip_id, mac_address, event, state_id, message, state, voltage, created_time FROM watering_logs WHERE chip_id = ? ORDER BY created_time DESC LIMIT ?"
-  ).all(chipId, limit) as any[];
+  ).all([chipId, limit]) as any[];
   return rows.map((row) => ({
     id: row.id,
     chipId: row.chip_id,
