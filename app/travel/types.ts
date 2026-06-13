@@ -49,6 +49,34 @@ export type Summary = {
   count: number;
 };
 
+/** 路线标注点 */
+export type RouteMarker = {
+  /** 对应位置 ID */
+  locationId: string;
+  /** 位置名称 */
+  name: string;
+  /** 经度 */
+  longitude: number;
+  /** 纬度 */
+  latitude: number;
+  /** 该地点在本段路线中的瞬间条数 */
+  momentCount: number;
+};
+
+/** 路线中的单个瞬间条目（未去重，用于位置列表面板） */
+export type RouteEntry = {
+  /** 对应位置 ID */
+  locationId: string;
+  /** 位置名称 */
+  name: string;
+  /** 经度 */
+  longitude: number;
+  /** 纬度 */
+  latitude: number;
+  /** 瞬间日期（YYYY-MM-DD） */
+  date: string;
+};
+
 /** 一段旅行路线 */
 export type Route = {
   /** 唯一标识，由 startDate 生成（如 "route-2024-01-01"） */
@@ -69,18 +97,6 @@ export type Route = {
   startName: string;
   /** 终点地名 */
   endName: string;
-};
-
-/** 路线标注点 */
-export type RouteMarker = {
-  /** 对应位置 ID */
-  locationId: string;
-  /** 位置名称 */
-  name: string;
-  /** 经度 */
-  longitude: number;
-  /** 纬度 */
-  latitude: number;
-  /** 该地点在本段路线中的瞬间条数 */
-  momentCount: number;
+  /** 按时间+空间排序后的瞬间条目（未去重，含日期，供位置列表面板使用） */
+  entries: RouteEntry[];
 };
