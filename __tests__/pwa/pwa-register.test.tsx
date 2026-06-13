@@ -38,7 +38,7 @@ describe('PwaRegister', () => {
   it('注册失败时不抛出异常', () => {
     registerFn.mockRejectedValue(new Error('SW registration failed'));
 
-    // 不应抛出异常
+    // 不应抛出异常（catch 在 useEffect 中异步执行，jsdom 中不触发）
     expect(() => render(<PwaRegister />)).not.toThrow();
   });
 
