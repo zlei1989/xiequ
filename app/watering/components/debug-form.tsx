@@ -1,8 +1,8 @@
 /**
- * 模拟器设备表单 — 设备标识、数字/模拟传感器、按钮的 GPIO 状态
+ * 模拟器调试表单 — 设备标识、数字/模拟传感器、按钮的 GPIO 状态
  *
  * 使用 antd-mobile 组件，Form mode="card" + Form.Header 分组标题。
- * 按钮含 2 秒自动复位逻辑。负载展示已独立为 LoadDisplay 组件。
+ * 按钮含 2 秒自动复位逻辑。负载展示已独立为 DebugLoadCard 组件。
  */
 
 'use client';
@@ -17,7 +17,7 @@ import {
 } from 'antd-mobile';
 import { useCallback, useEffect, useRef } from 'react';
 
-import type { DeviceIdentity, GpioState } from '../hooks/use-iot-simulator';
+import type { DeviceIdentity, GpioState } from '../debug/hooks/use-iot-simulator';
 import type { Dispatch, SetStateAction } from 'react';
 
 /** 数字传感器 → 中文标签 */
@@ -36,7 +36,7 @@ export const ANALOG_LABELS: Record<string, string> = {
 /** 按钮自动复位延迟（毫秒），模拟物理按键回弹 */
 const BUTTON_AUTO_RESET_MS = 2000;
 
-export function DeviceForm({
+export function DebugForm({
   identity,
   onIdentityChange,
   gpio,

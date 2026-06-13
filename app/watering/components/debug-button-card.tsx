@@ -1,5 +1,5 @@
 /**
- * 模拟器事件按钮 — 2×2 网格触发 getState / pushBootstrap / pushChange / pushFinish
+ * 模拟器调试按钮卡片 — 2×2 网格触发 getState / pushBootstrap / pushChange / pushFinish
  *
  * bootstrap 通过 Picker 选择参数后发送，change 通过 Popup 表单单选 + 多行输入。
  */
@@ -40,7 +40,7 @@ const CAUSE_OPTIONS = [
 /** 当前弹出的面板类型 */
 type PopupType = 'bootstrap' | 'change' | null;
 
-export function EventButtons({
+export function DebugButtonCard({
   onGetState,
   onPushBootstrap,
   onPushChange,

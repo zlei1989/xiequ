@@ -6,13 +6,14 @@
 
 'use client';
 
-import { NavBar, NoticeBar } from 'antd-mobile';
+import { NavBar } from 'antd-mobile';
 import { useRouter } from 'next/navigation';
 
-import { DeviceForm } from './components/device-form';
-import { EventButtons } from './components/event-buttons';
-import { LoadDisplay } from './components/load-display';
-import { ResponseLog } from './components/response-log';
+import { DebugButtonCard } from '../components/debug-button-card';
+import { DebugForm } from '../components/debug-form';
+import { DebugResponseList } from '../components/debug-response-list';
+
+import { DebugLoadCard } from './components/debug-load-card';
 import { useIotSimulator } from './hooks/use-iot-simulator';
 
 export default function DebugPage() {
@@ -38,22 +39,22 @@ export default function DebugPage() {
       >
         调试服务
       </NavBar>
-      <DeviceForm
+      <DebugForm
         gpio={gpio}
         identity={identity}
         onGpioChange={setGpio}
         onIdentityChange={setIdentity}
       />
       <div className="flex flex-col gap-4 p-4">
-        <LoadDisplay loads={gpio.loads} />
-        <EventButtons
+        <DebugLoadCard loads={gpio.loads} />
+        <DebugButtonCard
           loading={loading}
           onGetState={getState}
           onPushBootstrap={pushBootstrap}
           onPushChange={pushChange}
           onPushFinish={pushFinish}
         />
-        <ResponseLog logs={logs} onClear={clearLogs} />
+        <DebugResponseList logs={logs} onClear={clearLogs} />
       </div>
     </>
   );

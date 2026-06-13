@@ -1,11 +1,11 @@
 /**
  * 按钮自动复位逻辑单元测试
  *
- * 使用 vitest + @testing-library/react 测试 DeviceForm 中按钮 2 秒自动复位行为。
+ * 使用 vitest + @testing-library/react 测试 DebugForm 中按钮 2 秒自动复位行为。
  * 模拟传感器 clamp 逻辑作为独立纯函数测试。
  *
  * 注意事项：
- * - DeviceForm.onGpioChange 类型为 Dispatch<SetStateAction<GpioState>>，使用函数式更新；
+ * - DebugForm.onGpioChange 类型为 Dispatch<SetStateAction<GpioState>>，使用函数式更新；
  *   测试通过闭包跟踪最新状态，并通过 rerender 模拟 React 父组件的状态同步。
  * - antd-mobile Switch 内部使用 usePropsValue，其 checked 状态随 props.checked 同步；
  *   每次 onGpioChange 后需要 rerender 以传递最新 gpio 值给 Switch。
@@ -18,7 +18,7 @@
 import { render, screen, fireEvent, act, cleanup } from '@testing-library/react';
 import { describe, it, expect, vi, beforeAll, afterAll, afterEach } from 'vitest';
 
-import { DeviceForm } from '@/app/watering/debug/components/device-form';
+import { DebugForm } from '@/app/watering/components/debug-form';
 import type { DeviceIdentity, GpioState } from '@/app/watering/debug/hooks/use-iot-simulator';
 
 import type { SetStateAction } from 'react';
@@ -70,7 +70,7 @@ describe('按钮自动复位', () => {
     const { mock: onGpioChange, getState } = createGpioMock(defaultGpio);
 
     const { rerender } = render(
-      <DeviceForm
+      <DebugForm
         gpio={defaultGpio}
         identity={defaultIdentity}
         onGpioChange={onGpioChange}
@@ -81,7 +81,7 @@ describe('按钮自动复位', () => {
     /** 用 mock 中追踪的最新状态重新渲染组件，模拟 React 父组件的 setState 流程 */
     const syncGpio = () => {
       rerender(
-        <DeviceForm
+        <DebugForm
           gpio={getState()}
           identity={defaultIdentity}
           onGpioChange={onGpioChange}
@@ -118,7 +118,7 @@ describe('按钮自动复位', () => {
     const { mock: onGpioChange, getState } = createGpioMock(defaultGpio);
 
     const { rerender } = render(
-      <DeviceForm
+      <DebugForm
         gpio={defaultGpio}
         identity={defaultIdentity}
         onGpioChange={onGpioChange}
@@ -128,7 +128,7 @@ describe('按钮自动复位', () => {
 
     const syncGpio = () => {
       rerender(
-        <DeviceForm
+        <DebugForm
           gpio={getState()}
           identity={defaultIdentity}
           onGpioChange={onGpioChange}

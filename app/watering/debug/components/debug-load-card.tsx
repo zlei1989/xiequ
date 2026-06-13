@@ -1,5 +1,5 @@
 /**
- * 负载展示组件 — 以 ProgressCircle 展示各负载的 PWM 状态
+ * 调试负载卡片 — 以 ProgressCircle 展示各负载的 PWM 状态
  *
  * 纯展示，无交互。颜色与进度根据值映射：0=停止(灰)、1-254=PWM(绿)、1024=全速(红)。
  */
@@ -35,7 +35,7 @@ function getLabel(val: number): string {
   return `PWM ${getPwmPercent(val)}%`;
 }
 
-export function LoadDisplay({ loads }: { loads: Record<string, number> }) {
+export function DebugLoadCard({ loads }: { loads: Record<string, number> }) {
   return (
     <Card title="负载">
       <Grid columns={2} gap={12}>

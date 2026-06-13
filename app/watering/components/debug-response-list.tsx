@@ -1,5 +1,5 @@
 /**
- * 模拟器响应日志 — 展示每次请求的请求/响应详情
+ * 模拟器调试响应列表 — 展示每次请求的请求/响应详情
  *
  * 使用 antd-mobile 组件，Card 容器 + ErrorBlock 空态 + List 列表 + Tag 标签。
  */
@@ -9,7 +9,7 @@
 import { Button, Card, ErrorBlock, List, Tag } from 'antd-mobile';
 import { useState, useCallback } from 'react';
 
-import type { LogEntry } from '../hooks/use-iot-simulator';
+import type { LogEntry } from '../debug/hooks/use-iot-simulator';
 
 /** 方向标签配置 */
 const directionMeta: Record<
@@ -23,7 +23,7 @@ const directionMeta: Record<
 /** URL 最大展示长度，超出则截断 */
 const URL_MAX_LENGTH = 80;
 
-export function ResponseLog({
+export function DebugResponseList({
   logs,
   onClear,
 }: {

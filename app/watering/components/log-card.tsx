@@ -195,13 +195,13 @@ export function LogCard({ logs }: { logs: LogItem[] }) {
 
         return (
           <Card
-            key={group.stateId}
-            title={`State ID: ${group.stateId}`}
             extra={
               <Tag color={groupStatus.color} fill="solid">
                 {groupStatus.label}
               </Tag>
             }
+            key={group.stateId}
+            title={`State ID: ${group.stateId}`}
           >
             <Steps direction="vertical">
               {group.items.map((item, idx) => (
