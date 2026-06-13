@@ -48,3 +48,33 @@ export type Summary = {
   /** 未删除位置总数 */
   count: number;
 };
+
+/** 一段旅行路线 */
+export type Route = {
+  /** 唯一标识，由 startDate 生成（如 "route-2024-01-01"） */
+  id: string;
+  /** 路线中的标注点（时间顺序排列，去重后的地点） */
+  markers: RouteMarker[];
+  /** 按最近邻排序后的坐标序列，用作 polyline path */
+  polyline: [number, number][];
+  /** 开始日期（YYYY-MM-DD） */
+  startDate: string;
+  /** 结束日期（YYYY-MM-DD） */
+  endDate: string;
+  /** 持续天数，含头含尾（endDate - startDate + 1） */
+  days: number;
+  /** 起点地名 */
+  startName: string;
+  /** 终点地名 */
+  endName: string;
+};
+
+/** 路线标注点 */
+export type RouteMarker = {
+  locationId: string;
+  name: string;
+  longitude: number;
+  latitude: number;
+  /** 该地点在本段路线中的瞬间条数 */
+  momentCount: number;
+};

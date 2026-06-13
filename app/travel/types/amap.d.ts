@@ -49,6 +49,20 @@ declare namespace AMap {
     offset?: Pixel;
   }
 
+  /** 折线 */
+  class Polyline {
+    constructor(options: PolylineOptions);
+    setPath(path: [number, number][]): void;
+    setOptions(options: Partial<PolylineOptions>): void;
+  }
+  interface PolylineOptions {
+    path: [number, number][];
+    strokeColor?: string;
+    strokeWeight?: number;
+    strokeOpacity?: number;
+    showDir?: boolean;
+  }
+
   /** 像素坐标（用于 Marker 偏移） */
   // eslint-disable-next-line @typescript-eslint/no-extraneous-class
   class Pixel {
@@ -223,6 +237,7 @@ interface AMapModule {
     markers: AMap.Marker[],
     options?: AMap.MarkerClustererOptions,
   ) => AMap.MarkerClusterer;
+  Polyline: new (options: AMap.PolylineOptions) => AMap.Polyline;
 }
 
 /** 扩展 Window（AMap 通过异步加载注入，初始不存在） */
