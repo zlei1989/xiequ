@@ -7,32 +7,30 @@
  * Client Component（依赖 antd-mobile），使用 Tailwind CSS 保持风格统一。
  */
 
-import { Result } from 'antd-mobile';
-import Link from 'next/link';
+import { Button, ErrorBlock } from 'antd-mobile';
 
 /**
  * 离线状态展示组件
  *
- * 显示网络断开提示和返回首页的链接。
- * 用户点击链接后若网络已恢复则正常渲染目标页面。
+ * 显示网络断开提示和重新加载按钮。
+ * 用户点击按钮后若网络已恢复则正常进入首页。
  */
 export default function OfflinePage() {
+  const handleReload = () => {
+    window.location.href = '/';
+  };
+
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center p-4">
-      <Result
+    <div className="flex min-h-screen flex-col items-center justify-center">
+      <ErrorBlock
         description="请检查网络设置后重试"
-        status="error"
+        status="disconnected"
         title="当前无网络连接"
-      />
-      <div className="mt-6 text-center">
-        <Link
-          className="inline-block rounded-lg px-6 py-3 no-underline"
-          href="/"
-          style={{ backgroundColor: 'var(--adm-color-primary, #1677ff)', color: '#fff' }}
-        >
+      >
+        <Button color="primary" onClick={handleReload}>
           重新加载
-        </Link>
-      </div>
+        </Button>
+      </ErrorBlock>
     </div>
   );
 }

@@ -99,9 +99,11 @@ export function LocationViewPopup({
 
   return (
     <Popup
+      bodyClassName="overflow-auto"
       bodyStyle={{ height: '75vh' }}
       closeOnMaskClick={true}
       position="bottom"
+      showCloseButton={true}
       visible={visible}
       onClose={onClose}
       onMaskClick={onClose}

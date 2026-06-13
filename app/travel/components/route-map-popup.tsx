@@ -8,7 +8,7 @@
 
 'use client';
 
-import { DotLoading, ErrorBlock, List, NavBar, Popup, Toast } from 'antd-mobile';
+import { ErrorBlock, List, NavBar, Popup, Toast } from 'antd-mobile';
 import { UnorderedListOutline,EnvironmentOutline } from 'antd-mobile-icons';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
@@ -48,6 +48,9 @@ export function RouteMapPopup({
 
   /** TripMap 引用，用于 setCenter */
   const mapRef = useRef<{ setCenter: (pos: [number, number]) => void }>(null);
+
+  /** Toast 引用，用于关闭加载路线提示 */
+  const loadingToastRef = useRef<ReturnType<typeof Toast.show> | null>(null);
 
   /** 位置列表面板是否打开 */
   const [showEntryList, setShowEntryList] = useState(false);
@@ -103,6 +106,22 @@ export function RouteMapPopup({
       Toast.show({ icon: 'fail', content: '路线加载失败' });
     }
   }, [drivingError]);
+
+  /** 路线加载中 → Toast 轻提示 */
+  useEffect(() => {
+    if (drivingLoading) {
+      loadingToastRef.current = Toast.show({
+        content: '加载路线...',
+        position: 'bottom',
+      });
+    } else if (loadingToastRef.current) {
+      loadingToastRef.current.close();
+      loadingToastRef.current = null;
+    }
+    return () => {
+      loadingToastRef.current?.close();
+    };
+  }, [drivingLoading]);
 
   /** 路线标注点击 → 关闭列表面板 → 高亮标注 → 打开详情 */
   const handleRouteMarkerClick = useCallback(
@@ -165,11 +184,6 @@ export function RouteMapPopup({
           {route.startName} → {route.endName}
         </NavBar>
         <div className="h-[calc(80vh-45px)]">
-          {drivingLoading && (
-            <div className="absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2 rounded-lg bg-white/80 px-4 py-2 shadow">
-              <DotLoading /> 加载路线...
-            </div>
-          )}
           <TripMap
             routeMode
             activeMarkerId={activeLocationId ?? undefined}
@@ -191,6 +205,7 @@ export function RouteMapPopup({
 
       {/* 位置列表面板 */}
       <Popup
+        bodyClassName="overflow-auto"
         bodyStyle={{ width: '75vw' }}
         closeOnMaskClick={true}
         position="right"
@@ -198,31 +213,29 @@ export function RouteMapPopup({
         onClose={() => { setShowEntryList(false); }}
         onMaskClick={() => { setShowEntryList(false); }}
       >
-        <div className="overflow-y-auto" style={{ height: 'calc(100% - 45px)' }}>
-          {groupedEntries.size === 0 ? (
-            <ErrorBlock status="empty" title="暂无位置" />
-          ) : (
-            Array.from(groupedEntries.entries()).map(([date, entries]) => (
-              <List header={date} key={date}>
-                {entries.map((entry, i) => (
-                  <List.Item
-                    key={`${entry.locationId}-${i}`}
-                    prefix={(
+        {groupedEntries.size === 0 ? (
+          <ErrorBlock status="empty" title="暂无位置" />
+        ) : (
+          Array.from(groupedEntries.entries()).map(([date, entries]) => (
+            <List header={date} key={date}>
+              {entries.map((entry, i) => (
+                <List.Item
+                  key={`${entry.locationId}-${i}`}
+                  prefix={(
 
-                        <EnvironmentOutline />
+                    <EnvironmentOutline />
 
-                    )}
-                    arrowIcon={false}
-                    // eslint-disable-next-line react-hooks/refs -- onClick 是事件处理器，ref 在此场景合法
-                    onClick={() => { handleEntryClick(entry); }}
-                  >
-                    {entry.name}
-                  </List.Item>
-                ))}
-              </List>
-            ))
-          )}
-        </div>
+                  )}
+                  arrowIcon={false}
+                  // eslint-disable-next-line react-hooks/refs -- onClick 是事件处理器，ref 在此场景合法
+                  onClick={() => { handleEntryClick(entry); }}
+                >
+                  {entry.name}
+                </List.Item>
+              ))}
+            </List>
+          ))
+        )}
       </Popup>
 
       <LocationViewPopup
