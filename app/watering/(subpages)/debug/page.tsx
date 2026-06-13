@@ -33,7 +33,7 @@ export default function DebugPage() {
 
   return (
     <>
-      <div className="sticky top-0 z-10">
+      <div className="sticky top-0 z-10 bg-[var(--background)]">
         <NavBar
           onBack={() => { router.back(); }}
         >

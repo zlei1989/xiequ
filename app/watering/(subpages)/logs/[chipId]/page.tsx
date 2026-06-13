@@ -108,7 +108,7 @@ export default function DeviceLogsPage({
     // 有日志数据 — 下拉刷新包裹
     return (
       <PullToRefresh onRefresh={handleRefresh}>
-        <div className="px-3">
+        <div className="px-3 pb-3">
           <LogCard logs={logs} />
         </div>
       </PullToRefresh>
@@ -118,7 +118,7 @@ export default function DeviceLogsPage({
   return (
     <>
       <SafeArea position="top" />
-      <div className="sticky top-0 z-10">
+      <div className="sticky top-0 z-10 bg-[var(--background)]">
         <NavBar
           right={
             <DeleteOutline
