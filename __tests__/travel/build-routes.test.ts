@@ -47,6 +47,15 @@ describe('buildRoutes', () => {
     expect(buildRoutes(locs)).toEqual([]);
   });
 
+  it('returns empty array when location moments is undefined', () => {
+    const locs = [
+      makeLocation({ id: '1', name: '故宫', longitude: 116.4, latitude: 39.9 }),
+    ];
+    // makeLocation 默认 moments 为 {}，这里显式传 undefined
+    locs[0]!.moments = undefined;
+    expect(buildRoutes(locs)).toEqual([]);
+  });
+
   it('returns empty array when all locations are deleted', () => {
     const locs = [
       makeLocation({ id: '1', name: '故宫', deleted: true, moments: mm('2024-01-01') }),
