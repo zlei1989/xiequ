@@ -1,8 +1,10 @@
+'use client';
+
 /**
  * 离线兜底页
  *
  * 当用户断网时，Service Worker 拦截导航请求并返回此页面。
- * 纯 Server Component，使用 Tailwind CSS 保持风格统一。
+ * Client Component（依赖 antd-mobile），使用 Tailwind CSS 保持风格统一。
  */
 
 import { Result } from 'antd-mobile';
