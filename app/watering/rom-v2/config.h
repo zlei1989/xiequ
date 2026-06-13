@@ -31,7 +31,7 @@
 // ==================== 服务端配置 ====================
 // 请求地址前缀（腾讯云函数 IoT 设备接口）
 #define URL_PREFIX                                                             \
-  "http://xiequ.7qbjs.com/watering/api/"
+  "http://xiequ-test.7qbjs.com/watering/api/"
 
 // ==================== 版本信息 ====================
 // 程序版本号
