@@ -151,12 +151,15 @@ export default function FavouritesPage() {
   return (
     <>
       {/* 搜索框 — 始终渲染在顶部 */}
-      <SearchBar
-        placeholder="搜索名称、地址、备注"
-        value={searchText}
-        onChange={setSearchText}
-        onClear={() => { setSearchText(''); }}
-      />
+      <div className="sticky top-0 z-10">
+        <SearchBar
+          placeholder="搜索名称、地址、备注"
+          style={{ '--border-radius': '0px' }}
+          value={searchText}
+          onChange={setSearchText}
+          onClear={() => { setSearchText(''); }}
+        />
+      </div>
 
       {loading && sortedLocations.length === 0 ? (
         <DotLoading />

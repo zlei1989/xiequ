@@ -75,11 +75,12 @@ export function SearchPopup({
       onMaskClick={onClose}
     >
       <NavBar onBack={onClose}>添加位置</NavBar>
-      <SearchBar placeholder="选择位置" onSearch={(val) => { void handleSearch(val); }} />
+      <div className="sticky top-0 z-10">
+        <SearchBar style={{ '--border-radius': '0px' }}
+          placeholder="选择位置" onSearch={(val) => { void handleSearch(val); }} />
+      </div>
       {searching ? (
-        <List>
-          <List.Item prefix={<DotLoading />}>搜索中</List.Item>
-        </List>
+        <DotLoading />
       ) : results.length === 0 ? (
         <ErrorBlock status="empty" title="暂无搜索结果" />
       ) : (
