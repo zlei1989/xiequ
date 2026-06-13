@@ -29,6 +29,8 @@ import {
 } from 'antd';
 import { useState, useEffect } from 'react';
 
+import { useBackButton } from '@/lib/back-button';
+
 import { ProcessEditor } from './process-editor';
 import { ProcessInterruptEditor } from './process-interrupt-editor';
 import { ProcessStepEditor } from './process-step-editor';
@@ -102,6 +104,11 @@ export function DeviceEditor({
   const [scheduleIndex, setScheduleIndex] = useState(-1);
 
   const [voltageVisible, setVoltageConfigVisible] = useState(false);
+
+  useBackButton(processVisible, () => { setProcessVisible(false); });
+  useBackButton(stepVisible, () => { setStepVisible(false); });
+  useBackButton(interruptVisible, () => { setInterruptVisible(false); });
+  useBackButton(scheduleVisible, () => { setScheduleVisible(false); });
 
   // ---- 流程操作 ----
   function addProcess() {
