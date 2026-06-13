@@ -263,11 +263,54 @@ function formatTime(isoString: string): string {
   });
 }
 
+/**
+ * 渲染 bootstrap 步骤的增强描述
+ *
+ * 格式：{唤醒原因} · 休眠 {X小时} · {电压}V
+ */
+function renderBootstrapDescription(
+  item: LogItem,
+  allLogs: LogItem[],
+): string {
+  const parts: string[] = [];
+  const stateObj = item.state as Record<string, unknown> | undefined;
+  const causeLabel = formatCause(String(stateObj?.cause ?? ''));
+  if (causeLabel) parts.push(causeLabel);
+  const sleepSec = calcSleepDuration(item, allLogs);
+  if (sleepSec >= 60) {
+    parts.push(`休眠 ${formatSimpleDuration(sleepSec)}`);
+  }
+  if (item.voltage && item.voltage > 0) {
+    parts.push(`${String(item.voltage)}V`);
+  }
+  return parts.join(' · ');
+}
+
 /** ── 组件 ── */
 
 export function LogCard({ group }: { group: LogGroup }) {
   const groupStatus = getGroupStatus(group.items);
   const duration = hasExecute(group.items) ? formatDuration(group.items) : null;
+
+  // 摘要行数据
+  const processNames = extractProcessNames(group.items);
+  const stepCount = countSteps(group.items);
+  const summaryVoltage = group.items.find((i) => i.voltage && i.voltage > 0)?.voltage;
+
+  const summaryParts: string[] = [];
+  if (processNames.length > 0) {
+    summaryParts.push(processNames.join('、'));
+  }
+  if (stepCount > 0) {
+    summaryParts.push(`共 ${String(stepCount)} 个步骤`);
+  }
+  if (duration) {
+    summaryParts.push(duration);
+  }
+  if (summaryVoltage && summaryVoltage > 0) {
+    summaryParts.push(`${String(summaryVoltage)}V`);
+  }
+  const summaryText = summaryParts.join(' · ');
 
   return (
     <Card
@@ -277,14 +320,21 @@ export function LogCard({ group }: { group: LogGroup }) {
         </Tag>
       }
       key={group.stateId}
-      title={`State ID: ${group.stateId}`}
+      title={`第 ${group.stateId} 批次运行`}
     >
+      {summaryText && (
+        <div className="mb-2 text-xs text-gray-400">
+          {summaryText}
+        </div>
+      )}
       <Steps direction="vertical">
         {group.items.map((item, idx) => (
           <Steps.Step
             description={
               <span className="text-[13px] text-gray-700">
-                {formatMessage(item)}
+                {item.event === 'bootstrap'
+                  ? renderBootstrapDescription(item, group.items)
+                  : formatMessage(item)}
               </span>
             }
             key={`${group.stateId}-${idx}`}
@@ -294,6 +344,18 @@ export function LogCard({ group }: { group: LogGroup }) {
                 <Tag color={eventColors[item.event] || 'default'}>
                   {eventLabels[item.event] || item.event}
                 </Tag>
+                {item.event === 'change' && (() => {
+                  const stateObj = item.state as Record<string, unknown> | undefined;
+                  const changeType = String(stateObj?.type ?? '');
+                  if (changeType && changeTypeLabels[changeType]) {
+                    return (
+                      <Tag color={changeTypeColors[changeType] || 'default'}>
+                        {changeTypeLabels[changeType]}
+                      </Tag>
+                    );
+                  }
+                  return null;
+                })()}
                 <span className="text-xs text-gray-400">
                   {formatTime(item.createdTime)}
                 </span>
