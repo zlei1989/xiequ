@@ -4,10 +4,9 @@
 
 'use client';
 
-import { Dialog, List, SwipeAction, Toast } from 'antd-mobile';
+import { Dialog, List, SwipeAction, Tag, Toast } from 'antd-mobile';
 
 import { CoverImage } from './cover-image';
-import { StatusTag } from './status-tag';
 
 import type { Location } from '../types';
 
@@ -93,7 +92,11 @@ export function LocationListItem({
     >
       <List.Item
         description={location.address}
-        extra={<StatusTag checked={location.checked} />}
+        extra={
+          <Tag color={location.checked ? 'success' : 'primary'} fill="outline">
+            {location.checked ? '已去' : '待去'}
+          </Tag>
+        }
         prefix={
           <CoverImage
             alt={location.name}

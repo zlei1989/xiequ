@@ -108,16 +108,18 @@ export function LocationViewPopup({
       onClose={onClose}
       onMaskClick={onClose}
     >
-      <div className="relative">
-        <CoverImage alt={loc.name} height={240} src={coverUrl} />
-        <div className="absolute bottom-2 right-2">
+      <CoverImage
+        alt={loc.name}
+        height={240}
+        overlay={
           <UploadImage
             locationId={loc.id}
             type="cover"
             onSuccess={() => { setCoverKey(Date.now()); }}
           />
-        </div>
-      </div>
+        }
+        src={coverUrl}
+      />
 
       <List>
         <List.Item
