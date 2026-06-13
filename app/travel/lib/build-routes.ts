@@ -2,7 +2,8 @@
  * 路线构建器 — 纯函数
  *
  * 从位置列表中提取所有精彩瞬间，按时间分组为旅行路线，
- * 计算每组内的标注排序（时间优先、同日按最近邻）和连线路径（最近邻贪心）。
+ * 计算每组内的标注排序（时间优先、同日按最近邻）。
+ * 过滤掉持续天数 ≤ 2 的短路线，polyline 固定为空数组。
  */
 
 import type { Location, Route, RouteMarker } from '../types';
@@ -36,16 +37,6 @@ function extractMoments(locations: Location[]): MomentEntry[] {
     }
   }
   return entries;
-}
-
-/** 计算两个坐标之间的欧几里得距离 */
-function distance(
-  a: { longitude: number; latitude: number },
-  b: { longitude: number; latitude: number },
-): number {
-  const dx = b.longitude - a.longitude;
-  const dy = b.latitude - a.latitude;
-  return Math.sqrt(dx * dx + dy * dy);
 }
 
 /** 计算两个日期之间的天数差 */
@@ -123,11 +114,13 @@ function sortGroupEntries(entries: MomentEntry[]): MomentEntry[] {
       const lastOfDay = dayEntries[dayEntries.length - 1];
       if (lastOfDay) prev = lastOfDay;
     } else {
-      // 按到 prev 的距离排序
+      // 按到 prev 的欧几里得距离排序
       const prevRef = prev;
-      const sorted = [...dayEntries].sort(
-        (a, b) => distance(prevRef, a) - distance(prevRef, b),
-      );
+      const sorted = [...dayEntries].sort((a, b) => {
+        const da = Math.hypot(a.longitude - prevRef.longitude, a.latitude - prevRef.latitude);
+        const db = Math.hypot(b.longitude - prevRef.longitude, b.latitude - prevRef.latitude);
+        return da - db;
+      });
       result.push(...sorted);
       const lastOfSorted = sorted[sorted.length - 1];
       if (lastOfSorted) prev = lastOfSorted;
@@ -169,51 +162,6 @@ function buildMarkers(entries: MomentEntry[]): RouteMarker[] {
 }
 
 /**
- * 最近邻贪心算法计算连线路径
- *
- * 从第一个标注出发，每次选择未连线中距离最近的下一个标注。
- * 标注 ≤ 1 个时返回空数组。
- */
-function buildPolyline(markers: RouteMarker[]): [number, number][] {
-  if (markers.length <= 1) return [];
-
-  const coords: [number, number][] = markers.map((m) => [m.longitude, m.latitude]);
-  const visited = new Array<boolean>(coords.length).fill(false);
-  const result: [number, number][] = [];
-
-  let current = 0;
-  visited[current] = true;
-  const firstCoord = coords[current];
-  if (firstCoord) result.push([...firstCoord]);
-
-  while (result.length < coords.length) {
-    let nearest = -1;
-    let minDist = Infinity;
-
-    for (let i = 0; i < coords.length; i++) {
-      if (visited[i]) continue;
-      const ci = coords[i];
-      const cc = coords[current];
-      if (!ci || !cc) continue;
-      const dx = ci[0] - cc[0];
-      const dy = ci[1] - cc[1];
-      const d = Math.sqrt(dx * dx + dy * dy);
-      if (d < minDist) {
-        minDist = d;
-        nearest = i;
-      }
-    }
-
-    current = nearest;
-    visited[current] = true;
-    const nextCoord = coords[current];
-    if (nextCoord) result.push([...nextCoord]);
-  }
-
-  return result;
-}
-
-/**
  * 从位置列表构建路线
  *
  * 纯函数，不依赖任何外部状态。按以下步骤：
@@ -222,7 +170,7 @@ function buildPolyline(markers: RouteMarker[]): [number, number][] {
  * 3. 按 ≥ 2 天间隔分组
  * 4. 每组内：时间优先排序 + 同日按最近邻排序
  * 5. 每组内：地点去重，构建 RouteMarker
- * 6. 每组内：最近邻贪心计算 polyline
+ * 6. 过滤 days <= 2 的路线
  */
 export function buildRoutes(locations: Location[]): Route[] {
   const entries = extractMoments(locations);
@@ -233,28 +181,30 @@ export function buildRoutes(locations: Location[]): Route[] {
 
   const groups = groupByDateGap(entries);
 
-  return groups.map((group) => {
-    const sorted = sortGroupEntries(group);
-    const markers = buildMarkers(sorted);
-    const polyline = buildPolyline(markers);
+  return groups
+    .map((group) => {
+      const sorted = sortGroupEntries(group);
+      const markers = buildMarkers(sorted);
 
-    const first = sorted[0];
-    const last = sorted[sorted.length - 1];
-    const startDate = first?.date ?? '';
-    const endDate = last?.date ?? '';
+      const first = sorted[0];
+      const last = sorted[sorted.length - 1];
+      const startDate = first?.date ?? '';
+      const endDate = last?.date ?? '';
 
-    const firstMarker = markers[0];
-    const lastMarker = markers[markers.length - 1];
+      const firstMarker = markers[0];
+      const lastMarker = markers[markers.length - 1];
 
-    return {
-      id: `route-${startDate}`,
-      markers,
-      polyline,
-      startDate,
-      endDate,
-      days: calcDays(startDate, endDate),
-      startName: firstMarker?.name ?? '',
-      endName: lastMarker?.name ?? '',
-    };
-  });
+      return {
+        id: `route-${startDate}`,
+        markers,
+        polyline: [],
+        startDate,
+        endDate,
+        days: calcDays(startDate, endDate),
+        locationCount: markers.length,
+        startName: firstMarker?.name ?? '',
+        endName: lastMarker?.name ?? '',
+      };
+    })
+    .filter((route) => route.days > 2);
 }
