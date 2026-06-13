@@ -148,7 +148,7 @@ export function RouteMapPopup({
         visible={visible}
         onClose={onClose}
         position="bottom"
-        bodyStyle={{ height: '75vh' }}
+        bodyStyle={{ height: '80vh' }}
       >
         <NavBar
           onBack={onClose}
@@ -159,7 +159,7 @@ export function RouteMapPopup({
                 style={{ color: 'var(--adm-color-primary)' }}
                 onClick={() => { setShowEntryList(true); }}
               >
-                位置
+                列表
               </span>
             ) : null
           }
@@ -175,7 +175,7 @@ export function RouteMapPopup({
           <TripMap
             ref={mapRef}
             locations={[]}
-            onMarkerClick={() => {}}
+            onMarkerClick={() => { }}
             routeMode
             activeMarkerId={activeLocationId ?? undefined}
             fitViewOnUpdate={visible}
@@ -196,8 +196,13 @@ export function RouteMapPopup({
         visible={showEntryList}
         onClose={() => { setShowEntryList(false); }}
         position="right"
-        bodyStyle={{ width: '50vw' }}
+        bodyStyle={{ width: '60vw' }}
       >
+        <NavBar
+          onBack={() => { setShowEntryList(false); }}
+        >
+          位置列表
+        </NavBar>
         <div className="overflow-y-auto" style={{ height: 'calc(100% - 45px)' }}>
           {groupedEntries.size === 0 ? (
             <div
