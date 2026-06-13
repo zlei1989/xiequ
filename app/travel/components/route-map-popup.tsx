@@ -7,10 +7,11 @@
 
 'use client';
 
-import { NavBar, Popup } from 'antd-mobile';
-import { useCallback, useState } from 'react';
+import { DotLoading, NavBar, Popup, Toast } from 'antd-mobile';
+import { useCallback, useEffect, useState } from 'react';
 
 import { useTravelContext } from '../hooks/use-locations';
+import { useDrivingRoute } from '../hooks/use-driving-route';
 import { useMoments } from '../hooks/use-moments';
 
 import { LocationEditPopup } from './location-edit-popup';
@@ -45,6 +46,18 @@ export function RouteMapPopup({
     update: updateMoment,
     remove: removeMoment,
   } = useMoments(viewLocation?.id || '');
+
+  const {
+    path: drivingPath,
+    loading: drivingLoading,
+    error: drivingError,
+  } = useDrivingRoute(route?.markers ?? [], visible);
+
+  useEffect(() => {
+    if (drivingError) {
+      Toast.show({ icon: 'fail', content: '路线加载失败' });
+    }
+  }, [drivingError]);
 
   /** 路线标注点击 → 查找完整 Location 对象并打开详情 */
   const handleRouteMarkerClick = useCallback(
@@ -86,14 +99,19 @@ export function RouteMapPopup({
           {route.startName} → {route.endName}
         </NavBar>
         <div className="h-[calc(80vh-45px)]">
+          {drivingLoading && (
+            <div className="absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2 rounded-lg bg-white/80 px-4 py-2 shadow">
+              <DotLoading /> 加载路线...
+            </div>
+          )}
           <TripMap
             locations={[]}
             onMarkerClick={() => {}}
             routeMode
             routeMarkers={route.markers}
             polylines={
-              route.polyline.length > 0
-                ? [{ path: route.polyline, color: '#1677ff' }]
+              drivingPath.length > 0
+                ? [{ path: drivingPath, color: '#1677ff' }]
                 : []
             }
             onRouteMarkerClick={handleRouteMarkerClick}
