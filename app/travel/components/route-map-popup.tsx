@@ -3,6 +3,7 @@
  *
  * 使用 antd-mobile Popup 包裹 TripMap（routeMode），展示路线标注和连线。
  * 标注点击时打开 LocationViewPopup 查看地点详情。
+ * 右上角"列表"按钮打开右侧位置列表面板，按日期分组展示瞬间条目。
  */
 
 'use client';
@@ -96,9 +97,10 @@ export function RouteMapPopup({
     }
   }, [drivingError]);
 
-  /** 路线标注点击 → 查找完整 Location 对象并打开详情 */
+  /** 路线标注点击 → 关闭列表面板 → 高亮标注 → 打开详情 */
   const handleRouteMarkerClick = useCallback(
     (marker: RouteMarker) => {
+      setShowEntryList(false);
       setActiveLocationId(marker.locationId);
       const loc = locations.find((l) => l.id === marker.locationId);
       if (loc) setViewLocation(loc);
