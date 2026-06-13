@@ -19,6 +19,8 @@ import {
 } from 'antd-mobile';
 import { useState, useCallback } from 'react';
 
+import { useBackButton } from '@/lib/back-button';
+
 import type { RadioValue } from 'antd-mobile/es/components/radio';
 
 const CHANGE_TYPES = [
@@ -59,6 +61,9 @@ export function EventButtons({
   const closePopup = useCallback(() => {
     setPopupType(null);
   }, []);
+
+  useBackButton(popupType === 'bootstrap', closePopup);
+  useBackButton(popupType === 'change', closePopup);
 
   /** bootstrap 确认：发送并关闭 */
   const handleBootstrapConfirm = useCallback(() => {
