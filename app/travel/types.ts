@@ -71,9 +71,13 @@ export type Route = {
 
 /** 路线标注点 */
 export type RouteMarker = {
+  /** 对应位置 ID */
   locationId: string;
+  /** 位置名称 */
   name: string;
+  /** 经度 */
   longitude: number;
+  /** 纬度 */
   latitude: number;
   /** 该地点在本段路线中的瞬间条数 */
   momentCount: number;
