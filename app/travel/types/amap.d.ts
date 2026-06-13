@@ -25,6 +25,13 @@ declare namespace AMap {
     setMapStyle(style: string): void;
     setContainer(container: HTMLDivElement): void;
     getContainer(): HTMLElement | null;
+    /** 自动适配视野以包含指定覆盖物 */
+    setFitView(
+      overlays?: AMap.Marker[] | AMap.Polyline[],
+      immediately?: boolean,
+      padding?: [number, number, number, number],
+      duration?: number,
+    ): void;
   }
   interface MapOptions {
     zoom: number;

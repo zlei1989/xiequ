@@ -34,6 +34,8 @@ export const TripMap = forwardRef<
     routeMarkers?: RouteMarker[];
     /** 路线标注点击回调（routeMode 时使用） */
     onRouteMarkerClick?: (marker: RouteMarker) => void;
+    /** 路线标注更新后自动适配视野以包含所有标注（仅 routeMode 时生效） */
+    fitViewOnUpdate?: boolean;
   }
 >(function TripMap(
       {
@@ -45,6 +47,7 @@ export const TripMap = forwardRef<
         polylines,
         routeMarkers,
         onRouteMarkerClick,
+        fitViewOnUpdate = false,
       },
       ref,
     ) {
@@ -226,7 +229,12 @@ export const TripMap = forwardRef<
             polylinesRef.current.push(polyline);
           }
         }
-      }, [routeMode, routeMarkers, polylines, mapReady, onRouteMarkerClick]);
+
+        // 自动适配视野以包含所有标注
+        if (fitViewOnUpdate && routeMarkersRef.current.length > 0 && map) {
+          map.setFitView(routeMarkersRef.current, false, [40, 40, 40, 40]);
+        }
+      }, [routeMode, routeMarkers, polylines, mapReady, onRouteMarkerClick, fitViewOnUpdate]);
 
       /** 重试加载 —— 递增 retryKey 触发 effect 重新执行 */
       function handleRetry() {
