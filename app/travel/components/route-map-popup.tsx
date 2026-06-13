@@ -8,7 +8,7 @@
 'use client';
 
 import { DotLoading, NavBar, Popup, Toast } from 'antd-mobile';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { useDrivingRoute } from '../hooks/use-driving-route';
 import { useTravelContext } from '../hooks/use-locations';
@@ -47,11 +47,20 @@ export function RouteMapPopup({
     remove: removeMoment,
   } = useMoments(viewLocation?.id || '');
 
+  /**
+   * 稳定 markers 引用，避免 `route?.markers ?? []` 在 route=null 时
+   * 每次渲染都创建新空数组导致 useDrivingRoute 不必要的重渲染
+   */
+  const markers = useMemo(
+    () => route?.markers ?? [],
+    [route?.markers],
+  );
+
   const {
     path: drivingPath,
     loading: drivingLoading,
     error: drivingError,
-  } = useDrivingRoute(route?.markers ?? [], visible);
+  } = useDrivingRoute(markers, visible);
 
   useEffect(() => {
     if (drivingError) {
@@ -108,6 +117,7 @@ export function RouteMapPopup({
             locations={[]}
             onMarkerClick={() => {}}
             routeMode
+            fitViewOnUpdate={visible}
             routeMarkers={route.markers}
             polylines={
               drivingPath.length > 0
