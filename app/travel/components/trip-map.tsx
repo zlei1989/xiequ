@@ -15,7 +15,7 @@ import { forwardRef, useImperativeHandle, useEffect, useRef, useState } from 're
 import { readTheme, STYLE_MAP, useMapTheme } from '../hooks/use-map-theme';
 import { loadAmap } from '../services/amap';
 import { createMarkerEngine } from '../services/marker-engine';
-import { getAdmColor } from '../services/marker-style';
+import { createNumberedMarkerIcon } from '../services/marker-style';
 
 import type { Location, RouteMarker } from '../types';
 import type { CSSProperties } from 'react';
@@ -37,7 +37,7 @@ export const TripMap = forwardRef<
     onRouteMarkerClick?: (marker: RouteMarker) => void;
     /** 路线标注更新后自动适配视野以包含所有标注（仅 routeMode 时生效） */
     fitViewOnUpdate?: boolean;
-    /** 当前激活的标注 locationId（用于高亮，仅在 routeMode 时生效） */
+    /** 当前激活的标注 locationId（routeMode 时高亮） */
     activeMarkerId?: string;
   }
 >(function TripMap(
@@ -182,24 +182,6 @@ export const TripMap = forwardRef<
         engineRef.current.update(locations);
       }, [locations, mapReady, onMarkerClick, routeMode]);
 
-      /**
-       * 创建路线标注编号标签的 HTML 内容
-       *
-       * 数字序号居中圆形容器，激活状态使用警告色高亮，
-       * 非激活状态使用主色以跟随 antd-mobile 主题。
-       */
-      function createLabelContent(
-        num: number,
-        locationId: string,
-        activeMarkerId: string | undefined,
-      ): string {
-        const bgColor =
-          locationId === activeMarkerId
-            ? getAdmColor('--adm-color-warning', '#ffc107')
-            : getAdmColor('--adm-color-primary', '#1677ff');
-        return `<div style="background:${bgColor};color:#fff;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:bold">${String(num)}</div>`;
-      }
-
       /** 路线标注和连线渲染 effect（仅在 routeMode 时生效） */
       useEffect(() => {
         if (!routeMode || !mapReady || !mapRef.current) return;
@@ -216,18 +198,17 @@ export const TripMap = forwardRef<
         }
         polylinesRef.current = [];
 
-        // 创建路线标注（带编号，图标样式参考地图页标注）
+        // 创建路线标注（带编号的双圈 SVG 图标，与地图页标注样式统一）
         if (routeMarkers && routeMarkers.length > 0) {
           let index = 0;
           for (const rm of routeMarkers) {
             const i = index++;
+            const isActive = rm.locationId === activeMarkerId;
             const marker = new window.AMap.Marker({
               position: [rm.longitude, rm.latitude],
               title: rm.name,
-              label: {
-                content: createLabelContent(i + 1, rm.locationId, activeMarkerId),
-                offset: new window.AMap.Pixel(-10, -10),
-              },
+              icon: new window.AMap.Icon(createNumberedMarkerIcon(i + 1, isActive)),
+              offset: new window.AMap.Pixel(-14, -14),
             });
             marker.on('click', () => {
               onRouteMarkerClick?.(rm);
@@ -256,7 +237,15 @@ export const TripMap = forwardRef<
         if (fitViewOnUpdate && routeMarkersRef.current.length > 0) {
           map.setFitView(routeMarkersRef.current, false, [48, 48, 48, 48]);
         }
-      }, [routeMode, routeMarkers, polylines, mapReady, onRouteMarkerClick, fitViewOnUpdate, activeMarkerId]);
+      }, [
+        routeMode,
+        routeMarkers,
+        polylines,
+        mapReady,
+        onRouteMarkerClick,
+        fitViewOnUpdate,
+        activeMarkerId,
+      ]);
 
       /** 重试加载 —— 递增 retryKey 触发 effect 重新执行 */
       function handleRetry() {
