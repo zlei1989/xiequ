@@ -5,6 +5,8 @@
  * - 注入 Geist 字体 CSS 变量
  * - 检测系统深色模式偏好（通过内联 script 设置 data-prefers-color-scheme）
  * - 包裹 antd ConfigProvider（中文 locale）+ antd-mobile SSR 兼容层
+ * - 注册 PWA Service Worker（通过 PwaRegister 客户端组件）
+ * - 暴露 PWA 元数据（manifest、appleWebApp、图标）
  *
  * 注意：suppressHydrationWarning 用于抑制内联 script 修改 DOM 产生的水合警告。
  */
