@@ -1,7 +1,7 @@
 # 旅行路线页面设计文档
 
 **日期**：2026-06-13
-**状态**：待实施
+**状态**：已实施
 
 ---
 
@@ -129,11 +129,13 @@ type RouteMarker = {
   routeMode?: boolean;                                    // 禁用聚类，使用路线标注样式
   polylines?: { path: [number, number][]; color?: string }[];
   routeMarkers?: RouteMarker[];                           // 路线标注数据
+  onRouteMarkerClick?: (marker: RouteMarker) => void;     // 路线标注点击回调
+  fitViewOnUpdate?: boolean;                              // 标注更新后自动适配视野（边距 48px）
 }
 ```
 
 - `routeMode=true`：跳过 MarkerEngine，直接创建 AMap.Marker + AMap.Polyline
-- 标注图标使用编号圆点（1, 2, 3…）
+- 标注图标使用 SVG 圆形图标（带编号，24×24），风格与地图页标注一致，颜色跟随 `--adm-color-primary`
 - 基础能力（主题跟随、定位缓存）保持不变
 
 ---

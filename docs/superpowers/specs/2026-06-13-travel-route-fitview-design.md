@@ -1,7 +1,7 @@
 # 路线地图自动适配视野设计文档
 
 **日期**：2026-06-13
-**状态**：待实施
+**状态**：已实施
 
 ---
 
@@ -37,8 +37,8 @@ fitViewOnUpdate?: boolean;
 **路线标注渲染 effect 末尾添加**（在创建完 marker + polyline 之后）：
 ```ts
 // 自动适配视野以包含所有标注
-if (fitViewOnUpdate && routeMarkersRef.current.length > 0 && map) {
-  map.setFitView(routeMarkersRef.current, false, [40, 40, 40, 40]);
+if (fitViewOnUpdate && routeMarkersRef.current.length > 0) {
+  map.setFitView(routeMarkersRef.current, false, [48, 48, 48, 48]);
 }
 ```
 
@@ -55,5 +55,5 @@ fitViewOnUpdate={visible}
 
 - `AMap.Map.setFitView(overlays, immediately, avoid)` — 自动调整中心和缩放以适配传入的叠加物
 - `routeMarkersRef.current` 为 `AMap.Marker[]`（继承自 Overlay），兼容 `setFitView`
-- 边距 `[40, 40, 40, 40]` 防止标注贴边
+- 边距 `[48, 48, 48, 48]` 防止标注贴边
 - `fitViewOnUpdate` 仅在 `routeMode=true` 时生效，不影响地图页和收藏页
