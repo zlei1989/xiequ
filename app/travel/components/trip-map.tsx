@@ -182,6 +182,24 @@ export const TripMap = forwardRef<
         engineRef.current.update(locations);
       }, [locations, mapReady, onMarkerClick, routeMode]);
 
+      /**
+       * 创建路线标注编号标签的 HTML 内容
+       *
+       * 数字序号居中圆形容器，激活状态使用警告色高亮，
+       * 非激活状态使用主色以跟随 antd-mobile 主题。
+       */
+      function createLabelContent(
+        num: number,
+        locationId: string,
+        activeMarkerId: string | undefined,
+      ): string {
+        const bgColor =
+          locationId === activeMarkerId
+            ? getAdmColor('--adm-color-warning', '#ffc107')
+            : getAdmColor('--adm-color-primary', '#1677ff');
+        return `<div style="background:${bgColor};color:#fff;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:bold">${String(num)}</div>`;
+      }
+
       /** 路线标注和连线渲染 effect（仅在 routeMode 时生效） */
       useEffect(() => {
         if (!routeMode || !mapReady || !mapRef.current) return;
@@ -207,8 +225,8 @@ export const TripMap = forwardRef<
               position: [rm.longitude, rm.latitude],
               title: rm.name,
               label: {
-                content: `<div style="background:${rm.locationId === activeMarkerId ? getAdmColor('--adm-color-warning', '#ffc107') : '#1677ff'};color:#fff;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:bold">${String(i + 1)}</div>`,
-                offset: new window.AMap.Pixel(-12, -12),
+                content: createLabelContent(i + 1, rm.locationId, activeMarkerId),
+                offset: new window.AMap.Pixel(-10, -10),
               },
             });
             marker.on('click', () => {
