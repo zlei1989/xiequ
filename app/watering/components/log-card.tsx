@@ -7,7 +7,7 @@
 
 'use client';
 
-import { Card, Space, Steps, Tag, ErrorBlock } from 'antd-mobile';
+import { Card, Space, Steps, Tag } from 'antd-mobile';
 
 /** ── 常量 ── */
 
@@ -42,6 +42,9 @@ export type LogItem = {
   process?: { name?: string };
   cause?: string;
 };
+
+/** 按 stateId 分组后的日志组 */
+export type LogGroup = { stateId: string; items: LogItem[] };
 
 /** ── 工具函数 ── */
 
@@ -173,67 +176,48 @@ function formatTime(isoString: string): string {
 
 /** ── 组件 ── */
 
-export function LogCard({ logs }: { logs: LogItem[] }) {
-  // 防御性空检查 — page.tsx 虽然已经拦截了空数组，
-  // 但保留此检查确保 LogViewer 独立使用时仍有正确的空态展示。
-  if (logs.length === 0) {
-    return (
-      <ErrorBlock
-        status="empty"
-        title="暂无日志"
-      />
-    );
-  }
-
-  const groups = groupByStateId(logs);
+export function LogCard({ group }: { group: LogGroup }) {
+  const groupStatus = getGroupStatus(group.items);
+  const duration = hasExecute(group.items) ? formatDuration(group.items) : null;
 
   return (
-    <Space block direction="vertical">
-      {groups.map((group) => {
-        const groupStatus = getGroupStatus(group.items);
-        const duration = hasExecute(group.items) ? formatDuration(group.items) : null;
-
-        return (
-          <Card
-            extra={
-              <Tag color={groupStatus.color}>
-                {groupStatus.label}
-              </Tag>
+    <Card
+      extra={
+        <Tag color={groupStatus.color}>
+          {groupStatus.label}
+        </Tag>
+      }
+      key={group.stateId}
+      title={`State ID: ${group.stateId}`}
+    >
+      <Steps direction="vertical">
+        {group.items.map((item, idx) => (
+          <Steps.Step
+            description={
+              <span className="text-[13px] text-gray-700">
+                {formatMessage(item)}
+              </span>
             }
-            key={group.stateId}
-            title={`State ID: ${group.stateId}`}
-          >
-            <Steps direction="vertical">
-              {group.items.map((item, idx) => (
-                <Steps.Step
-                  description={
-                    <span className="text-[13px] text-gray-700">
-                      {formatMessage(item)}
-                    </span>
-                  }
-                  key={`${group.stateId}-${idx}`}
-                  status={getStepStatus(item.event)}
-                  title={
-                    <Space align="center">
-                      <Tag color={eventColors[item.event] || 'default'}>
-                        {eventLabels[item.event] || item.event}
-                      </Tag>
-                      <span className="text-xs text-gray-400">
-                        {formatTime(item.createdTime)}
-                      </span>
-                    </Space>
-                  }
-                />
-              ))}
-            </Steps>
-            {duration && (
-              <div className="mt-2 flex justify-end text-xs text-gray-400">
-                用时 {duration}
-              </div>
-            )}
-          </Card>
-        );
-      })}
-    </Space>
+            key={`${group.stateId}-${idx}`}
+            status={getStepStatus(item.event)}
+            title={
+              <Space align="center">
+                <Tag color={eventColors[item.event] || 'default'}>
+                  {eventLabels[item.event] || item.event}
+                </Tag>
+                <span className="text-xs text-gray-400">
+                  {formatTime(item.createdTime)}
+                </span>
+              </Space>
+            }
+          />
+        ))}
+      </Steps>
+      {duration && (
+        <div className="mt-2 flex justify-end text-xs text-gray-400">
+          用时 {duration}
+        </div>
+      )}
+    </Card>
   );
 }
