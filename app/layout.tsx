@@ -17,6 +17,7 @@ import 'antd-mobile/es/global';
 import './globals.css';
 import 'normalize.css';
 import { AntdMobileCompat } from '../components/antd-mobile-compat';
+import { PwaRegister } from '../components/pwa-register';
 
 import type { Metadata } from 'next';
 
@@ -33,6 +34,17 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: '谐趣',
   description: '浇花帮手、旅行计划、台岛遍历',
+  // PWA：手机桌面图标 + 全屏启动
+  manifest: '/manifest.webmanifest',
+  icons: {
+    icon: '/icons/icon-192.png',
+    apple: '/icons/icon-192.png',
+  },
+  appleWebApp: {
+    capable: true,
+    title: '谐趣',
+    statusBarStyle: 'black-translucent',
+  },
 };
 
 /**
@@ -61,6 +73,7 @@ export default function RootLayout({
         <ConfigProvider locale={zhCN}>
           <AntdMobileCompat />
           {children}
+          <PwaRegister />
         </ConfigProvider>
       </body>
     </html>

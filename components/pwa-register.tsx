@@ -21,7 +21,7 @@ export function PwaRegister() {
 
     navigator.serviceWorker
       .register('/sw.js')
-      .catch((err) => {
+      .catch((err: unknown) => {
         // SW 注册失败不影响主功能
         // 常见原因：非 HTTPS、浏览器不支持、private 模式限制
         console.warn('Service Worker 注册失败:', err);

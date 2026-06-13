@@ -25,6 +25,8 @@ describe('OfflinePage', () => {
     const links = screen.getAllByRole('link', { name: /重新加载/ });
     expect(links.length).toBeGreaterThanOrEqual(1);
     // 验证链接指向首页
-    expect(links[0].getAttribute('href')).toBe('/');
+    const link = links[0];
+    if (!link) throw new Error('Expected at least one link');
+    expect(link.getAttribute('href')).toBe('/');
   });
 });
