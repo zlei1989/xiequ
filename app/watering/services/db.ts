@@ -78,8 +78,12 @@ export async function initDb() {
     CREATE TABLE IF NOT EXISTS watering_logs (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       chip_id TEXT NOT NULL,
+      mac_address TEXT,
       event TEXT NOT NULL,
+      state_id TEXT,
+      message TEXT,
       state JSON,
+      voltage REAL NOT NULL DEFAULT 0,
       created_time TEXT NOT NULL
     )
   `);
@@ -88,6 +92,23 @@ export async function initDb() {
     CREATE INDEX IF NOT EXISTS idx_watering_logs_chip_id
     ON watering_logs(chip_id, created_time DESC)
   `);
+
+  // 新增独立列迁移（v2: 从 state JSON 提取高频字段）
+  try {
+    db.exec('ALTER TABLE watering_logs ADD COLUMN mac_address TEXT');
+  } catch { /* 列已存在 */ }
+  try {
+    db.exec('ALTER TABLE watering_logs ADD COLUMN state_id TEXT');
+  } catch { /* 列已存在 */ }
+  try {
+    db.exec('ALTER TABLE watering_logs ADD COLUMN message TEXT');
+  } catch { /* 列已存在 */ }
+  try {
+    db.exec('ALTER TABLE watering_logs ADD COLUMN voltage REAL NOT NULL DEFAULT 0');
+  } catch { /* 列已存在 */ }
+  try {
+    db.exec('CREATE INDEX IF NOT EXISTS idx_watering_logs_state_id ON watering_logs(state_id)');
+  } catch { /* 索引已存在 */ }
 }
 
 /**
@@ -290,28 +311,72 @@ export async function updateTick(chipId: string) {
 export async function getDeviceLogs(chipId: string, limit = 100) {
   const db = await getDb();
   const rows = db.prepare(
-    "SELECT id, chip_id, event, state, created_time FROM watering_logs WHERE chip_id = ? ORDER BY created_time DESC LIMIT ?"
+    "SELECT id, chip_id, mac_address, event, state_id, message, state, voltage, created_time FROM watering_logs WHERE chip_id = ? ORDER BY created_time DESC LIMIT ?"
   ).all(chipId, limit) as any[];
   return rows.map((row) => ({
     id: row.id,
     chipId: row.chip_id,
+    macAddress: row.mac_address ?? undefined,
     event: row.event,
+    stateId: row.state_id ?? undefined,
+    message: row.message ?? undefined,
     state: parseJSON(row.state, undefined as Record<string, unknown> | undefined),
+    voltage: typeof row.voltage === 'number' ? row.voltage : undefined,
     createdTime: row.created_time,
   }));
 }
 
 /**
- * 写入设备日志
+ * 计算设备当前电压
+ *
+ * 从 GPIO 传感器数据中取对应引脚的读数，应用分压公式。
+ * 公式：V_actual = V_sensor × (R1 + R2) / R2
+ * 仅在 r1 > 0 && r2 > 0 时应用分压比，否则直接使用原始读数。
+ * 传感器数据缺失或电压未配置时返回 0。
  */
-export async function writeDeviceLog(chipId: string, event: string, state?: Record<string, unknown>) {
+export function calcVoltage(
+  voltageConfig: { sensor: string; r1: number; r2: number } | undefined,
+  sensors: Record<string, number> | undefined,
+): number {
+  if (!voltageConfig || !sensors) return 0;
+  const raw = sensors[voltageConfig.sensor];
+  if (typeof raw !== 'number') return 0;
+  const r1 = voltageConfig.r1;
+  const r2 = voltageConfig.r2;
+  const value = r1 > 0 && r2 > 0 ? raw * ((r1 + r2) / r2) : raw;
+  return Math.round(value * 100) / 100; // 保留 2 位小数
+}
+
+/**
+ * 写入设备日志
+ *
+ * SQLite WASM 驱动 API 为同步调用，但函数签名保持 async 以兼容上层契约。
+ * voltage 从设备配置的电压分压公式计算，未配置时为 0。
+ */
+ 
+export async function writeDeviceLog(
+  chipId: string,
+  event: string,
+  macAddress: string,
+  state?: Record<string, unknown>,
+  voltage?: number,
+  stateId?: string,
+  message?: string,
+) {
   const db = await getDb();
-  db.prepare("INSERT INTO watering_logs (chip_id, event, state, created_time) VALUES (?, ?, ?, ?)").run(
+  db.prepare(`
+    INSERT INTO watering_logs (chip_id, mac_address, event, state_id, message, state, voltage, created_time)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  `).run([
     chipId,
+    macAddress,
     event,
+    stateId ?? null,
+    message ?? null,
     state ? JSON.stringify(state) : null,
-    new Date().toISOString()
-  );
+    voltage ?? 0,
+    new Date().toISOString(),
+  ]);
 }
 
 /**
