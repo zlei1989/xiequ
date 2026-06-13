@@ -206,6 +206,36 @@ declare namespace AMap {
     districtList?: DistrictItem[];
   }
 
+  /** 驾车路线规划 */
+  class Driving {
+    constructor(options: DrivingOptions);
+    search(
+      origin: [number, number],
+      destination: [number, number],
+      options: DrivingSearchOptions | undefined,
+      callback: (status: string, result: DrivingResult) => void,
+    ): void;
+  }
+  interface DrivingOptions {
+    policy?: number;
+  }
+  interface DrivingSearchOptions {
+    waypoints?: [number, number][];
+  }
+  interface DrivingResult {
+    routes?: DrivingRoute[];
+  }
+  interface DrivingRoute {
+    steps?: DrivingStep[];
+  }
+  interface DrivingStep {
+    path?: DrivingPathPoint[];
+  }
+  interface DrivingPathPoint {
+    lng: number;
+    lat: number;
+  }
+
   /** 经纬度 */
   interface LngLat {
     lng: number;
@@ -238,6 +268,7 @@ interface AMapModule {
     options?: AMap.MarkerClustererOptions,
   ) => AMap.MarkerClusterer;
   Polyline: new (options: AMap.PolylineOptions) => AMap.Polyline;
+  Driving: new (options: AMap.DrivingOptions) => AMap.Driving;
 }
 
 /** 扩展 Window（AMap 通过异步加载注入，初始不存在） */
