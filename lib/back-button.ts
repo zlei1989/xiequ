@@ -54,11 +54,10 @@ function handlePopstate(): void {
   }
 
   // 重新注入占位，阻止页面跳转
-  // 仅在栈中还有未关闭的弹窗时注入占位（stack.length > 1，
-  // 因为当前被关闭的弹窗 entry 仍在栈中，等待 React cleanup 移除）
-  // 若只剩当前关闭的这个（stack.length === 1），不注入占位，
-  // 让浏览器的自然回退离开页面
-  if (stack.length > 1) {
+  // 栈中仍有 entry 时（包括当前正在关闭的，它等待 React cleanup 移除），
+  // 注入占位使返回键始终先关闭弹窗而非跳转页面。
+  // 仅在栈完全为空时（异常情况，监听器已清理）不注入占位。
+  if (stack.length > 0) {
     pushPlaceholder();
   }
 

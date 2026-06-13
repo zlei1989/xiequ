@@ -143,6 +143,59 @@ describe('useBackButton', () => {
     unmountA();
   });
 
+  it('嵌套弹窗快速连按返回键（React cleanup 未执行时再次按下回退）', async () => {
+    const useBackButton = await loadHook();
+    const onCloseOuter = vi.fn();
+    const onCloseInner = vi.fn();
+
+    // 先打开外层弹窗
+    const { rerender: rerenderOuter, unmount: unmountOuter } = renderHook<
+      ReturnType<typeof useBackButton>,
+      { visible: boolean }
+    >(({ visible }) => { useBackButton(visible, onCloseOuter); },
+      { initialProps: { visible: false } },
+    );
+    rerenderOuter({ visible: true });
+
+    // 再打开内层弹窗（嵌套）
+    const { rerender: rerenderInner, unmount: unmountInner } = renderHook<
+      ReturnType<typeof useBackButton>,
+      { visible: boolean }
+    >(({ visible }) => { useBackButton(visible, onCloseInner); },
+      { initialProps: { visible: false } },
+    );
+    rerenderInner({ visible: true });
+
+    // 第一次返回键 → 关闭内层弹窗
+    firePopstate();
+    expect(onCloseInner).toHaveBeenCalledOnce();
+    expect(onCloseOuter).not.toHaveBeenCalled();
+
+    // 快速连按：不等待 React cleanup，直接再次按下返回键
+    // 此时内层 entry 仍在栈中但 onCloseRef 已被置空，
+    // handlePopstate 取栈顶——内层 entry——onCloseRef=null，跳过
+    // 但 stack.length > 0 为 true，pushPlaceholder 被调用保持页面
+    firePopstate();
+    // 内层不应被重复调用（onCloseRef 已被置空）
+    expect(onCloseInner).toHaveBeenCalledOnce();
+
+    // 验证 pushState 被调用（阻止了页面跳转，用户仍停留在当前页）
+    const pushCountAfterSecond = pushState.mock.calls.length;
+
+    // 现在模拟 React 完成状态更新：内层 visible 变为 false，cleanup 出栈
+    rerenderInner({ visible: false });
+
+    // 第三次返回键 → 应正确关闭外层弹窗
+    firePopstate();
+    expect(onCloseOuter).toHaveBeenCalledOnce();
+
+    // pushState 应增加（第三次返回键时也注入了占位）
+    expect(pushState.mock.calls.length).toBeGreaterThan(pushCountAfterSecond);
+
+    unmountInner();
+    unmountOuter();
+  });
+
   it('弹窗关闭（visible=false）后从栈中移除，不再响应返回键', async () => {
     const useBackButton = await loadHook();
     const onClose = vi.fn();
