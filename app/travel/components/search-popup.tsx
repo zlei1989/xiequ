@@ -76,8 +76,8 @@ export function SearchPopup({
     >
       <NavBar onBack={onClose}>添加位置</NavBar>
       <div className="sticky top-0 z-10">
-        <SearchBar style={{ '--border-radius': '0px' }}
-          placeholder="选择位置" onSearch={(val) => { void handleSearch(val); }} />
+        <SearchBar placeholder="选择位置"
+          style={{ '--border-radius': '0px' }} onSearch={(val) => { void handleSearch(val); }} />
       </div>
       {searching ? (
         <DotLoading />

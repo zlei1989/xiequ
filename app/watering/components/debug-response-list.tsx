@@ -6,7 +6,7 @@
 
 'use client';
 
-import { Button, Card, ErrorBlock, List, Tag } from 'antd-mobile';
+import { Button, Card, ErrorBlock, List, Tag, Space } from 'antd-mobile';
 import { useState, useCallback } from 'react';
 
 import type { LogEntry } from '../hooks/use-iot-simulator';
@@ -94,15 +94,15 @@ function LogItem({ log }: { log: LogEntry }) {
           </Tag>
         ) : undefined
       }
-      prefix={
+    >
+      <Space block>
         <Tag color={meta.color}>
           {meta.label}
         </Tag>
-      }
-    >
-      <span className="text-[11px] text-gray-400">
-        {log.timestamp}
-      </span>
+        <span className="text-[11px] text-gray-400">
+          {log.timestamp}
+        </span>
+      </Space>
       {log.body && (
         <pre className="mb-0 mt-1 overflow-x-auto font-mono text-[11px] text-gray-800">
           {log.body}
