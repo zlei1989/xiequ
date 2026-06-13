@@ -1,83 +1,97 @@
+/**
+ * 设备详情/配置页
+ *
+ * 使用 antd-mobile NavBar 替代自定义顶栏，统一移动端交互。
+ * 通过 saveRef 模式将保存函数从 DeviceEditor 传递到 Header 按钮。
+ */
+
 "use client";
 
-import { use, useRef } from "react";
-import { Spin, Button, Popconfirm, message } from "antd";
-import { ArrowLeftOutlined, SaveOutlined, DeleteOutlined } from "@ant-design/icons";
-import { useRouter } from "next/navigation";
-import { useDeviceConfig } from "../../hooks/use-device-config";
-import { DeviceEditor } from "../../components/device-editor";
+import { NavBar, DotLoading, Dialog, Toast } from "antd-mobile";
+import { CheckOutline, DeleteOutline } from "antd-mobile-icons";
+import { useRouter, useParams } from "next/navigation";
+import { useRef } from "react";
 
-export default function DeviceDetailPage({
-  params,
-}: {
-  params: Promise<{ chipId: string }>;
-}) {
-  const { chipId } = use(params);
+import { DeviceEditor } from "../../components/device-editor";
+import { useDeviceConfig } from "../../hooks/use-device-config";
+
+export default function DeviceDetailPage() {
+  const { chipId } = useParams<{ chipId: string }>();
   const router = useRouter();
   const { config, gpio, loading, save, remove } = useDeviceConfig(chipId);
 
-  // DeviceEditor 将 handleSave 注册到此 ref，Header 保存按钮通过它触发保存
   const saveRef = useRef<() => Promise<void>>(async () => {});
 
+  /** 删除设备：Dialog 确认 → remove → Toast → 返回 */
   async function handleRemove() {
+    const confirmed = await Dialog.confirm({
+      title: "确认删除设备？",
+      content: "不可恢复",
+    });
+    if (!confirmed) return;
+
     try {
       await remove();
-      message.success("设备已删除");
+      Toast.show({ icon: "success", content: "设备已删除" });
       router.push("/watering");
-    } catch (err: any) {
-      message.error(err.message || "删除失败");
+    } catch (err: unknown) {
+      console.error("[Watering] 删除设备失败:", {
+        chipId,
+        message: err instanceof Error ? err.message : String(err),
+        stack: err instanceof Error ? err.stack : undefined,
+      });
+      Toast.show({
+        icon: "fail",
+        content: err instanceof Error ? err.message : String(err) || "删除失败",
+      });
     }
+  }
+
+  /** 保存设备：通过 saveRef 调用 DeviceEditor 的 handleSave */
+  async function handleSave() {
+    await saveRef.current();
   }
 
   if (loading || !config) {
     return (
-      <div style={{ textAlign: "center", padding: 48 }}>
-        <Spin />
+      <div className="py-12 text-center">
+        <DotLoading />
       </div>
     );
   }
 
   return (
     <div>
-      {/* 页面内顶栏操作按钮 — 匹配 iot-wfm EditView header extra */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          padding: "12px 16px",
-          background: "#fff",
-          borderBottom: "1px solid #f0f0f0",
-        }}
-      >
-        <h3 style={{ margin: 0, fontSize: 16 }}>{config.name || "设备配置"}</h3>
-        <div style={{ display: "flex", gap: 8 }}>
-          <Button
-            type="primary"
-            icon={<SaveOutlined />}
-            onClick={() => saveRef.current()}
-          >
-            保存
-          </Button>
-          <Popconfirm title="确认删除设备？不可恢复。" onConfirm={handleRemove}>
-            <Button danger icon={<DeleteOutlined />}>
-              删除
-            </Button>
-          </Popconfirm>
-          <Button icon={<ArrowLeftOutlined />} onClick={() => router.back()}>
-            返回
-          </Button>
-        </div>
+      <div className="sticky top-0 z-10 bg-[var(--background)]">
+        <NavBar
+          right={
+            <div style={{ display: "flex", gap: 12 }}>
+              <CheckOutline onClick={() => { void handleSave(); }} />
+              <DeleteOutline onClick={() => { void handleRemove(); }} />
+            </div>
+          }
+          onBack={() => { router.back(); }}
+        >
+          {config.name || "设备配置"}
+        </NavBar>
       </div>
 
       <DeviceEditor
         config={config}
         gpio={gpio}
-        onSave={async (data) => {
-          await save(data);
-        }}
-        onRemove={handleRemove}
         saveRef={saveRef}
+        onRemove={handleRemove}
+        onSave={async (data) => {
+          try {
+            await save(data);
+            Toast.show({ icon: "success", content: "配置已保存" });
+          } catch (err: unknown) {
+            Toast.show({
+              icon: "fail",
+              content: err instanceof Error ? err.message : String(err) || "保存失败",
+            });
+          }
+        }}
       />
     </div>
   );
