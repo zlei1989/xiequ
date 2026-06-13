@@ -52,7 +52,7 @@ export default function DeviceDetailPage({
     <div>
       {/* 页面内顶栏操作按钮 — 匹配 iot-wfm EditView header extra */}
       <div
-        className="flex items-center justify-between border-0 border-b border-solid border-gray-100 bg-white p-3"
+        className="sticky top-0 z-10 flex items-center justify-between border-0 border-b border-solid border-gray-100 bg-white p-3"
       >
         <h3 className="m-0 text-base">{config.name || '设备配置'}</h3>
         <div className="flex gap-2">

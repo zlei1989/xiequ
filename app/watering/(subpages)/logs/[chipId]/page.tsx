@@ -118,16 +118,18 @@ export default function DeviceLogsPage({
   return (
     <>
       <SafeArea position="top" />
-      <NavBar
-        right={
-          <DeleteOutline
-            onClick={() => { void handleClear(); }}
-          />
-        }
-        onBack={() => { router.back(); }}
-      >
-        设备: {chipId}
-      </NavBar>
+      <div className="sticky top-0 z-10">
+        <NavBar
+          right={
+            <DeleteOutline
+              onClick={() => { void handleClear(); }}
+            />
+          }
+          onBack={() => { router.back(); }}
+        >
+          设备: {chipId}
+        </NavBar>
+      </div>
       {renderContent()}
     </>
   );

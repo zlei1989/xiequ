@@ -33,11 +33,13 @@ export default function DebugPage() {
 
   return (
     <>
-      <NavBar
-        onBack={() => { router.back(); }}
-      >
-        调试服务
-      </NavBar>
+      <div className="sticky top-0 z-10">
+        <NavBar
+          onBack={() => { router.back(); }}
+        >
+          调试服务
+        </NavBar>
+      </div>
       <DebugForm
         gpio={gpio}
         identity={identity}
