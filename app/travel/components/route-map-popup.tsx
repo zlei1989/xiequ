@@ -8,7 +8,7 @@
 'use client';
 
 import { DotLoading, NavBar, Popup, Toast } from 'antd-mobile';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useDrivingRoute } from '../hooks/use-driving-route';
 import { useTravelContext } from '../hooks/use-locations';
@@ -19,7 +19,7 @@ import { LocationViewPopup } from './location-view-popup';
 import { MomentEditPopup } from './moment-edit-popup';
 import { TripMap } from './trip-map';
 
-import type { Route, RouteMarker, Location, Moment } from '../types';
+import type { Route, RouteMarker, Location, Moment, RouteEntry } from '../types';
 
 export function RouteMapPopup({
   route,
@@ -40,6 +40,15 @@ export function RouteMapPopup({
     moment: Moment | null;
   } | null>(null);
 
+  /** TripMap 引用，用于 setCenter */
+  const mapRef = useRef<{ setCenter: (pos: [number, number]) => void }>(null);
+
+  /** 位置列表面板是否打开 */
+  const [showEntryList, setShowEntryList] = useState(false);
+
+  /** 当前高亮的标注 locationId */
+  const [activeLocationId, setActiveLocationId] = useState<string | null>(null);
+
   const {
     moments,
     add: addMoment,
@@ -56,6 +65,25 @@ export function RouteMapPopup({
     [route?.markers],
   );
 
+  /** 已删除位置的 locationId 集合（用于过滤位置列表） */
+  const deletedIds = useMemo(
+    () => new Set(locations.filter((l) => l.deleted).map((l) => l.id)),
+    [locations],
+  );
+
+  /** 按日期分组的瞬间条目（过滤已删除位置） */
+  const groupedEntries = useMemo(() => {
+    const entries = route?.entries ?? [];
+    const active = entries.filter((e) => !deletedIds.has(e.locationId));
+    const groups = new Map<string, RouteEntry[]>();
+    for (const e of active) {
+      const list = groups.get(e.date);
+      if (list) list.push(e);
+      else groups.set(e.date, [e]);
+    }
+    return groups;
+  }, [route?.entries, deletedIds]);
+
   const {
     path: drivingPath,
     loading: drivingLoading,
@@ -71,6 +99,7 @@ export function RouteMapPopup({
   /** 路线标注点击 → 查找完整 Location 对象并打开详情 */
   const handleRouteMarkerClick = useCallback(
     (marker: RouteMarker) => {
+      setActiveLocationId(marker.locationId);
       const loc = locations.find((l) => l.id === marker.locationId);
       if (loc) setViewLocation(loc);
     },
@@ -104,6 +133,17 @@ export function RouteMapPopup({
         <NavBar
           onBack={onClose}
           back="关闭"
+          right={
+            route.entries.length > 0 ? (
+              <span
+                className="cursor-pointer text-sm"
+                style={{ color: 'var(--adm-color-primary)' }}
+                onClick={() => { setShowEntryList(true); }}
+              >
+                列表
+              </span>
+            ) : null
+          }
         >
           {route.startName} → {route.endName}
         </NavBar>
@@ -114,9 +154,11 @@ export function RouteMapPopup({
             </div>
           )}
           <TripMap
+            ref={mapRef}
             locations={[]}
             onMarkerClick={() => {}}
             routeMode
+            activeMarkerId={activeLocationId ?? undefined}
             fitViewOnUpdate={visible}
             routeMarkers={route.markers}
             polylines={
@@ -130,10 +172,79 @@ export function RouteMapPopup({
         </div>
       </Popup>
 
+      {/* 位置列表面板 */}
+      <Popup
+        visible={showEntryList}
+        onClose={() => { setShowEntryList(false); }}
+        position="right"
+        bodyStyle={{ width: '60vw' }}
+      >
+        <NavBar
+          onBack={() => { setShowEntryList(false); }}
+          back="关闭"
+        >
+          位置列表
+        </NavBar>
+        <div className="overflow-y-auto" style={{ height: 'calc(100% - 45px)' }}>
+          {groupedEntries.size === 0 ? (
+            <div
+              className="flex h-full items-center justify-center"
+              style={{ color: 'var(--adm-color-weak)' }}
+            >
+              暂无位置
+            </div>
+          ) : (
+            Array.from(groupedEntries.entries()).map(([date, entries]) => (
+              <div key={date}>
+                {/* 日期分组标题 */}
+                <div
+                  className="sticky top-0 px-4 py-2 text-xs"
+                  style={{
+                    backgroundColor: 'var(--adm-color-box)',
+                    color: 'var(--adm-color-weak)',
+                  }}
+                >
+                  {date}
+                </div>
+                {/* 当日条目 */}
+                {entries.map((entry, i) => (
+                  <div
+                    key={`${entry.locationId}-${i}`}
+                    className="flex cursor-pointer items-center gap-2 border-b px-4 py-3 active:bg-[var(--adm-color-fill)]"
+                    style={{ borderColor: 'var(--adm-color-border)' }}
+                    onClick={() => {
+                      setShowEntryList(false);
+                      setActiveLocationId(entry.locationId);
+                      // eslint-disable-next-line react-hooks/refs -- onClick 是事件处理器，可以访问 ref
+                      mapRef.current?.setCenter([entry.longitude, entry.latitude]);
+                      const loc = locations.find((l) => l.id === entry.locationId);
+                      if (loc) setViewLocation(loc);
+                    }}
+                  >
+                    <span
+                      className="text-xs"
+                      style={{ color: 'var(--adm-color-warning)' }}
+                    >
+                      📍
+                    </span>
+                    <span
+                      className="text-sm"
+                      style={{ color: 'var(--adm-color-text)' }}
+                    >
+                      {entry.name}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ))
+          )}
+        </div>
+      </Popup>
+
       <LocationViewPopup
         location={viewLocation}
         visible={!!viewLocation && !editMoment && !editLocation}
-        onClose={() => { setViewLocation(null); }}
+        onClose={() => { setViewLocation(null); setActiveLocationId(null); }}
         moments={moments}
         onEdit={(loc) => { setEditLocation(loc); }}
         onToggle={handleToggle}
