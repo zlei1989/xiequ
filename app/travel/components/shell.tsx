@@ -18,7 +18,7 @@ import type { Summary } from '../types';
 
 /** 路由路径常量，多处引用避免硬编码字符串 */
 const TRAVEL_BASE_PATH = '/travel';
-const TRAVEL_LIST_PATH = '/travel/list';
+const TRAVEL_FAVOURITES_PATH = '/travel/favourites';
 const TRAVEL_ROUTES_PATH = '/travel/routes';
 
 /**
@@ -142,7 +142,7 @@ export function Shell({ children }: { children: ReactNode }) {
 
       <TabBar safeArea activeKey={pathname} onChange={(key) => { router.push(key); }}>
         <TabBar.Item icon={<EnvironmentOutline />} key={TRAVEL_BASE_PATH} title="地图" />
-        <TabBar.Item icon={<StarOutline />} key={TRAVEL_LIST_PATH} title="收藏" />
+        <TabBar.Item icon={<StarOutline />} key={TRAVEL_FAVOURITES_PATH} title="收藏" />
         <TabBar.Item icon={<TravelOutline />} key={TRAVEL_ROUTES_PATH} title="路线" />
       </TabBar>
 
