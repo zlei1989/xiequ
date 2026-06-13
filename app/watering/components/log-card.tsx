@@ -154,7 +154,7 @@ export function formatMessage(item: LogItem): string {
   if (item.message) return item.message;
   switch (item.event) {
     case 'bootstrap':
-      return item.cause ? `设备(${item.cause})开机` : '设备开机';
+      return item.cause ? `${formatCause(item.cause)}开机` : '设备开机';
     case 'execute':
       return `执行流程${item.process?.name ? `: ${item.process.name}` : ''}`;
     case 'terminate':
