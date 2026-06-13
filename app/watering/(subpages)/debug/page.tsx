@@ -31,15 +31,8 @@ export default function DebugPage() {
   } = useIotSimulator();
   const router = useRouter();
 
-  return (
-    <>
-      <div className="sticky top-0 z-10 bg-[var(--background)]">
-        <NavBar
-          onBack={() => { router.back(); }}
-        >
-          调试服务
-        </NavBar>
-      </div>
+  function renderContent() {
+    return (<>
       <DebugForm
         gpio={gpio}
         identity={identity}
@@ -57,6 +50,19 @@ export default function DebugPage() {
         />
         <DebugResponseList logs={logs} onClear={clearLogs} />
       </div>
+    </>)
+  }
+
+  return (
+    <>
+      <div className="sticky top-0 z-10 bg-[var(--background)]">
+        <NavBar
+          onBack={() => { router.back(); }}
+        >
+          调试服务
+        </NavBar>
+      </div>
+      {renderContent()}
     </>
   );
 }

@@ -6,10 +6,7 @@
  */
 
 'use client';
-
-import { BugOutlined } from '@ant-design/icons';
-import { Button, Spin, Empty } from 'antd';
-import { NavBar, PullToRefresh } from 'antd-mobile';
+import { NavBar, PullToRefresh, DotLoading, Button, ErrorBlock } from 'antd-mobile';
 import { AppstoreOutline } from 'antd-mobile-icons';
 import { useRouter } from 'next/navigation';
 
@@ -21,49 +18,57 @@ const isDev = process.env.NODE_ENV === 'development';
 export default function WateringPage() {
   const { devices, loading, refresh } = useDevices(15000);
   const router = useRouter();
-  return (
-    <>
-      <NavBar
-        backIcon={
-          <AppstoreOutline />
-        }
-        right={
-          isDev && (
-            <Button
-              icon={<BugOutlined />}
-              size="small"
-              onClick={() => { router.push('/watering/debug'); }}
-            >
-              调试
-            </Button>
+
+  function renderContent() {
+    {/* PullToRefresh: antd-mobile 下拉刷新，onRefresh 触发设备列表重新加载 */ }
+    return (
+      < PullToRefresh onRefresh={refresh} >
+        {/* 设备卡片列表 */}
+        {
+          loading && devices.length === 0 ? (
+            <DotLoading />
+          ) : devices.length === 0 ? (
+            <ErrorBlock status='empty' description="暂无设备，等待 IoT 设备上线" />
+          ) : (
+            <div
+              className="flex flex-col gap-4 px-3 pb-3">
+              {devices.map((device) => (
+                <DeviceCard
+                  device={device}
+                  key={device.chipId}
+                  onRefresh={() => { void refresh(); }}
+                />
+              ))}
+            </div>
           )
         }
-        onBack={() => { router.push('/'); }}
-      >
-        我的设备
-      </NavBar>
-      {/* PullToRefresh: antd-mobile 下拉刷新，onRefresh 触发设备列表重新加载 */}
-      <PullToRefresh onRefresh={refresh}>
-        {/* 设备卡片列表 */}
-        {loading && devices.length === 0 ? (
-          <div className="py-12 text-center">
-            <Spin />
-          </div>
-        ) : devices.length === 0 ? (
-          <Empty description="暂无设备，等待 IoT 设备上线" />
-        ) : (
-          <span className="flex flex-col gap-4 px-3">
-            {devices.map((device) => (
-              <DeviceCard
-                device={device}
-                key={device.chipId}
-                onRefresh={() => { void refresh(); }}
-              />
-            ))}
-          </span>
-        )}
+      </PullToRefresh >
+    );
+  }
 
-      </PullToRefresh>
+  return (
+    <>
+      <div className="sticky top-0 z-10 bg-[var(--background)]">
+        <NavBar
+          backIcon={
+            <AppstoreOutline />
+          }
+          right={
+            isDev && (
+              <Button
+                size="mini"
+                onClick={() => { router.push('/watering/debug'); }}
+              >
+                调试
+              </Button>
+            )
+          }
+          onBack={() => { router.push('/'); }}
+        >
+          我的设备
+        </NavBar>
+      </div>
+      {renderContent()}
     </>
   );
 }
