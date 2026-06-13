@@ -106,6 +106,18 @@ export function RouteMapPopup({
     [locations],
   );
 
+  /** 位置列表条目点击 → 关闭面板 → 移动地图 → 打开详情 */
+  const handleEntryClick = useCallback(
+    (entry: RouteEntry) => {
+      setShowEntryList(false);
+      setActiveLocationId(entry.locationId);
+      mapRef.current?.setCenter([entry.longitude, entry.latitude]);
+      const loc = locations.find((l) => l.id === entry.locationId);
+      if (loc) setViewLocation(loc);
+    },
+    [locations],
+  );
+
   /** 切换打卡状态 */
   async function handleToggle(location: Location) {
     await update(location.id, { checked: !location.checked });
@@ -212,14 +224,8 @@ export function RouteMapPopup({
                     key={`${entry.locationId}-${i}`}
                     className="flex cursor-pointer items-center gap-2 border-b px-4 py-3 active:bg-[var(--adm-color-fill)]"
                     style={{ borderColor: 'var(--adm-color-border)' }}
-                    onClick={() => {
-                      setShowEntryList(false);
-                      setActiveLocationId(entry.locationId);
-                      // eslint-disable-next-line react-hooks/refs -- onClick 是事件处理器，可以访问 ref
-                      mapRef.current?.setCenter([entry.longitude, entry.latitude]);
-                      const loc = locations.find((l) => l.id === entry.locationId);
-                      if (loc) setViewLocation(loc);
-                    }}
+                    // eslint-disable-next-line react-hooks/refs -- onClick 是事件处理器，ref 在此场景合法
+                    onClick={() => { handleEntryClick(entry); }}
                   >
                     <span
                       className="text-xs"
