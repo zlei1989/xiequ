@@ -9,7 +9,7 @@
 
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 
 import { loadAmap } from '../services/amap';
 
@@ -110,6 +110,14 @@ function fetchSegmentPath(
 /**
  * 驾车路线 Hook
  *
+ * 根据路线标注点（时间顺序），调用高德 AMap.Driving API 获取真实驾车路线。
+ * 途经点超过 16 个时自动分段，串行请求后拼接 path。
+ *
+ * **依赖设计：**
+ * - `markersKey`（基于内容哈希的字符串）替代 `markers` 数组引用，避免 `[] !== []` 导致的无限循环
+ * - 仅依赖 `markersKey` + `active`，不从依赖数组读取自身输出（`path.length`）
+ * - `lastKeyRef` 在 `active=false` 时重置，确保下次打开弹层时重新请求
+ *
  * @param markers - 路线标注点（时间顺序）
  * @param active - 是否激活请求（弹层打开时为 true）
  */
@@ -120,35 +128,43 @@ export function useDrivingRoute(
   const [path, setPath] = useState<[number, number][]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const prevKeyRef = useRef<string>('');
+  /** 记录上次已完成请求的 markersKey，用于跳过重复请求 */
+  const lastKeyRef = useRef<string>('');
+
+  /**
+   * 基于 markers 内容生成稳定 key。
+   * 用 useMemo 确保新空数组 `[]` 也产出稳定的 `""` 字符串，
+   * 避免 `Object.is([], []) === false` 导致 effect 无限重执行。
+   */
+  const markersKey = useMemo(
+    () => markers.map((m) => m.locationId).join(','),
+    [markers],
+  );
 
   useEffect(() => {
-    // 生成标记键用于判断 markers 是否变化
-    const key = markers.map((m) => m.locationId).join(',');
-    // 悬空时清空
+    // 弹层关闭时重置所有状态，包括 key，确保下次打开时重新请求
     if (!active) {
       /* eslint-disable react-hooks/set-state-in-effect -- 弹层关闭时重置状态，属外部系统同步 */
       setPath([]);
       setLoading(false);
       setError(null);
       /* eslint-enable react-hooks/set-state-in-effect */
+      lastKeyRef.current = '';
       return;
     }
 
     // 标记不足 2 个时无需请求
     if (markers.length < 2) {
-       
       setPath([]);
       setLoading(false);
       setError(null);
-       
       return;
     }
 
-    // 标记未变化且已有结果时跳过
-    if (key === prevKeyRef.current && path.length > 0) return;
+    // 标记未变化时跳过（避免重复请求同一组 markers）
+    if (markersKey === lastKeyRef.current) return;
 
-    prevKeyRef.current = key;
+    lastKeyRef.current = markersKey;
     let aborted = false;
 
     async function fetchRoute() {
@@ -192,7 +208,9 @@ export function useDrivingRoute(
     return () => {
       aborted = true;
     };
-  }, [markers, active, path.length]);
+    // markersKey 基于内容哈希，稳定可靠；markers.length 变化时 key 必然变化
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- 见上方"依赖设计"注释
+  }, [markersKey, active]);
 
   return { path, loading, error };
 }
