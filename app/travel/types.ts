@@ -63,6 +63,8 @@ export type Route = {
   endDate: string;
   /** 持续天数，含头含尾（endDate - startDate + 1） */
   days: number;
+  /** 路线中去重后的位置数量 */
+  locationCount: number;
   /** 起点地名 */
   startName: string;
   /** 终点地名 */
