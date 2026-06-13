@@ -242,7 +242,7 @@ export const TripMap = forwardRef<
 
         // 自动适配视野以包含所有标注
         if (fitViewOnUpdate && routeMarkersRef.current.length > 0) {
-          map.setFitView(routeMarkersRef.current, false, [144, 144, 144, 144]);
+          map.setFitView(routeMarkersRef.current, false, [48, 48, 48, 48]);
         }
       }, [routeMode, routeMarkers, polylines, mapReady, onRouteMarkerClick, fitViewOnUpdate]);
 
