@@ -301,7 +301,7 @@ export async function updateTick(chipId: string) {
   const now = Date.now();
   const existing = db.prepare("SELECT 1 FROM watering_device_state WHERE chip_id = ?").get(chipId);
   if (existing) {
-    db.prepare("UPDATE watering_device_state SET last_tick_time = ? WHERE chip_id = ?").run(now, chipId);
+    db.prepare("UPDATE watering_device_state SET last_tick_time = ? WHERE chip_id = ?").run([now, chipId]);
   }
 }
 
@@ -366,7 +366,7 @@ export async function writeDeviceLog(
   db.prepare(`
     INSERT INTO watering_logs (chip_id, mac_address, event, state_id, message, state, voltage, created_time)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(
+  `).run([
     chipId,
     macAddress,
     event,
@@ -375,7 +375,7 @@ export async function writeDeviceLog(
     state ? JSON.stringify(state) : null,
     voltage ?? 0,
     new Date().toISOString(),
-  );
+  ]);
 }
 
 /**
