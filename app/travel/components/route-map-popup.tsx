@@ -8,8 +8,8 @@
 
 'use client';
 
-import { DotLoading, NavBar, Popup, Toast } from 'antd-mobile';
-import { UnorderedListOutline } from 'antd-mobile-icons';
+import { DotLoading, ErrorBlock, List, NavBar, Popup, Toast } from 'antd-mobile';
+import { UnorderedListOutline,EnvironmentOutline } from 'antd-mobile-icons';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useBackButton } from '@/lib/back-button';
@@ -200,49 +200,26 @@ export function RouteMapPopup({
       >
         <div className="overflow-y-auto" style={{ height: 'calc(100% - 45px)' }}>
           {groupedEntries.size === 0 ? (
-            <div
-              className="flex h-full items-center justify-center"
-              style={{ color: 'var(--adm-color-weak)' }}
-            >
-              暂无位置
-            </div>
+            <ErrorBlock status="empty" title="暂无位置" />
           ) : (
             Array.from(groupedEntries.entries()).map(([date, entries]) => (
-              <div key={date}>
-                {/* 日期分组标题 */}
-                <div
-                  className="sticky top-0 px-4 py-2 text-xs"
-                  style={{
-                    backgroundColor: 'var(--adm-color-box)',
-                    color: 'var(--adm-color-weak)',
-                  }}
-                >
-                  {date}
-                </div>
-                {/* 当日条目 */}
+              <List header={date} key={date}>
                 {entries.map((entry, i) => (
-                  <div
-                    className="flex cursor-pointer items-center gap-2 border-b px-4 py-3 active:bg-[var(--adm-color-fill)]"
+                  <List.Item
                     key={`${entry.locationId}-${i}`}
-                    style={{ borderColor: 'var(--adm-color-border)' }}
+                    prefix={(
+
+                        <EnvironmentOutline />
+
+                    )}
+                    arrowIcon={false}
                     // eslint-disable-next-line react-hooks/refs -- onClick 是事件处理器，ref 在此场景合法
                     onClick={() => { handleEntryClick(entry); }}
                   >
-                    <span
-                      className="text-xs"
-                      style={{ color: 'var(--adm-color-warning)' }}
-                    >
-                      📍
-                    </span>
-                    <span
-                      className="text-sm"
-                      style={{ color: 'var(--adm-color-text)' }}
-                    >
-                      {entry.name}
-                    </span>
-                  </div>
+                    {entry.name}
+                  </List.Item>
                 ))}
-              </div>
+              </List>
             ))
           )}
         </div>
