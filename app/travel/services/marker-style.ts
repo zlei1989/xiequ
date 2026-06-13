@@ -13,6 +13,9 @@
 /** 图标尺寸 */
 const ICON_SIZE = 24;
 
+/** 带编号标注的图标尺寸 */
+const NUMBERED_ICON_SIZE = 28;
+
 /** 从 DOM 读取 antd-mobile CSS 变量，不可用时返回 fallback */
 export function getAdmColor(varName: string, fallback: string): string {
   if (typeof document === 'undefined') return fallback;
@@ -58,5 +61,30 @@ export function createMarkerIcon(status: MarkerStatus) {
     image: createSvgDataUrl(color),
     size: [ICON_SIZE, ICON_SIZE] as [number, number],
     imageSize: [ICON_SIZE, ICON_SIZE] as [number, number],
+  };
+}
+
+/**
+ * 创建带编号的路线标注图标配置
+ *
+ * 用于路线弹出层地图（routeMode），生成双圈圆形 SVG + 居中数字序号。
+ * 颜色对齐 antd-mobile 语义色：激活态 warning 黄，非激活态 primary 蓝。
+ *
+ * @param num — 序号（1-based）
+ * @param isActive — 是否为当前激活的标注
+ * @returns 可用于 AMap.Icon 构造的配置对象
+ */
+export function createNumberedMarkerIcon(num: number, isActive: boolean) {
+  const varName = isActive ? '--adm-color-warning' : '--adm-color-primary';
+  const fallback = isActive ? '#ffc107' : '#1677ff';
+  const color = getAdmColor(varName, fallback);
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${NUMBERED_ICON_SIZE}" height="${NUMBERED_ICON_SIZE}">
+  <circle cx="14" cy="14" r="13" fill="${color}" stroke="white" stroke-width="2"/>
+  <text x="14" y="14" text-anchor="middle" dominant-baseline="central" fill="white" font-size="12" font-weight="bold">${String(num)}</text>
+</svg>`;
+  return {
+    image: `data:image/svg+xml;charset=utf-8,${svg.replace(/#/g, '%23')}`,
+    size: [NUMBERED_ICON_SIZE, NUMBERED_ICON_SIZE] as [number, number],
+    imageSize: [NUMBERED_ICON_SIZE, NUMBERED_ICON_SIZE] as [number, number],
   };
 }

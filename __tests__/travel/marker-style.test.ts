@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 
-import { createMarkerIcon, getAdmColor } from '@/app/travel/services/marker-style';
+import { createMarkerIcon, createNumberedMarkerIcon, getAdmColor } from '@/app/travel/services/marker-style';
 
 describe('getAdmColor', () => {
   it('returns fallback color when document is not available', () => {
@@ -47,5 +47,37 @@ describe('createMarkerIcon', () => {
     expect(decoded).toContain('<circle');
     expect(decoded).toContain('r="11"');
     expect(decoded).toContain('r="4"');
+  });
+});
+
+describe('createNumberedMarkerIcon', () => {
+  it('returns icon config with warning color for active marker', () => {
+    const icon = createNumberedMarkerIcon(1, true);
+    expect(icon.image).toContain('data:image/svg+xml');
+    expect(icon.image).toContain('%23ffc107'); // warning fallback
+    expect(icon.size).toEqual([28, 28]);
+    expect(icon.imageSize).toEqual([28, 28]);
+  });
+
+  it('returns icon config with primary color for inactive marker', () => {
+    const icon = createNumberedMarkerIcon(2, false);
+    expect(icon.image).toContain('%231677ff'); // primary fallback
+  });
+
+  it('generates SVG with circle and text elements', () => {
+    const icon = createNumberedMarkerIcon(5, false);
+    const decoded = decodeURIComponent(
+      icon.image.replace('data:image/svg+xml;charset=utf-8,', ''),
+    );
+    expect(decoded).toContain('<circle');
+    expect(decoded).toContain('r="13"');
+    expect(decoded).toContain('<text');
+    expect(decoded).toContain('>5<');
+  });
+
+  it('encodes # in colors to %23', () => {
+    const icon = createNumberedMarkerIcon(1, true);
+    // 不应出现未编码的 #（data URL 中 # 是 fragment 分隔符）
+    expect(icon.image).not.toMatch(/(?<!%23)#/);
   });
 });
