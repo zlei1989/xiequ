@@ -15,6 +15,7 @@ import { forwardRef, useImperativeHandle, useEffect, useRef, useState } from 're
 import { readTheme, STYLE_MAP, useMapTheme } from '../hooks/use-map-theme';
 import { loadAmap } from '../services/amap';
 import { createMarkerEngine } from '../services/marker-engine';
+import { getAdmColor } from '../services/marker-style';
 
 import type { Location, RouteMarker } from '../types';
 import type { CSSProperties } from 'react';
@@ -194,18 +195,27 @@ export const TripMap = forwardRef<
         }
         polylinesRef.current = [];
 
-        // 创建路线标注（带编号）
+        // 创建路线标注（带编号，图标样式参考地图页标注）
         if (routeMarkers && routeMarkers.length > 0) {
+          const color = getAdmColor('--adm-color-primary', '#1677ff');
           let index = 0;
           for (const rm of routeMarkers) {
             const i = index++;
+            // 生成带编号的圆形 SVG 图标，与地图页标注保持一致的视觉风格
+            const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24">
+              <circle cx="12" cy="12" r="11" fill="${color}" stroke="white" stroke-width="2"/>
+              <text x="12" y="17" text-anchor="middle" fill="white" font-size="11" font-weight="bold" font-family="Arial,sans-serif">${String(i + 1)}</text>
+            </svg>`;
+            const icon = new window.AMap.Icon({
+              image: `data:image/svg+xml;charset=utf-8,${svg.replace(/#/g, '%23')}`,
+              size: [24, 24],
+              imageSize: [24, 24],
+            });
             const marker = new window.AMap.Marker({
               position: [rm.longitude, rm.latitude],
               title: rm.name,
-              label: {
-                content: `<div style="background:#1677ff;color:#fff;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:bold">${String(i + 1)}</div>`,
-                offset: new window.AMap.Pixel(-10, -10),
-              },
+              icon,
+              offset: new window.AMap.Pixel(-12, -12),
             });
             marker.on('click', () => {
               onRouteMarkerClick?.(rm);
