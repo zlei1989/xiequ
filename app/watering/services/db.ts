@@ -1,4 +1,4 @@
-import { getDb } from "@/lib/db";
+import { getDb, getDbSync } from "@/lib/db";
 import { newId } from "@/lib/utils";
 import type { DeviceConfig, DeviceState, DeviceItem } from "../types";
 
@@ -362,7 +362,7 @@ export async function writeDeviceLog(
   stateId?: string,
   message?: string,
 ) {
-  const db = getDb();
+  const db = getDbSync();
   db.prepare(`
     INSERT INTO watering_logs (chip_id, mac_address, event, state_id, message, state, voltage, created_time)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
