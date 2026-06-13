@@ -67,11 +67,12 @@ export function SearchPopup({
 
   return (
     <Popup
-      visible={visible}
-      onMaskClick={onClose}
-      onClose={onClose}
+      bodyClassName="min-h-[60vh] max-h-[75vh] overflow-auto"
+      closeOnMaskClick={true}
       position="bottom"
-      bodyClassName="rounded-t-2xl min-h-[60vh] max-h-[75vh] overflow-auto"
+      visible={visible}
+      onClose={onClose}
+      onMaskClick={onClose}
     >
       <NavBar onBack={onClose}>添加位置</NavBar>
       <SearchBar placeholder="选择位置" onSearch={(val) => { void handleSearch(val); }} />
@@ -85,16 +86,17 @@ export function SearchPopup({
         <List>
           {results.map((item) => (
             <List.Item
-              key={item.id}
-              description={item.address}
               clickable
-              onClick={() =>
-              { onAdd({
-                name: item.name,
-                address: item.address,
-                longitude: item.longitude,
-                latitude: item.latitude,
-              }); }
+              description={item.address}
+              key={item.id}
+              onClick={() => {
+                onAdd({
+                  name: item.name,
+                  address: item.address,
+                  longitude: item.longitude,
+                  latitude: item.latitude,
+                });
+              }
               }
             >
               {item.name}

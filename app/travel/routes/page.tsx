@@ -33,9 +33,9 @@ export default function RoutesPage() {
   if (routes.length === 0) {
     return (
       <ErrorBlock
+        description="添加精彩瞬间后将自动生成路线"
         status="empty"
         title="暂无路线"
-        description="添加精彩瞬间后将自动生成路线"
       />
     );
   }

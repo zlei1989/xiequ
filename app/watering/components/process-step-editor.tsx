@@ -44,9 +44,9 @@ export function ProcessStepEditor({
       width: 60,
       render: (_: unknown, _record: Interrupt, index: number) => (
         <Button
-          type="text"
-          size="small"
           icon={<EditOutlined />}
+          size="small"
+          type="text"
           onClick={() => { onEditInterrupt(index); }}
         />
       ),
@@ -62,9 +62,9 @@ export function ProcessStepEditor({
           步骤名称
         </label>
         <Input
+          placeholder="输入步骤名称"
           value={step.name}
           onChange={(e) => { onChange({ ...step, name: e.target.value }); }}
-          placeholder="输入步骤名称"
         />
       </div>
 
@@ -74,18 +74,18 @@ export function ProcessStepEditor({
         </label>
         {loadOptions.length > 0 ? (
           <Select
+            allowClear
+            className="w-full"
+            options={loadOptions}
+            placeholder="选择负载（可选）"
             value={step.component ?? undefined}
             onChange={(v) => { onChange({ ...step, component: v }); }}
-            options={loadOptions}
-            allowClear
-            placeholder="选择负载（可选）"
-            className="w-full"
           />
         ) : (
           <Empty
-            image={Empty.PRESENTED_IMAGE_SIMPLE}
-            description="设备无可用负载（loads），请等待设备上报 GPIO 状态"
             className="my-2"
+            description="设备无可用负载（loads），请等待设备上报 GPIO 状态"
+            image={Empty.PRESENTED_IMAGE_SIMPLE}
           />
         )}
       </div>
@@ -100,12 +100,12 @@ export function ProcessStepEditor({
          * 无负载时参数无意义，故禁用。
          */}
         <InputNumber
+          className="w-full"
+          disabled={!hasLoad}
           value={step.value.begin as number}
           onChange={(v) =>
           { onChange({ ...step, value: { ...step.value, begin: v ?? 0 } }); }
           }
-          disabled={!hasLoad}
-          className="w-full"
         />
       </div>
 
@@ -114,12 +114,12 @@ export function ProcessStepEditor({
           停止参数
         </label>
         <InputNumber
+          className="w-full"
+          disabled={!hasLoad}
           value={step.value.end as number}
           onChange={(v) =>
           { onChange({ ...step, value: { ...step.value, end: v ?? 0 } }); }
           }
-          disabled={!hasLoad}
-          className="w-full"
         />
       </div>
 
@@ -128,11 +128,11 @@ export function ProcessStepEditor({
           超时限制（毫秒）
         </label>
         <InputNumber
+          className="w-full"
+          min={0}
+          step={1000}
           value={step.timeout}
           onChange={(v) => { onChange({ ...step, timeout: v ?? 600000 }); }}
-          step={1000}
-          min={0}
-          className="w-full"
         />
       </div>
 
@@ -142,9 +142,9 @@ export function ProcessStepEditor({
         </label>
         <Switch
           checked={!step.disabled}
-          onChange={(checked) => { onChange({ ...step, disabled: !checked }); }}
           checkedChildren="启用"
           unCheckedChildren="禁用"
+          onChange={(checked) => { onChange({ ...step, disabled: !checked }); }}
         />
       </div>
 
@@ -153,19 +153,19 @@ export function ProcessStepEditor({
           中断方式
         </label>
         <Table
-          dataSource={step.interrupts || []}
-          columns={interruptColumns}
-          rowKey="key"
-          pagination={false}
-          size="small"
           bordered
+          columns={interruptColumns}
+          dataSource={step.interrupts || []}
+          pagination={false}
+          rowKey="key"
+          size="small"
         />
         <Button
-          type="dashed"
-          icon={<PlusOutlined />}
-          onClick={onAddInterrupt}
           block
           className="mt-2"
+          icon={<PlusOutlined />}
+          type="dashed"
+          onClick={onAddInterrupt}
         >
           添加
         </Button>

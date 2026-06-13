@@ -71,10 +71,10 @@ describe('按钮自动复位', () => {
 
     const { rerender } = render(
       <DeviceForm
-        identity={defaultIdentity}
-        onIdentityChange={vi.fn()}
         gpio={defaultGpio}
+        identity={defaultIdentity}
         onGpioChange={onGpioChange}
+        onIdentityChange={vi.fn()}
       />,
     );
 
@@ -82,10 +82,10 @@ describe('按钮自动复位', () => {
     const syncGpio = () => {
       rerender(
         <DeviceForm
-          identity={defaultIdentity}
-          onIdentityChange={vi.fn()}
           gpio={getState()}
+          identity={defaultIdentity}
           onGpioChange={onGpioChange}
+          onIdentityChange={vi.fn()}
         />,
       );
     };
@@ -119,20 +119,20 @@ describe('按钮自动复位', () => {
 
     const { rerender } = render(
       <DeviceForm
-        identity={defaultIdentity}
-        onIdentityChange={vi.fn()}
         gpio={defaultGpio}
+        identity={defaultIdentity}
         onGpioChange={onGpioChange}
+        onIdentityChange={vi.fn()}
       />,
     );
 
     const syncGpio = () => {
       rerender(
         <DeviceForm
-          identity={defaultIdentity}
-          onIdentityChange={vi.fn()}
           gpio={getState()}
+          identity={defaultIdentity}
           onGpioChange={onGpioChange}
+          onIdentityChange={vi.fn()}
         />,
       );
     };

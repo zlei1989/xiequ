@@ -111,29 +111,29 @@ export default function TravelPage() {
   return (
     <div className="relative flex h-full flex-col">
       <TripMap
-        ref={mapRef}
-        locations={sortedLocations}
-        onMarkerClick={onMarkerClick}
         className="flex-1"
+        locations={sortedLocations}
+        ref={mapRef}
+        onMarkerClick={onMarkerClick}
       />
 
       <LocationViewPopup
         location={viewLocation}
-        visible={!!viewLocation}
-        onClose={() => { setViewLocation(null); }}
         moments={moments}
-        onEdit={(loc) => { setEditLocation(loc); }}
-        onToggle={handleToggle}
-        onDelete={handleDelete}
+        visible={!!viewLocation}
         onAddMoment={() => {
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- viewLocation 非空
           setEditMoment({ locationId: viewLocation!.id, moment: null });
         }}
+        onClose={() => { setViewLocation(null); }}
+        onDelete={handleDelete}
+        onDeleteMoment={async (m) => { await removeMoment(m.id); }}
+        onEdit={(loc) => { setEditLocation(loc); }}
         onEditMoment={(m) => {
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- viewLocation 非空
           setEditMoment({ locationId: viewLocation!.id, moment: m });
         }}
-        onDeleteMoment={async (m) => { await removeMoment(m.id); }}
+        onToggle={handleToggle}
       />
 
       <LocationEditPopup
@@ -146,15 +146,15 @@ export default function TravelPage() {
       <MomentEditPopup
         moment={editMoment?.moment || null}
         visible={!!editMoment}
+        onAdd={addMoment}
         onClose={() => { setEditMoment(null); }}
         onSave={updateMoment}
-        onAdd={addMoment}
       />
 
       <SearchPopup
         visible={searchVisible}
-        onClose={() => { setSearchVisible(false); }}
         onAdd={(data) => { void handleAdd(data); }}
+        onClose={() => { setSearchVisible(false); }}
       />
     </div>
   );

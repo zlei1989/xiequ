@@ -51,15 +51,15 @@ export function ScheduleEditor({
           类型
         </label>
         <Select
-          value={schedule.type}
-          onChange={(v) => { update({ ...schedule, type: v }); }}
+          className="w-full"
           options={[
             { value: 'day', label: '每天' },
             { value: 'minute', label: '每分钟' },
             { value: 'week', label: '每周' },
             { value: 'month', label: '每月' },
           ]}
-          className="w-full"
+          value={schedule.type}
+          onChange={(v) => { update({ ...schedule, type: v }); }}
         />
       </div>
 
@@ -68,11 +68,11 @@ export function ScheduleEditor({
           间隔（天）
         </label>
         <InputNumber
+          className="w-full"
+          min={1}
+          step={1}
           value={schedule.interval}
           onChange={(v) => { update({ ...schedule, interval: v ?? 1 }); }}
-          step={1}
-          min={1}
-          className="w-full"
         />
       </div>
 
@@ -81,6 +81,8 @@ export function ScheduleEditor({
           时间
         </label>
         <TimePicker
+          className="w-full"
+          format="HH:mm"
           value={timeValue}
           onChange={(d: Dayjs | null) => {
             if (d) {
@@ -89,8 +91,6 @@ export function ScheduleEditor({
               update({ ...schedule, value: ms });
             }
           }}
-          format="HH:mm"
-          className="w-full"
         />
       </div>
 
@@ -99,13 +99,13 @@ export function ScheduleEditor({
           执行流程
         </label>
         <Select
-          value={schedule.process}
-          onChange={(v) => { update({ ...schedule, process: v }); }}
+          className="w-full"
           options={processes.map((p, i) => ({
             value: i,
             label: p.name || `流程 ${String(i)}`,
           }))}
-          className="w-full"
+          value={schedule.process}
+          onChange={(v) => { update({ ...schedule, process: v }); }}
         />
       </div>
 
@@ -115,9 +115,9 @@ export function ScheduleEditor({
         </label>
         <Switch
           checked={!schedule.disabled}
-          onChange={(checked) => { update({ ...schedule, disabled: !checked }); }}
           checkedChildren="启用"
           unCheckedChildren="禁用"
+          onChange={(checked) => { update({ ...schedule, disabled: !checked }); }}
         />
       </div>
     </div>

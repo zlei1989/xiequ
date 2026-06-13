@@ -32,12 +32,12 @@ export function ResponseLog({
 }) {
   return (
     <Card
-      title="请求日志"
       extra={
-        <Button size="mini" color="danger" fill="none" onClick={onClear}>
+        <Button color="danger" fill="none" size="mini" onClick={onClear}>
           清空
         </Button>
       }
+      title="请求日志"
     >
       {logs.length === 0 ? (
         <ErrorBlock status="empty" />
@@ -74,10 +74,14 @@ function LogItem({ log }: { log: LogEntry }) {
 
   return (
     <List.Item
-      prefix={
-        <Tag color={meta.color} fill="solid">
-          {meta.label}
-        </Tag>
+      clickable={false}
+      description={
+        <span
+          className={`break-all ${canExpand ? 'cursor-pointer select-none' : ''}`}
+          onClick={canExpand ? toggleExpand : undefined}
+        >
+          {urlTruncated}
+        </span>
       }
       extra={
         log.status !== undefined ? (
@@ -90,15 +94,11 @@ function LogItem({ log }: { log: LogEntry }) {
           </Tag>
         ) : undefined
       }
-      description={
-        <span
-          onClick={canExpand ? toggleExpand : undefined}
-          className={`break-all ${canExpand ? 'cursor-pointer select-none' : ''}`}
-        >
-          {urlTruncated}
-        </span>
+      prefix={
+        <Tag color={meta.color} fill="solid">
+          {meta.label}
+        </Tag>
       }
-      clickable={false}
     >
       <span className="text-[11px] text-gray-400">
         {log.timestamp}

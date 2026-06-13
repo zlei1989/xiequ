@@ -133,8 +133,8 @@ export function DeviceForm({
         </Form.Item>
         <Form.Item label="stateId">
           <Input
-            value={identity.stateId}
             readOnly
+            value={identity.stateId}
           />
         </Form.Item>
       </Form>
@@ -144,9 +144,9 @@ export function DeviceForm({
         <Form.Header>数字传感器 (0/1)</Form.Header>
         {Object.entries(gpio.digitalSensors).map(([key, val]) => (
           <Form.Item
+            childElementPosition="right"
             key={key}
             label={`${key} (${DIGITAL_LABELS[key] ?? key})`}
-            childElementPosition="right"
           >
             <Switch
               checked={val === 1}
@@ -169,9 +169,9 @@ export function DeviceForm({
         <Form.Header>按钮 (0/1，切为 0 后 2 秒自动回 1)</Form.Header>
         {Object.entries(gpio.buttons).map(([key, val]) => (
           <Form.Item
+            childElementPosition="right"
             key={key}
             label={key}
-            childElementPosition="right"
           >
             <Switch
               checked={val === 1}
@@ -195,8 +195,8 @@ export function DeviceForm({
             <Grid columns={4} gap={12}>
               <Grid.Item span={3}>
                 <Slider
-                  min={0}
                   max={1024}
+                  min={0}
                   step={1}
                   value={val}
                   onChange={(v) => {
@@ -212,7 +212,7 @@ export function DeviceForm({
                 />
               </Grid.Item>
               <Grid.Item span={1}>
-                <Stepper step={1} defaultValue={val} />
+                <Stepper defaultValue={val} step={1} />
               </Grid.Item>
 
             </Grid>
@@ -250,7 +250,7 @@ export function DeviceForm({
             return (
               <Grid.Item key={key}>
                 <AutoCenter>
-                  <Space direction="vertical" className="gap-0">
+                  <Space className="gap-0" direction="vertical">
                     <ProgressCircle
                       percent={pwmPercent}
                       style={{

@@ -67,28 +67,29 @@ export function Shell({ children }: { children: ReactNode }) {
       <SafeArea position="top" />
       <NavBar
         backIcon={<AppstoreOutline />}
-        onBack={() => { router.push('/'); }}
         right={
           <span className="flex justify-end text-2xl">
             <MoreOutline onClick={() => { setActionVisible(true); }} />
           </span>
         }
+        onBack={() => { router.push('/'); }}
       >
         旅行计划
       </NavBar>
 
       <div className="flex-1 overflow-auto">{children}</div>
 
-      <TabBar activeKey={pathname} onChange={(key) => { router.push(key); }} safeArea>
-        <TabBar.Item key="/travel" icon={<EnvironmentOutline />} title="地图" />
-        <TabBar.Item key="/travel/list" icon={<StarOutline />} title="收藏" />
-        <TabBar.Item key="/travel/routes" icon={<TravelOutline />} title="路线" />
+      <TabBar safeArea activeKey={pathname} onChange={(key) => { router.push(key); }}>
+        <TabBar.Item icon={<EnvironmentOutline />} key="/travel" title="地图" />
+        <TabBar.Item icon={<StarOutline />} key="/travel/list" title="收藏" />
+        <TabBar.Item icon={<TravelOutline />} key="/travel/routes" title="路线" />
       </TabBar>
 
       <SafeArea position="bottom" />
 
       <ActionSheet
-        visible={actionVisible}
+        closeOnAction
+        safeArea
         actions={[
           { key: 'overview', text: '概览' },
           { key: 'all', text: '显示全部' },
@@ -96,10 +97,9 @@ export function Shell({ children }: { children: ReactNode }) {
           { key: 'uncheck', text: '筛选待去' },
           { key: 'add', text: '添加位置' },
         ]}
+        visible={actionVisible}
         onAction={handleAction}
         onClose={() => { setActionVisible(false); }}
-        closeOnAction
-        safeArea
       />
     </div>
   );

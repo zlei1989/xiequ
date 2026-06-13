@@ -92,17 +92,17 @@ export function LocationListItem({
       ]}
     >
       <List.Item
-        prefix={
-          <CoverImage
-            src={iconUrl}
-            alt={location.name}
-            width={44}
-            height={44}
-            shape="circle"
-          />
-        }
         description={location.address}
         extra={<StatusTag checked={location.checked} />}
+        prefix={
+          <CoverImage
+            alt={location.name}
+            height={44}
+            shape="circle"
+            src={iconUrl}
+            width={44}
+          />
+        }
         onClick={() => { onClick(location); }}
       >
         {location.name}

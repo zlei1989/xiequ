@@ -98,46 +98,47 @@ export function MomentEditPopup({
 
   return (
     <Popup
-      visible={visible}
-      onMaskClick={onClose}
-      onClose={onClose}
-      position="bottom"
       bodyClassName="rounded-t-2xl min-h-[40vh] max-h-[75vh] overflow-auto"
+      closeOnMaskClick={true}
+      position="bottom"
+      visible={visible}
+      onClose={onClose}
+      onMaskClick={onClose}
     >
       <NavBar
-        onBack={onClose}
         right={
-          <Button color="primary" size="small" loading={saving} onClick={handleSave}>
+          <Button color="primary" loading={saving} size="small" onClick={handleSave}>
             保存
           </Button>
         }
+        onBack={onClose}
       >
         {isEdit ? '编辑瞬间' : '添加瞬间'}
       </NavBar>
-      <Form layout="vertical" className="px-4">
+      <Form className="px-4" layout="vertical">
         <Form.Item
           label="日期"
           onClick={() => { setDatePickerVisible(true); }}
         >
           <DatePicker
+            max={new Date()}
+            min={new Date(2000, 0, 1)}
+            value={dateStrToDate(date)}
             visible={datePickerVisible}
             onClose={() => { setDatePickerVisible(false); }}
-            value={dateStrToDate(date)}
             onConfirm={(val) => {
               setDate(dateToStr(val));
             }}
-            min={new Date(2000, 0, 1)}
-            max={new Date()}
           >
             {(value) => (value ? dateToStr(value) : '请选择日期')}
           </DatePicker>
         </Form.Item>
         <Form.Item label="内容">
           <TextArea
-            value={text}
-            onChange={setText}
             placeholder="记录这一刻..."
             rows={4}
+            value={text}
+            onChange={setText}
           />
         </Form.Item>
       </Form>

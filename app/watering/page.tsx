@@ -23,9 +23,9 @@ export default function WateringPage() {
         <h2 className="m-0 text-lg font-semibold">设备列表</h2>
         <Button
           icon={<ReloadOutlined />}
-          onClick={() => { void refresh(); }}
           loading={loading}
           size="small"
+          onClick={() => { void refresh(); }}
         >
           刷新
         </Button>
@@ -40,7 +40,7 @@ export default function WateringPage() {
         <Empty description="暂无设备，等待 IoT 设备上线" />
       ) : (
         devices.map((device) => (
-          <DeviceCard key={device.chipId} device={device} onRefresh={() => { void refresh(); }} />
+          <DeviceCard device={device} key={device.chipId} onRefresh={() => { void refresh(); }} />
         ))
       )}
     </div>

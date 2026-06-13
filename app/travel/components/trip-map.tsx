@@ -258,9 +258,9 @@ export const TripMap = forwardRef<
         return (
           <div className="flex h-full items-center justify-center">
             <ErrorBlock
+              description="请检查网络连接后刷新页面"
               status="default"
               title="地图加载失败"
-              description="请检查网络连接后刷新页面"
             />
           </div>
         );

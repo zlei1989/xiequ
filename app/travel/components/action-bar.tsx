@@ -34,12 +34,12 @@ export function ActionBar({ actions }: { actions: Action[] }) {
         <Space wrap>
           {actions.map((action) => (
             <Button
-              key={action.key}
-              size="small"
               color={action.color}
-              fill={action.fill}
-              loading={action.loading}
               disabled={action.disabled}
+              fill={action.fill}
+              key={action.key}
+              loading={action.loading}
+              size="small"
               onClick={action.onClick}
             >
               {action.text}

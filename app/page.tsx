@@ -54,11 +54,11 @@ export default function Home() {
       <List>
         {apps.map((app) => (
           <List.Item
+            arrowIcon
+            clickable
+            description={app.description}
             key={app.href}
             prefix={app.icon}
-            description={app.description}
-            clickable
-            arrowIcon
             onClick={() => { handleClick(app.href); }}
           >
             {app.title}

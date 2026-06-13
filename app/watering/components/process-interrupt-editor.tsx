@@ -41,9 +41,9 @@ export function ProcessInterruptEditor({
           中断名称
         </label>
         <Input
+          placeholder="输入中断名称"
           value={interrupt.name}
           onChange={(e) => { onChange({ ...interrupt, name: e.target.value }); }}
-          placeholder="输入中断名称"
         />
       </div>
 
@@ -53,16 +53,16 @@ export function ProcessInterruptEditor({
         </label>
         {sensorOptions.length > 0 ? (
           <Select
+            className="w-full"
+            options={sensorOptions}
             value={interrupt.component}
             onChange={(v) => { onChange({ ...interrupt, component: v }); }}
-            options={sensorOptions}
-            className="w-full"
           />
         ) : (
           <Empty
-            image={Empty.PRESENTED_IMAGE_SIMPLE}
-            description="设备无可用传感器（sensors），请等待设备上报 GPIO 状态"
             className="my-2"
+            description="设备无可用传感器（sensors），请等待设备上报 GPIO 状态"
+            image={Empty.PRESENTED_IMAGE_SIMPLE}
           />
         )}
       </div>
@@ -72,6 +72,8 @@ export function ProcessInterruptEditor({
           信号类型
         </label>
         <Radio.Group
+          buttonStyle="solid"
+          optionType="button"
           value={signalType}
           onChange={(e) =>
           { onChange({
@@ -79,8 +81,6 @@ export function ProcessInterruptEditor({
             signalType: e.target.value as Interrupt['signalType'],
           }); }
           }
-          optionType="button"
-          buttonStyle="solid"
         >
           <Radio.Button value="digital">数字信号</Radio.Button>
           <Radio.Button value="analog">模拟信号</Radio.Button>
@@ -95,11 +95,11 @@ export function ProcessInterruptEditor({
           </label>
           <Switch
             checked={interrupt.state === 1 || interrupt.state === true}
+            checkedChildren="触发 (1)"
+            unCheckedChildren="未触发 (0)"
             onChange={(checked) =>
             { onChange({ ...interrupt, state: checked ? 1 : 0 }); }
             }
-            checkedChildren="触发 (1)"
-            unCheckedChildren="未触发 (0)"
           />
         </div>
       )}
@@ -112,6 +112,8 @@ export function ProcessInterruptEditor({
               逻辑
             </label>
             <Radio.Group
+              buttonStyle="solid"
+              optionType="button"
               value={logic}
               onChange={(e) =>
               { onChange({
@@ -119,8 +121,6 @@ export function ProcessInterruptEditor({
                 logic: e.target.value as Interrupt['logic'],
               }); }
               }
-              optionType="button"
-              buttonStyle="solid"
             >
               <Radio.Button value=">">大于</Radio.Button>
               <Radio.Button value="<">小于</Radio.Button>
@@ -132,14 +132,14 @@ export function ProcessInterruptEditor({
               触发阈值
             </label>
             <InputNumber
+              className="w-full"
+              min={0}
+              placeholder="输入模拟信号触发阈值"
+              step={1}
               value={threshold}
               onChange={(v) =>
               { onChange({ ...interrupt, threshold: v ?? 0 }); }
               }
-              min={0}
-              step={1}
-              className="w-full"
-              placeholder="输入模拟信号触发阈值"
             />
             <div className="mt-1 text-[11px] text-gray-400">
               当传感器值{logic === '>' ? '大于' : '小于'}阈值时触发中断
@@ -153,11 +153,11 @@ export function ProcessInterruptEditor({
           屏蔽抖动间隔（毫秒）
         </label>
         <InputNumber
+          className="w-full"
+          min={0}
+          step={100}
           value={interrupt.intercept}
           onChange={(v) => { onChange({ ...interrupt, intercept: v ?? 0 }); }}
-          step={100}
-          min={0}
-          className="w-full"
         />
         {/*
          * intercept 用于防抖：在首次触发中断后，该时间段内忽略同一传感器的重复触发。
@@ -170,11 +170,11 @@ export function ProcessInterruptEditor({
           延迟检测（毫秒）
         </label>
         <InputNumber
+          className="w-full"
+          min={0}
+          step={1000}
           value={interrupt.delay}
           onChange={(v) => { onChange({ ...interrupt, delay: v ?? 0 }); }}
-          step={1000}
-          min={0}
-          className="w-full"
         />
       </div>
 
@@ -183,11 +183,11 @@ export function ProcessInterruptEditor({
           持续时间（毫秒）
         </label>
         <InputNumber
+          className="w-full"
+          min={0}
+          step={1000}
           value={interrupt.duration}
           onChange={(v) => { onChange({ ...interrupt, duration: v ?? 0 }); }}
-          step={1000}
-          min={0}
-          className="w-full"
         />
       </div>
 
@@ -197,9 +197,9 @@ export function ProcessInterruptEditor({
         </label>
         <Switch
           checked={!interrupt.disabled}
-          onChange={(checked) => { onChange({ ...interrupt, disabled: !checked }); }}
           checkedChildren="启用"
           unCheckedChildren="禁用"
+          onChange={(checked) => { onChange({ ...interrupt, disabled: !checked }); }}
         />
       </div>
     </div>

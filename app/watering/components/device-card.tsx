@@ -129,14 +129,13 @@ export function DeviceCard({
 
   return (
     <Card
-      size="small"
-      title={device.name || `设备-${device.chipId}`}
+      className="mb-3"
       extra={
         <div className="flex items-center gap-1">
           <Button
-            type="text"
-            size="small"
             icon={<FileTextOutlined />}
+            size="small"
+            type="text"
             onClick={() =>
             { router.push(
               `/watering/logs/${device.chipId}?macAddress=${encodeURIComponent(device.macAddress)}`,
@@ -146,9 +145,9 @@ export function DeviceCard({
             日志
           </Button>
           <Button
-            type="text"
-            size="small"
             icon={<EditOutlined />}
+            size="small"
+            type="text"
             onClick={() =>
             { router.push(
               `/watering/devices/${device.chipId}?macAddress=${encodeURIComponent(device.macAddress)}`,
@@ -159,20 +158,21 @@ export function DeviceCard({
           </Button>
           {/* eslint-disable @typescript-eslint/no-misused-promises -- antd 支持 Promise */}
           <Popconfirm title="确认清除设备状态？" onConfirm={onClickClear}>
-            <Button type="text" size="small" icon={<DeleteOutlined />} danger />
+            <Button danger icon={<DeleteOutlined />} size="small" type="text" />
           </Popconfirm>
           <Popconfirm title="确认删除设备？不可恢复。" onConfirm={handleRemove}>
-            <Button type="text" size="small" danger>
+            <Button danger size="small" type="text">
               删除
             </Button>
           </Popconfirm>
           {/* eslint-enable @typescript-eslint/no-misused-promises */}
         </div>
       }
-      className="mb-3"
+      size="small"
+      title={device.name || `设备-${device.chipId}`}
     >
       {/* 设备信息 — 1 行 2 列 */}
-      <Row gutter={[8, 4]} className="mb-2">
+      <Row className="mb-2" gutter={[8, 4]}>
         <Col span={12}>
           <span className="text-xs text-gray-400">芯片: </span>
           <span className="text-[13px]">{device.chipId}</span>
@@ -199,11 +199,11 @@ export function DeviceCard({
         <Col span={12}>
           <span className="text-xs text-gray-400">状态: </span>
           {device.isOnline ? (
-            <Tag color="green" className="m-0">
+            <Tag className="m-0" color="green">
               在线
             </Tag>
           ) : (
-            <Tag color="default" className="m-0">
+            <Tag className="m-0" color="default">
               离线
             </Tag>
           )}
@@ -251,19 +251,17 @@ export function DeviceCard({
               }
             }
             return rows.map((row, rowIdx) => (
-              <Row gutter={8} key={rowIdx} className="mb-1">
+              <Row className="mb-1" gutter={8} key={rowIdx}>
                 {row.map(({ idx, span }) => {
                   const exec = isExec(idx);
                   // idleSleep 模式下仅允许终止正在执行的流程
                   const disabled = !device.isOnline || (!exec && device.idleSleep);
                   return (
-                    <Col span={span} key={idx}>
+                    <Col key={idx} span={span}>
                       <Button
-                        type="primary"
+                        block
                         danger={exec}
                         disabled={disabled}
-                        block
-                        size="small"
                         icon={
                           exec ? (
                             <PauseCircleOutlined />
@@ -271,6 +269,8 @@ export function DeviceCard({
                             <ThunderboltOutlined />
                           )
                         }
+                        size="small"
+                        type="primary"
                         onClick={() => { void onClickSwitch(idx); }}
                       >
                         {exec ? '停止' : processes[idx]?.name ?? ''}

@@ -54,10 +54,10 @@ export function MomentForm({
   return (
     <Form layout="horizontal">
       <Form.Item label="日期">
-        <Input value={date} onChange={setDate} placeholder="YYYY-MM-DD" />
+        <Input placeholder="YYYY-MM-DD" value={date} onChange={setDate} />
       </Form.Item>
       <Form.Item label="内容">
-        <Input value={text} onChange={setText} placeholder="记录这一刻..." />
+        <Input placeholder="记录这一刻..." value={text} onChange={setText} />
       </Form.Item>
       <Form.Item>
         <Button color="primary" loading={submitting} onClick={handleSubmit}>

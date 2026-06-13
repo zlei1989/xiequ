@@ -57,8 +57,8 @@ export default function DeviceDetailPage({
         <h3 className="m-0 text-base">{config.name || '设备配置'}</h3>
         <div className="flex gap-2">
           <Button
-            type="primary"
             icon={<SaveOutlined />}
+            type="primary"
             onClick={() => { void saveRef.current(); }}
           >
             保存
@@ -78,6 +78,8 @@ export default function DeviceDetailPage({
       <DeviceEditor
         config={config}
         gpio={gpio}
+        saveRef={saveRef}
+        onRemove={handleRemove}
         onSave={async (data) => {
           try {
             await save(data);
@@ -87,8 +89,6 @@ export default function DeviceDetailPage({
             message.error(err instanceof Error ? err.message : String(err) || '保存失败');
           }
         }}
-        onRemove={handleRemove}
-        saveRef={saveRef}
       />
     </div>
   );

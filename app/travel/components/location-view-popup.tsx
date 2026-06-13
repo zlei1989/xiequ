@@ -99,14 +99,15 @@ export function LocationViewPopup({
 
   return (
     <Popup
-      visible={visible}
-      onMaskClick={onClose}
-      onClose={onClose}
-      position="bottom"
       bodyClassName="rounded-t-2xl max-h-[75vh] overflow-auto"
+      closeOnMaskClick={true}
+      position="bottom"
+      visible={visible}
+      onClose={onClose}
+      onMaskClick={onClose}
     >
       <div className="relative">
-        <CoverImage src={coverUrl} alt={loc.name} height={240} />
+        <CoverImage alt={loc.name} height={240} src={coverUrl} />
         <div className="absolute bottom-2 right-2">
           <UploadImage
             locationId={loc.id}
@@ -119,7 +120,7 @@ export function LocationViewPopup({
       <List>
         <List.Item
           extra={
-            <Button size="small" fill="none" color="primary" onClick={() => { onEdit(loc); }}>
+            <Button color="primary" fill="none" size="small" onClick={() => { onEdit(loc); }}>
               <EditSOutline />
             </Button>
           }
@@ -134,26 +135,24 @@ export function LocationViewPopup({
       </List>
 
       <Section
-        title="精彩瞬间"
         extra={
-          <Button size="small" fill="none" color="primary" onClick={onAddMoment}>
+          <Button color="primary" fill="none" size="small" onClick={onAddMoment}>
             <AddOutline />
           </Button>
         }
+        title="精彩瞬间"
       >
         {moments.length === 0 ? (
           <ErrorBlock status="empty" title="暂无记录" />
         ) : (
-          <Space direction="vertical" className="w-full">
+          <Space className="w-full" direction="vertical">
             {moments.map((moment) => (
               <Card
-                key={moment.id}
-                title={moment.date}
                 extra={
                   <Button
-                    size="small"
-                    fill="none"
                     color="danger"
+                    fill="none"
+                    size="small"
                     onClick={(event) => {
                       event.stopPropagation();
                       handleDeleteMoment(moment);
@@ -162,6 +161,8 @@ export function LocationViewPopup({
                     <DeleteOutline />
                   </Button>
                 }
+                key={moment.id}
+                title={moment.date}
                 onClick={() => { onEditMoment(moment); }}
               >
                 {moment.text}
@@ -176,10 +177,10 @@ export function LocationViewPopup({
           extra={
             <Switch
               checked={loc.checked}
-              uncheckedText="待去"
               checkedText="已去"
-              onChange={handleToggle}
               disabled={moments.length > 0}
+              uncheckedText="待去"
+              onChange={handleToggle}
             />
           }
         >

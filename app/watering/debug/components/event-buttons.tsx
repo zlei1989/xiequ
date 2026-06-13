@@ -126,15 +126,14 @@ export function EventButtons({
 
       {/* ---- bootstrap Popup ---- */}
       <Popup
+        closeOnMaskClick={true}
+        position="bottom"
         visible={popupType === 'bootstrap'}
         onClose={closePopup}
-        position="bottom"
-        bodyStyle={{ borderTopLeftRadius: 12, borderTopRightRadius: 12 }}
       >
         <NavBar onBack={closePopup}>bootstrap 参数</NavBar>
 
         <Form
-          layout="horizontal"
           footer={
             <Button
               block
@@ -144,6 +143,7 @@ export function EventButtons({
               确认发送
             </Button>
           }
+          layout="horizontal"
         >
           <Form.Item label="启动原因">
             <Radio.Group
@@ -152,9 +152,9 @@ export function EventButtons({
                 setBootstrapCause(String(val));
               }}
             >
-              <Space direction="vertical" block>
+              <Space block direction="vertical">
                 {CAUSE_OPTIONS.map((item) => (
-                  <Radio key={item.value} value={item.value} block>
+                  <Radio block key={item.value} value={item.value}>
                     {item.label}
                   </Radio>
                 ))}
@@ -166,15 +166,14 @@ export function EventButtons({
 
       {/* ---- change Popup ---- */}
       <Popup
+        closeOnMaskClick={true}
+        position="bottom"
         visible={popupType === 'change'}
         onClose={closePopup}
-        position="bottom"
-        bodyStyle={{ borderTopLeftRadius: 12, borderTopRightRadius: 12 }}
       >
         <NavBar onBack={closePopup}>change 参数</NavBar>
 
         <Form
-          layout="horizontal"
           footer={
             <Button
               block
@@ -184,6 +183,7 @@ export function EventButtons({
               确认发送
             </Button>
           }
+          layout="horizontal"
         >
           <Form.Item label="变更类型">
             <Radio.Group
@@ -192,9 +192,9 @@ export function EventButtons({
                 setChangeType(String(val));
               }}
             >
-              <Space direction="vertical" block>
+              <Space block direction="vertical">
                 {CHANGE_TYPES.map((item) => (
-                  <Radio key={item.value} value={item.value} block>
+                  <Radio block key={item.value} value={item.value}>
                     {item.label}
                   </Radio>
                 ))}
@@ -205,9 +205,9 @@ export function EventButtons({
           <Form.Item label="附加消息">
             <TextArea
               placeholder="可选"
+              rows={3}
               value={changeMessage}
               onChange={(v) => { setChangeMessage(v); }}
-              rows={3}
             />
           </Form.Item>
         </Form>

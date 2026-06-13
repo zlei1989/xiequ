@@ -34,22 +34,22 @@ export default function DebugPage() {
         IoT 设备模拟器
       </NavBar>
       <NoticeBar
-        content="模拟 ESP32 设备发起 getState / pushState 请求，用于调试服务端设备协议"
         color="default"
+        content="模拟 ESP32 设备发起 getState / pushState 请求，用于调试服务端设备协议"
       />
-      <Space  direction="vertical" block className="gap-4">
+      <Space  block className="gap-4" direction="vertical">
         <DeviceForm
-          identity={identity}
-          onIdentityChange={setIdentity}
           gpio={gpio}
+          identity={identity}
           onGpioChange={setGpio}
+          onIdentityChange={setIdentity}
         />
         <EventButtons
+          loading={loading}
           onGetState={getState}
           onPushBootstrap={pushBootstrap}
           onPushChange={pushChange}
           onPushFinish={pushFinish}
-          loading={loading}
         />
         <ResponseLog logs={logs} onClear={clearLogs} />
       </Space>

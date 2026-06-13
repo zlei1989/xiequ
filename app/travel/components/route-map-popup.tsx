@@ -145,13 +145,12 @@ export function RouteMapPopup({
   return (
     <>
       <Popup
+        bodyStyle={{ height: '80vh' }}
+        position="bottom"
         visible={visible}
         onClose={onClose}
-        position="bottom"
-        bodyStyle={{ height: '80vh' }}
       >
         <NavBar
-          onBack={onClose}
           right={
             route.entries.length > 0 ? (
               <span
@@ -163,6 +162,7 @@ export function RouteMapPopup({
               </span>
             ) : null
           }
+          onBack={onClose}
         >
           {route.startName} → {route.endName}
         </NavBar>
@@ -173,30 +173,30 @@ export function RouteMapPopup({
             </div>
           )}
           <TripMap
-            ref={mapRef}
-            locations={[]}
-            onMarkerClick={() => { }}
             routeMode
             activeMarkerId={activeLocationId ?? undefined}
+            className="h-full"
             fitViewOnUpdate={visible}
-            routeMarkers={route.markers}
+            locations={[]}
             polylines={
               drivingPath.length > 0
                 ? [{ path: drivingPath, color: '#1677ff' }]
                 : []
             }
+            ref={mapRef}
+            routeMarkers={route.markers}
+            onMarkerClick={() => { }}
             onRouteMarkerClick={handleRouteMarkerClick}
-            className="h-full"
           />
         </div>
       </Popup>
 
       {/* 位置列表面板 */}
       <Popup
+        bodyStyle={{ width: '60vw' }}
+        position="right"
         visible={showEntryList}
         onClose={() => { setShowEntryList(false); }}
-        position="right"
-        bodyStyle={{ width: '60vw' }}
       >
         <NavBar
           onBack={() => { setShowEntryList(false); }}
@@ -227,8 +227,8 @@ export function RouteMapPopup({
                 {/* 当日条目 */}
                 {entries.map((entry, i) => (
                   <div
-                    key={`${entry.locationId}-${i}`}
                     className="flex cursor-pointer items-center gap-2 border-b px-4 py-3 active:bg-[var(--adm-color-fill)]"
+                    key={`${entry.locationId}-${i}`}
                     style={{ borderColor: 'var(--adm-color-border)' }}
                     // eslint-disable-next-line react-hooks/refs -- onClick 是事件处理器，ref 在此场景合法
                     onClick={() => { handleEntryClick(entry); }}
@@ -255,19 +255,19 @@ export function RouteMapPopup({
 
       <LocationViewPopup
         location={viewLocation}
-        visible={!!viewLocation && !editMoment && !editLocation}
-        onClose={() => { setViewLocation(null); setActiveLocationId(null); }}
         moments={moments}
-        onEdit={(loc) => { setEditLocation(loc); }}
-        onToggle={handleToggle}
-        onDelete={handleDelete}
+        visible={!!viewLocation && !editMoment && !editLocation}
         onAddMoment={() => {
           if (viewLocation) setEditMoment({ locationId: viewLocation.id, moment: null });
         }}
+        onClose={() => { setViewLocation(null); setActiveLocationId(null); }}
+        onDelete={handleDelete}
+        onDeleteMoment={async (m) => { await removeMoment(m.id); }}
+        onEdit={(loc) => { setEditLocation(loc); }}
         onEditMoment={(m) => {
           if (viewLocation) setEditMoment({ locationId: viewLocation.id, moment: m });
         }}
-        onDeleteMoment={async (m) => { await removeMoment(m.id); }}
+        onToggle={handleToggle}
       />
 
       <LocationEditPopup
@@ -280,9 +280,9 @@ export function RouteMapPopup({
       <MomentEditPopup
         moment={editMoment?.moment || null}
         visible={!!editMoment}
+        onAdd={addMoment}
         onClose={() => { setEditMoment(null); }}
         onSave={updateMoment}
-        onAdd={addMoment}
       />
     </>
   );

@@ -188,7 +188,7 @@ export function LogViewer({ logs }: { logs: LogItem[] }) {
   const groups = groupByStateId(logs);
 
   return (
-    <Space direction="vertical" block>
+    <Space block direction="vertical">
       {groups.map((group) => {
         const groupStatus = getGroupStatus(group.items);
         const duration = hasExecute(group.items) ? formatDuration(group.items) : null;
@@ -210,7 +210,13 @@ export function LogViewer({ logs }: { logs: LogItem[] }) {
             <Steps direction="vertical">
               {group.items.map((item, idx) => (
                 <Steps.Step
+                  description={
+                    <span className="text-[13px] text-gray-700">
+                      {formatMessage(item)}
+                    </span>
+                  }
                   key={`${group.stateId}-${idx}`}
+                  status={getStepStatus(item.event)}
                   title={
                     <Space align="center">
                       <Tag color={eventColors[item.event] || 'default'} fill="solid">
@@ -221,12 +227,6 @@ export function LogViewer({ logs }: { logs: LogItem[] }) {
                       </span>
                     </Space>
                   }
-                  description={
-                    <span className="text-[13px] text-gray-700">
-                      {formatMessage(item)}
-                    </span>
-                  }
-                  status={getStepStatus(item.event)}
                 />
               ))}
             </Steps>

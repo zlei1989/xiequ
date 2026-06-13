@@ -113,17 +113,17 @@ export function UploadImage({
   return (
     <Space align="center">
       <input
-        ref={fileInputRef}
-        type="file"
         accept=".jpg,.jpeg"
         className="hidden"
+        ref={fileInputRef}
+        type="file"
         onChange={handleFileChange}
       />
       <Button
-        onClick={() => fileInputRef.current?.click()}
+        fill="outline"
         loading={uploading}
         shape="rounded"
-        fill="outline"
+        onClick={() => fileInputRef.current?.click()}
       >
         <CameraOutline />
       </Button>

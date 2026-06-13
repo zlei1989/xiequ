@@ -21,7 +21,7 @@ export function Section({
   children: ReactNode;
 }) {
   return (
-    <Card title={title} extra={extra}>
+    <Card extra={extra} title={title}>
       {children}
     </Card>
   );

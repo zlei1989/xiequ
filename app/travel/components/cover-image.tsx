@@ -37,14 +37,14 @@ export function CoverImage({
 }) {
   return (
     <Image
-      src={src}
+      lazy
       alt={alt}
-      width={width}
-      height={height}
-      fit={fit}
       className={shape === 'circle' ? 'rounded-full' : ''}
       fallback={fallback}
-      lazy
+      fit={fit}
+      height={height}
+      src={src}
+      width={width}
     />
   );
 }

@@ -43,9 +43,9 @@ export function ProcessEditor({
       width: 60,
       render: (_: unknown, _record: Step, index: number) => (
         <Button
-          type="text"
-          size="small"
           icon={<EditOutlined />}
+          size="small"
+          type="text"
           onClick={() => { onEditStep(index); }}
         />
       ),
@@ -61,9 +61,9 @@ export function ProcessEditor({
           功能名称
         </label>
         <Input
+          placeholder="输入流程名称"
           value={process.name}
           onChange={(e) => { onChange({ ...process, name: e.target.value }); }}
-          placeholder="输入流程名称"
         />
       </div>
 
@@ -73,18 +73,18 @@ export function ProcessEditor({
         </label>
         {buttonOptions.length > 0 ? (
           <Select
+            allowClear
+            className="w-full"
+            options={buttonOptions}
+            placeholder="选择触发按钮（可选）"
             value={process.trigger ?? undefined}
             onChange={(v) => { onChange({ ...process, trigger: v }); }}
-            options={buttonOptions}
-            allowClear
-            placeholder="选择触发按钮（可选）"
-            className="w-full"
           />
         ) : (
           <Empty
-            image={Empty.PRESENTED_IMAGE_SIMPLE}
-            description="设备无可用按钮（buttons），请等待设备上报 GPIO 状态"
             className="my-2"
+            description="设备无可用按钮（buttons），请等待设备上报 GPIO 状态"
+            image={Empty.PRESENTED_IMAGE_SIMPLE}
           />
         )}
       </div>
@@ -94,19 +94,19 @@ export function ProcessEditor({
           步骤
         </label>
         <Table
-          dataSource={process.steps}
-          columns={columns}
-          rowKey="key"
-          pagination={false}
-          size="small"
           bordered
+          columns={columns}
+          dataSource={process.steps}
+          pagination={false}
+          rowKey="key"
+          size="small"
         />
         <Button
-          type="dashed"
-          icon={<PlusOutlined />}
-          onClick={onAddStep}
           block
           className="mt-2"
+          icon={<PlusOutlined />}
+          type="dashed"
+          onClick={onAddStep}
         >
           添加
         </Button>

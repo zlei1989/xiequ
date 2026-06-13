@@ -275,9 +275,9 @@ export function DeviceEditor({
       width: 60,
       render: (_: unknown, _record: Process, index: number) => (
         <Button
-          type="text"
-          size="small"
           icon={<EditOutlined />}
+          size="small"
+          type="text"
           onClick={() => {
             setProcessIndex(index);
             setProcessVisible(true);
@@ -310,9 +310,9 @@ export function DeviceEditor({
       width: 60,
       render: (_: unknown, _record: Schedule, index: number) => (
         <Button
-          type="text"
-          size="small"
           icon={<EditOutlined />}
+          size="small"
+          type="text"
           onClick={() => {
             setScheduleIndex(index);
             setScheduleVisible(true);
@@ -331,9 +331,9 @@ export function DeviceEditor({
             设备名称
           </label>
           <Input
+            placeholder="输入设备名称"
             value={form.name}
             onChange={(e) => { setForm({ ...form, name: e.target.value }); }}
-            placeholder="输入设备名称"
           />
         </div>
 
@@ -358,11 +358,11 @@ export function DeviceEditor({
               空闲超时（毫秒）
             </label>
             <InputNumber
+              className="w-full"
+              min={0}
+              step={1000}
               value={form.idleTimeout}
               onChange={(v) => { setForm({ ...form, idleTimeout: v ?? 30000 }); }}
-              step={1000}
-              min={0}
-              className="w-full"
             />
           </div>
         )}
@@ -372,11 +372,11 @@ export function DeviceEditor({
             开机执行
           </label>
           <select
+            className="w-full rounded-md border border-solid border-gray-300 px-2 py-1 text-sm"
             value={form.bootExec}
             onChange={(e) =>
             { setForm({ ...form, bootExec: Number(e.target.value) }); }
             }
-            className="w-full rounded-md border border-solid border-gray-300 px-2 py-1 text-sm"
           >
             <option value={-1}>无</option>
             {form.processes.map((p, i) => (
@@ -392,12 +392,12 @@ export function DeviceEditor({
             延迟执行（毫秒）
           </label>
           <InputNumber
+            className="w-full"
+            disabled={form.bootExec < 0}
+            min={0}
+            step={1000}
             value={form.execDelay}
             onChange={(v) => { setForm({ ...form, execDelay: v ?? 0 }); }}
-            step={1000}
-            min={0}
-            disabled={form.bootExec < 0}
-            className="w-full"
           />
         </div>
       </div>
@@ -419,9 +419,9 @@ export function DeviceEditor({
           )}
         </div>
         <Button
-          type="link"
-          size="small"
           icon={<EditOutlined />}
+          size="small"
+          type="link"
           onClick={() => { setVoltageConfigVisible(true); }}
         >
           {form.voltage ? '修改' : '配置'}
@@ -432,19 +432,19 @@ export function DeviceEditor({
       <div className="mb-4">
         <h4 className="m-0 mb-2 text-sm">功能</h4>
         <Table
-          dataSource={form.processes}
-          columns={processColumns}
-          rowKey="key"
-          pagination={false}
-          size="small"
           bordered
+          columns={processColumns}
+          dataSource={form.processes}
+          pagination={false}
+          rowKey="key"
+          size="small"
         />
         <Button
-          type="dashed"
-          icon={<PlusOutlined />}
-          onClick={addProcess}
           block
           className="mt-2"
+          icon={<PlusOutlined />}
+          type="dashed"
+          onClick={addProcess}
         >
           添加
         </Button>
@@ -454,19 +454,19 @@ export function DeviceEditor({
       <div className="mb-4">
         <h4 className="m-0 mb-2 text-sm">计划任务</h4>
         <Table
-          dataSource={form.schedules}
-          columns={scheduleColumns}
-          rowKey="key"
-          pagination={false}
-          size="small"
           bordered
+          columns={scheduleColumns}
+          dataSource={form.schedules}
+          pagination={false}
+          rowKey="key"
+          size="small"
         />
         <Button
-          type="dashed"
-          icon={<PlusOutlined />}
-          onClick={addSchedule}
           block
           className="mt-2"
+          icon={<PlusOutlined />}
+          type="dashed"
+          onClick={addSchedule}
         >
           添加
         </Button>
@@ -478,39 +478,39 @@ export function DeviceEditor({
 
       {/* 流程编辑 Drawer (80%) */}
       <Drawer
-        title="编辑流程"
-        placement="bottom"
-        size="80%"
-        open={processVisible}
-        onClose={() => { setProcessVisible(false); }}
         destroyOnHidden
         extra={
           <Space>
             <Popconfirm title="确认删除此流程？" onConfirm={deleteProcess}>
-              <Button icon={<DeleteOutlined />} danger size="small">
+              <Button danger icon={<DeleteOutlined />} size="small">
                 删除
               </Button>
             </Popconfirm>
             <Button
               icon={<CloseOutlined />}
-              onClick={() => { setProcessVisible(false); }}
               size="small"
+              onClick={() => { setProcessVisible(false); }}
             />
           </Space>
         }
+        open={processVisible}
+        placement="bottom"
+        size="80%"
+        title="编辑流程"
+        onClose={() => { setProcessVisible(false); }}
       >
         {/* eslint-disable @typescript-eslint/no-non-null-assertion -- processIndex > -1 条件已保证 */}
         {processIndex > -1 && (
           <ProcessEditor
-            process={form.processes[processIndex]!}
             gpio={gpio}
+            process={form.processes[processIndex]!}
+            onAddStep={addStep}
             onChange={(updated) => { updateProcess(processIndex, updated); }}
-            onRemove={deleteProcess}
             onEditStep={(stepIdx) => {
               setStepIndex(stepIdx);
               setStepVisible(true);
             }}
-            onAddStep={addStep}
+            onRemove={deleteProcess}
           />
         )}
         {/* eslint-enable @typescript-eslint/no-non-null-assertion */}
@@ -518,39 +518,39 @@ export function DeviceEditor({
 
       {/* 步骤编辑 Drawer (75%) */}
       <Drawer
-        title="编辑步骤"
-        placement="bottom"
-        size="75%"
-        open={stepVisible}
-        onClose={() => { setStepVisible(false); }}
         destroyOnHidden
         extra={
           <Space>
             <Popconfirm title="确认删除此步骤？" onConfirm={deleteStep}>
-              <Button icon={<DeleteOutlined />} danger size="small">
+              <Button danger icon={<DeleteOutlined />} size="small">
                 删除
               </Button>
             </Popconfirm>
             <Button
               icon={<CloseOutlined />}
-              onClick={() => { setStepVisible(false); }}
               size="small"
+              onClick={() => { setStepVisible(false); }}
             />
           </Space>
         }
+        open={stepVisible}
+        placement="bottom"
+        size="75%"
+        title="编辑步骤"
+        onClose={() => { setStepVisible(false); }}
       >
         {/* eslint-disable @typescript-eslint/no-non-null-assertion -- 条件已保证索引有效 */}
         {stepIndex > -1 && processIndex > -1 && (
           <ProcessStepEditor
-            step={form.processes[processIndex]!.steps[stepIndex]!}
             gpio={gpio}
+            step={form.processes[processIndex]!.steps[stepIndex]!}
+            onAddInterrupt={addInterrupt}
             onChange={(updated) => { updateStep(stepIndex, updated); }}
-            onRemove={deleteStep}
             onEditInterrupt={(intIdx) => {
               setInterruptIndex(intIdx);
               setInterruptVisible(true);
             }}
-            onAddInterrupt={addInterrupt}
+            onRemove={deleteStep}
           />
         )}
         {/* eslint-enable @typescript-eslint/no-non-null-assertion */}
@@ -558,26 +558,26 @@ export function DeviceEditor({
 
       {/* 中断编辑 Drawer (70%) */}
       <Drawer
-        title="编辑中断"
-        placement="bottom"
-        size="70%"
-        open={interruptVisible}
-        onClose={() => { setInterruptVisible(false); }}
         destroyOnHidden
         extra={
           <Space>
             <Popconfirm title="确认删除此中断？" onConfirm={deleteInterrupt}>
-              <Button icon={<DeleteOutlined />} danger size="small">
+              <Button danger icon={<DeleteOutlined />} size="small">
                 删除
               </Button>
             </Popconfirm>
             <Button
               icon={<CloseOutlined />}
-              onClick={() => { setInterruptVisible(false); }}
               size="small"
+              onClick={() => { setInterruptVisible(false); }}
             />
           </Space>
         }
+        open={interruptVisible}
+        placement="bottom"
+        size="70%"
+        title="编辑中断"
+        onClose={() => { setInterruptVisible(false); }}
       >
         {interruptIndex > -1 &&
           stepIndex > -1 &&
@@ -585,12 +585,12 @@ export function DeviceEditor({
           /* eslint-disable @typescript-eslint/no-non-null-assertion -- 条件已保证各级索引有效 */
           form.processes[processIndex]!.steps[stepIndex]!.interrupts && (
           <ProcessInterruptEditor
+            gpio={gpio}
             interrupt={
               form.processes[processIndex]!.steps[stepIndex]!.interrupts[
                 interruptIndex
               ]!
             }
-            gpio={gpio}
             onChange={(updated) => { updateInterrupt(interruptIndex, updated); }}
             onRemove={deleteInterrupt}
           />
@@ -600,32 +600,32 @@ export function DeviceEditor({
 
       {/* 定时编辑 Drawer (70%) */}
       <Drawer
-        title="编辑定时任务"
-        placement="bottom"
-        size="70%"
-        open={scheduleVisible}
-        onClose={() => { setScheduleVisible(false); }}
         destroyOnHidden
         extra={
           <Space>
             <Popconfirm title="确认删除此定时任务？" onConfirm={deleteSchedule}>
-              <Button icon={<DeleteOutlined />} danger size="small">
+              <Button danger icon={<DeleteOutlined />} size="small">
                 删除
               </Button>
             </Popconfirm>
             <Button
               icon={<CloseOutlined />}
-              onClick={() => { setScheduleVisible(false); }}
               size="small"
+              onClick={() => { setScheduleVisible(false); }}
             />
           </Space>
         }
+        open={scheduleVisible}
+        placement="bottom"
+        size="70%"
+        title="编辑定时任务"
+        onClose={() => { setScheduleVisible(false); }}
       >
         {/* eslint-disable @typescript-eslint/no-non-null-assertion -- scheduleIndex > -1 条件已保证 */}
         {scheduleIndex > -1 && (
           <ScheduleEditor
-            schedules={[form.schedules[scheduleIndex]!]}
             processes={form.processes}
+            schedules={[form.schedules[scheduleIndex]!]}
             onChange={(updated) => {
               if (updated.length > 0) {
                  
@@ -640,8 +640,8 @@ export function DeviceEditor({
       {/* 电压检测配置 Drawer (60%) */}
       <VoltageConfigDrawer
         open={voltageVisible}
-        voltage={form.voltage}
         sensors={gpio.sensors}
+        voltage={form.voltage}
         onChange={(vc) => { setForm({ ...form, voltage: vc }); }}
         onClose={() => { setVoltageConfigVisible(false); }}
       />

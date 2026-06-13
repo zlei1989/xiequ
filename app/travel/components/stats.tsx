@@ -19,18 +19,18 @@ export function Stats({ summary }: { summary: Summary }) {
       <Grid columns={3} gap={8}>
         <Grid.Item>
           {/** 居中显示标题和数值；数字需转为字符串以便 React 渲染 */}
-          <Card title="已去" headerClassName="justify-center" bodyClassName="text-center">{String(summary.checkedCount)}</Card>
+          <Card bodyClassName="text-center" headerClassName="justify-center" title="已去">{String(summary.checkedCount)}</Card>
         </Grid.Item>
         <Grid.Item>
-          <Card title="待去" headerClassName="justify-center" bodyClassName="text-center">{String(summary.uncheckCount)}</Card>
+          <Card bodyClassName="text-center" headerClassName="justify-center" title="待去">{String(summary.uncheckCount)}</Card>
         </Grid.Item>
         <Grid.Item>
-          <Card title="总计" headerClassName="justify-center" bodyClassName="text-center">{String(summary.count)}</Card>
+          <Card bodyClassName="text-center" headerClassName="justify-center" title="总计">{String(summary.count)}</Card>
         </Grid.Item>
       </Grid>
       <Card
-        title="完成进度"
         extra={`${String(summary.checkedPercentage)}%`}
+        title="完成进度"
       >
         <ProgressBar percent={summary.checkedPercentage} />
       </Card>

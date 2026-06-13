@@ -57,19 +57,19 @@ export function VoltageConfigDrawer({
 
   return (
     <Drawer
-      title="电压检测配置"
-      placement="bottom"
-      size="60%"
-      open={open}
-      onClose={handleClose}
       destroyOnHidden
       extra={
         <Button
           icon={<CloseOutlined />}
-          onClick={handleClose}
           size="small"
+          onClick={handleClose}
         />
       }
+      open={open}
+      placement="bottom"
+      size="60%"
+      title="电压检测配置"
+      onClose={handleClose}
     >
       <div className="flex flex-col gap-4">
         {/* 传感器选择 */}
@@ -80,11 +80,11 @@ export function VoltageConfigDrawer({
             电压检测传感器
           </label>
           <Select
-            value={config.sensor}
-            onChange={(v) => { update({ sensor: v }); }}
+            className="w-full"
             options={sensors.map((s) => ({ value: s, label: s }))}
             placeholder="选择传感器引脚"
-            className="w-full"
+            value={config.sensor}
+            onChange={(v) => { update({ sensor: v }); }}
           />
           <div className="mt-1 text-[11px] text-gray-400">
             选择用于电压检测的 ADC 传感器引脚
@@ -100,12 +100,12 @@ export function VoltageConfigDrawer({
           </label>
           <Space.Compact className="w-full">
             <InputNumber
+              className="flex-1"
+              min={0}
+              placeholder="默认 30000"
+              step={1000}
               value={config.r1}
               onChange={(v) => { update({ r1: v ?? DEFAULT_R1 }); }}
-              min={0}
-              step={1000}
-              className="flex-1"
-              placeholder="默认 30000"
             />
             <Button disabled>Ω</Button>
           </Space.Compact>
@@ -123,12 +123,12 @@ export function VoltageConfigDrawer({
           </label>
           <Space.Compact className="w-full">
             <InputNumber
+              className="flex-1"
+              min={0}
+              placeholder="默认 10000"
+              step={1000}
               value={config.r2}
               onChange={(v) => { update({ r2: v ?? DEFAULT_R2 }); }}
-              min={0}
-              step={1000}
-              className="flex-1"
-              placeholder="默认 10000"
             />
             <Button disabled>Ω</Button>
           </Space.Compact>

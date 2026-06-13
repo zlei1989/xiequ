@@ -25,8 +25,8 @@ export function RouteListItem({
   return (
     <List.Item
       clickable
-      onClick={handleClick}
       description={`${String(route.days)}天 · ${String(route.locationCount)}个位置 · ${route.startDate} 至 ${route.endDate}`}
+      onClick={handleClick}
     >
       {route.startName} → {route.endName}
     </List.Item>

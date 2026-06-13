@@ -87,9 +87,9 @@ export default function DeviceLogsPage({
     if (error && logs.length === 0) {
       return (
         <ErrorBlock
+          description={error.message}
           status="default"
           title="加载失败"
-          description={error.message}
         >
           <span
             className="cursor-pointer text-blue-500"
@@ -125,14 +125,14 @@ export default function DeviceLogsPage({
     <>
       <SafeArea position="top" />
       <NavBar
-        onBack={() => { router.back(); }}
         right={
           <DeleteOutline
-            fontSize={22}
             className="text-gray-500"
+            fontSize={22}
             onClick={() => { void handleClear(); }}
           />
         }
+        onBack={() => { router.back(); }}
       >
         设备: {chipId}
       </NavBar>
