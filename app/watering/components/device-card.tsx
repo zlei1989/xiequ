@@ -11,7 +11,7 @@ import {
 } from '@ant-design/icons';
 import { Card, Tag, Button, Row, Col, message } from 'antd';
 import { ActionSheet, Dialog } from 'antd-mobile';
-import { MoreOutline } from 'antd-mobile-icons';
+import { SetOutline } from 'antd-mobile-icons';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
@@ -166,16 +166,17 @@ export function DeviceCard({
               icon={<FileTextOutlined />}
               size="small"
               type="text"
-              onClick={() =>
-              { router.push(
-                `/watering/logs/${device.chipId}?macAddress=${encodeURIComponent(device.macAddress)}`,
-              ); }
+              onClick={() => {
+                router.push(
+                  `/watering/logs/${device.chipId}?macAddress=${encodeURIComponent(device.macAddress)}`,
+                );
+              }
               }
             >
               日志
             </Button>
             <Button
-              icon={<MoreOutline />}
+              icon={<SetOutline />}
               size="small"
               type="text"
               onClick={() => { setActionVisible(true); }}
@@ -240,7 +241,7 @@ export function DeviceCard({
         {processes.length > 0 && (
           <div className="mt-2">
             {(() => {
-            // 计算每个按钮的栅格宽度
+              // 计算每个按钮的栅格宽度
               const items: { idx: number; span: number }[] = [];
               if (processes.length % 2 === 1) {
                 items.push({ idx: 0, span: 24 });

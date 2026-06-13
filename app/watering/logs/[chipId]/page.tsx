@@ -77,11 +77,7 @@ export default function DeviceLogsPage({
   function renderContent() {
     // 首次加载中
     if (loading && logs.length === 0) {
-      return (
-        <div className="flex items-center justify-center py-24">
-          <DotLoading />
-        </div>
-      );
+      return (<DotLoading />);
     }
 
     // 首次加载失败
@@ -125,8 +121,6 @@ export default function DeviceLogsPage({
       <NavBar
         right={
           <DeleteOutline
-            className="text-gray-500"
-            fontSize={22}
             onClick={() => { void handleClear(); }}
           />
         }

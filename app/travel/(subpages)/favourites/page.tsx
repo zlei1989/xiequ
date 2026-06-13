@@ -159,9 +159,7 @@ export default function FavouritesPage() {
       />
 
       {loading && sortedLocations.length === 0 ? (
-        <List>
-          <List.Item prefix={<DotLoading />}>加载中</List.Item>
-        </List>
+        <DotLoading />
       ) : sortedLocations.length === 0 ? (
         <ErrorBlock status="empty" title="暂无位置" />
       ) : searchText.trim() && filteredLocations.length === 0 ? (
