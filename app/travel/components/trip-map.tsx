@@ -16,7 +16,7 @@ import { readTheme, STYLE_MAP, useMapTheme } from '../hooks/use-map-theme';
 import { loadAmap } from '../services/amap';
 import { createMarkerEngine } from '../services/marker-engine';
 
-import type { Location } from '../types';
+import type { Location, RouteMarker } from '../types';
 import type { CSSProperties } from 'react';
 
 export const TripMap = forwardRef<
@@ -26,11 +26,34 @@ export const TripMap = forwardRef<
     onMarkerClick: (location: Location) => void;
     className?: string;
     style?: CSSProperties;
+    /** 路线模式：禁用聚类，使用路线标注 + 连线 */
+    routeMode?: boolean;
+    /** 路线连线数据 */
+    polylines?: { path: [number, number][]; color?: string }[];
+    /** 路线标注数据（routeMode 时使用，替代 locations） */
+    routeMarkers?: RouteMarker[];
+    /** 路线标注点击回调（routeMode 时使用） */
+    onRouteMarkerClick?: (marker: RouteMarker) => void;
   }
->(function TripMap({ locations, onMarkerClick, className, style }, ref) {
+>(function TripMap(
+  {
+    locations,
+    onMarkerClick,
+    className,
+    style,
+    routeMode = false,
+    polylines,
+    routeMarkers,
+    onRouteMarkerClick,
+  },
+  ref,
+) {
       const containerRef = useRef<HTMLDivElement>(null);
       const mapRef = useRef<AMap.Map | null>(null);
       const engineRef = useRef<ReturnType<typeof createMarkerEngine> | null>(null);
+      /** 路线模式下的标注和连线引用（用于清理） */
+      const routeMarkersRef = useRef<AMap.Marker[]>([]);
+      const polylinesRef = useRef<AMap.Polyline[]>([]);
 
       /** 地图实例是否就绪 */
       const [mapReady, setMapReady] = useState(false);
@@ -119,6 +142,19 @@ export const TripMap = forwardRef<
             engineRef.current.destroy();
             engineRef.current = null;
           }
+          // 清理路线标注和连线（必须在 map 销毁前）
+          if (polylinesRef.current.length > 0 && mapRef.current) {
+            for (const p of polylinesRef.current) {
+              mapRef.current.remove(p);
+            }
+            polylinesRef.current = [];
+          }
+          if (routeMarkersRef.current.length > 0 && mapRef.current) {
+            for (const m of routeMarkersRef.current) {
+              mapRef.current.remove(m);
+            }
+            routeMarkersRef.current = [];
+          }
           if (mapRef.current) {
             mapRef.current.destroy();
             mapRef.current = null;
@@ -129,7 +165,7 @@ export const TripMap = forwardRef<
 
       /** 标注重建 effect —— 依赖 mapReady + locations */
       useEffect(() => {
-        if (!mapReady || !mapRef.current) return;
+        if (routeMode || !mapReady || !mapRef.current) return;
 
         // 首次运行时创建引擎
         if (!engineRef.current) {
@@ -138,6 +174,58 @@ export const TripMap = forwardRef<
 
         engineRef.current.update(locations);
       }, [locations, mapReady, onMarkerClick]);
+
+      /** 路线标注和连线渲染 effect（仅在 routeMode 时生效） */
+      useEffect(() => {
+        if (!routeMode || !mapReady || !mapRef.current) return;
+
+        const map = mapRef.current;
+
+        // 清理旧标注和连线
+        for (const m of routeMarkersRef.current) {
+          map.remove(m);
+        }
+        routeMarkersRef.current = [];
+        for (const p of polylinesRef.current) {
+          map.remove(p);
+        }
+        polylinesRef.current = [];
+
+        // 创建路线标注（带编号）
+        if (routeMarkers && routeMarkers.length > 0) {
+          for (let i = 0; i < routeMarkers.length; i++) {
+            const rm = routeMarkers[i]!;
+            const marker = new window.AMap!.Marker({
+              position: [rm.longitude, rm.latitude],
+              title: rm.name,
+              label: {
+                content: `<div style="background:#1677ff;color:#fff;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:bold">${String(i + 1)}</div>`,
+                offset: new window.AMap!.Pixel(-10, -10),
+              },
+            });
+            marker.on('click', () => {
+              onRouteMarkerClick?.(rm);
+            });
+            map.add(marker);
+            routeMarkersRef.current.push(marker);
+          }
+        }
+
+        // 创建连线
+        if (polylines && polylines.length > 0) {
+          for (const pl of polylines) {
+            const polyline = new window.AMap!.Polyline({
+              path: pl.path,
+              strokeColor: pl.color || '#1677ff',
+              strokeWeight: 3,
+              strokeOpacity: 0.7,
+              showDir: true,
+            });
+            map.add(polyline);
+            polylinesRef.current.push(polyline);
+          }
+        }
+      }, [routeMode, routeMarkers, polylines, mapReady, onRouteMarkerClick]);
 
       /** 重试加载 —— 递增 retryKey 触发 effect 重新执行 */
       function handleRetry() {
