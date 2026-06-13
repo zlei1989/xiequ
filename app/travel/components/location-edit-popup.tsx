@@ -86,7 +86,7 @@ export function LocationEditPopup({
       >
         编辑位置
       </NavBar>
-      <Form className="px-4" layout="vertical">
+      <Form className="px-3" layout="vertical">
         <Form.Item label="名称">
           <Input placeholder="位置名称" value={name} onChange={setName} />
         </Form.Item>

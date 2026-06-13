@@ -115,7 +115,7 @@ export function MomentEditPopup({
       >
         {isEdit ? '编辑瞬间' : '添加瞬间'}
       </NavBar>
-      <Form className="px-4" layout="vertical">
+      <Form className="px-3" layout="vertical">
         <Form.Item
           label="日期"
           onClick={() => { setDatePickerVisible(true); }}

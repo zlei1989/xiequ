@@ -131,7 +131,7 @@ export function Shell({ children }: { children: ReactNode }) {
           <AppstoreOutline />
         }
         right={
-          <MoreOutline onClick={() => { setActionVisible(true); }} className="text-2xl" />
+          <MoreOutline className="text-2xl" onClick={() => { setActionVisible(true); }} />
         }
         onBack={() => { router.push('/'); }}
       >

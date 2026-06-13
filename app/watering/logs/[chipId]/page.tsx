@@ -9,6 +9,7 @@
 'use client';
 
 import {
+  Button,
   NavBar,
   PullToRefresh,
   DotLoading,
@@ -21,7 +22,7 @@ import { DeleteOutline } from 'antd-mobile-icons';
 import { useRouter } from 'next/navigation';
 import { use, useEffect } from 'react';
 
-import { LogViewer } from '../../components/log-viewer';
+import { LogCard } from '../../components/log-card';
 import { useDeviceLogs } from '../../hooks/use-device-logs';
 
 /** 设备日志页 */
@@ -91,12 +92,9 @@ export default function DeviceLogsPage({
           status="default"
           title="加载失败"
         >
-          <span
-            className="cursor-pointer text-blue-500"
-            onClick={() => { void handleRefresh(); }}
-          >
+          <Button color="primary" size="small" onClick={() => { void handleRefresh(); }}>
             点击重试
-          </span>
+          </Button>
         </ErrorBlock>
       );
     }
@@ -114,8 +112,8 @@ export default function DeviceLogsPage({
     // 有日志数据 — 下拉刷新包裹
     return (
       <PullToRefresh onRefresh={handleRefresh}>
-        <div className="px-4">
-          <LogViewer logs={logs} />
+        <div className="px-3">
+          <LogCard logs={logs} />
         </div>
       </PullToRefresh>
     );

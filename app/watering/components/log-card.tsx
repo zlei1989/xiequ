@@ -173,7 +173,7 @@ function formatTime(isoString: string): string {
 
 /** ── 组件 ── */
 
-export function LogViewer({ logs }: { logs: LogItem[] }) {
+export function LogCard({ logs }: { logs: LogItem[] }) {
   // 防御性空检查 — page.tsx 虽然已经拦截了空数组，
   // 但保留此检查确保 LogViewer 独立使用时仍有正确的空态展示。
   if (logs.length === 0) {
@@ -196,15 +196,11 @@ export function LogViewer({ logs }: { logs: LogItem[] }) {
         return (
           <Card
             key={group.stateId}
-            title={
-              <Space align="center">
-                <span className="text-sm font-medium">
-                  stateId: {group.stateId}
-                </span>
-                <Tag color={groupStatus.color} fill="solid">
-                  {groupStatus.label}
-                </Tag>
-              </Space>
+            title={`State ID: ${group.stateId}`}
+            extra={
+              <Tag color={groupStatus.color} fill="solid">
+                {groupStatus.label}
+              </Tag>
             }
           >
             <Steps direction="vertical">

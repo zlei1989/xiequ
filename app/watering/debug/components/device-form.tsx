@@ -1,20 +1,17 @@
 /**
- * 模拟器设备表单 — 设备标识、数字/模拟传感器、按钮、负载的 GPIO 状态
+ * 模拟器设备表单 — 设备标识、数字/模拟传感器、按钮的 GPIO 状态
  *
  * 使用 antd-mobile 组件，Form mode="card" + Form.Header 分组标题。
- * 按钮含 2 秒自动复位逻辑，负载为纯展示 ProgressCircle。
+ * 按钮含 2 秒自动复位逻辑。负载展示已独立为 LoadDisplay 组件。
  */
 
 'use client';
 
 import {
-  AutoCenter,
   Form,
   Grid,
   Input,
-  ProgressCircle,
   Slider,
-  Space,
   Switch,
   Stepper,
 } from 'antd-mobile';
@@ -25,13 +22,13 @@ import type { Dispatch, SetStateAction } from 'react';
 
 /** 数字传感器 → 中文标签 */
 const DIGITAL_LABELS: Record<string, string> = {
-  sensor_1: '水浸1',
-  sensor_2: '水浸2',
+  sensor_1: '水满1',
+  sensor_2: '水满2',
 };
 
 /** 模拟传感器 → 中文标签 */
 export const ANALOG_LABELS: Record<string, string> = {
-  sensor_0: '温度',
+  sensor_0: '温阻电压',
   sensor_3: '负载电压',
   sensor_4: '电源电压',
 };
@@ -192,8 +189,8 @@ export function DeviceForm({
             key={key}
             label={`${key} (${ANALOG_LABELS[key] ?? key})`}
           >
-            <Grid columns={4} gap={12}>
-              <Grid.Item span={3}>
+            <Grid columns={3} gap={12}>
+              <Grid.Item span={2}>
                 <Slider
                   max={1024}
                   min={0}
@@ -220,58 +217,6 @@ export function DeviceForm({
         ))}
       </Form>
 
-      {/* ---- 负载（纯展示） ---- */}
-      <Form>
-        <Form.Header>负载</Form.Header>
-        <Grid columns={2} gap={12}>
-          {Object.entries(gpio.loads).map(([key, val]) => {
-            // 百分比计算：PWM 模式 val/255*100，1024=100%，0=0%
-            const pwmPercent =
-              val === 0
-                ? 0
-                : val === 1024
-                  ? 100
-                  : Math.round((val / 255) * 100);
-            // 颜色：0=灰，1-255=绿，1024=红
-            const color =
-              val === 0
-                ? 'var(--adm-color-weak)'
-                : val === 1024
-                  ? 'var(--adm-color-danger)'
-                  : 'var(--adm-color-success)';
-            // 状态文字
-            const label =
-              val === 0
-                ? '停止'
-                : val === 1024
-                  ? '全速'
-                  : `PWM ${pwmPercent}%`;
-
-            return (
-              <Grid.Item key={key}>
-                <AutoCenter>
-                  <Space className="gap-0" direction="vertical">
-                    <ProgressCircle
-                      percent={pwmPercent}
-                      style={{
-                        '--fill-color': color,
-                        '--size': '64px',
-                        '--track-width': '4px',
-                      }}
-                    >
-                      <span className="text-sm font-medium">{val}</span>
-                    </ProgressCircle>
-                    <Space>
-                      <span className="text-xs text-gray-500">{key}</span>
-                      <span className="text-xs text-gray-400">{label}</span>
-                    </Space>
-                  </Space>
-                </AutoCenter>
-              </Grid.Item>
-            );
-          })}
-        </Grid>
-      </Form>
     </>
   );
 }

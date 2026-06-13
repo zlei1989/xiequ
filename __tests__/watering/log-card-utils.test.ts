@@ -1,5 +1,5 @@
 /**
- * log-viewer 工具函数单元测试
+ * log-card 工具函数单元测试
  *
  * 测试 groupByStateId / formatDuration / formatMessage 三个纯函数。
  */
@@ -10,8 +10,8 @@ import {
   groupByStateId,
   formatDuration,
   formatMessage,
-} from '@/app/watering/components/log-viewer';
-import type { LogItem } from '@/app/watering/components/log-viewer';
+} from '@/app/watering/components/log-card';
+import type { LogItem } from '@/app/watering/components/log-card';
 
 /** 构造测试用 LogItem，只需传覆写字段 */
 function makeLog(overrides: Partial<LogItem> = {}): LogItem {

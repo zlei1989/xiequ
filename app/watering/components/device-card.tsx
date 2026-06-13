@@ -5,14 +5,15 @@
 'use client';
 
 import {
-  EditOutlined,
   FileTextOutlined,
   ThunderboltOutlined,
   PauseCircleOutlined,
-  DeleteOutlined,
 } from '@ant-design/icons';
-import { Card, Tag, Button, Row, Col, message, Popconfirm } from 'antd';
+import { Card, Tag, Button, Row, Col, message } from 'antd';
+import { ActionSheet, Dialog } from 'antd-mobile';
+import { MoreOutline } from 'antd-mobile-icons';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 import { setDeviceSwitch, removeDevice } from '../actions';
 
@@ -26,6 +27,35 @@ export function DeviceCard({
   onRefresh: () => void;
 }) {
   const router = useRouter();
+  const [actionVisible, setActionVisible] = useState(false);
+
+  /** ActionSheet 菜单分发 */
+  function handleAction(action: { key: string | number }) {
+    const key = String(action.key);
+    switch (key) {
+      case 'config':
+        router.push(
+          `/watering/devices/${device.chipId}?macAddress=${encodeURIComponent(device.macAddress)}`,
+        );
+        break;
+      case 'clear':
+        void onClickClear();
+        break;
+      case 'delete':
+        void Dialog.confirm({
+          title: '确认删除设备？',
+          content: '不可恢复。',
+          onConfirm: async () => { await handleRemove(); },
+        });
+        break;
+    }
+  }
+
+  const actions = [
+    { key: 'config', text: '配置设备' },
+    { key: 'clear', text: '清除状态' },
+    { key: 'delete', text: '删除设备', danger: true },
+  ];
 
   /**
    * 电压计算
@@ -128,89 +158,75 @@ export function DeviceCard({
   }
 
   return (
-    <Card
-      className="mb-3"
-      extra={
-        <div className="flex items-center gap-1">
-          <Button
-            icon={<FileTextOutlined />}
-            size="small"
-            type="text"
-            onClick={() =>
-            { router.push(
-              `/watering/logs/${device.chipId}?macAddress=${encodeURIComponent(device.macAddress)}`,
-            ); }
-            }
-          >
-            日志
-          </Button>
-          <Button
-            icon={<EditOutlined />}
-            size="small"
-            type="text"
-            onClick={() =>
-            { router.push(
-              `/watering/devices/${device.chipId}?macAddress=${encodeURIComponent(device.macAddress)}`,
-            ); }
-            }
-          >
-            配置
-          </Button>
-          {/* eslint-disable @typescript-eslint/no-misused-promises -- antd 支持 Promise */}
-          <Popconfirm title="确认清除设备状态？" onConfirm={onClickClear}>
-            <Button danger icon={<DeleteOutlined />} size="small" type="text" />
-          </Popconfirm>
-          <Popconfirm title="确认删除设备？不可恢复。" onConfirm={handleRemove}>
-            <Button danger size="small" type="text">
-              删除
+    <>
+      <Card
+        extra={
+          <div className="flex items-center gap-1">
+            <Button
+              icon={<FileTextOutlined />}
+              size="small"
+              type="text"
+              onClick={() =>
+              { router.push(
+                `/watering/logs/${device.chipId}?macAddress=${encodeURIComponent(device.macAddress)}`,
+              ); }
+              }
+            >
+              日志
             </Button>
-          </Popconfirm>
-          {/* eslint-enable @typescript-eslint/no-misused-promises */}
-        </div>
-      }
-      size="small"
-      title={device.name || `设备-${device.chipId}`}
-    >
-      {/* 设备信息 — 1 行 2 列 */}
-      <Row className="mb-2" gutter={[8, 4]}>
-        <Col span={12}>
-          <span className="text-xs text-gray-400">芯片: </span>
-          <span className="text-[13px]">{device.chipId}</span>
-        </Col>
-        {voltage !== undefined ? (
+            <Button
+              icon={<MoreOutline />}
+              size="small"
+              type="text"
+              onClick={() => { setActionVisible(true); }}
+            >
+              选项
+            </Button>
+          </div>
+        }
+        size="small"
+        title={device.name || `设备-${device.chipId}`}
+      >
+        {/* 设备信息 — 1 行 2 列 */}
+        <Row className="mb-2" gutter={[8, 4]}>
           <Col span={12}>
-            <span className="text-xs text-gray-400">电压: </span>
-            <span className="text-[13px] font-medium">
-              {voltage.toFixed(2)}V
-            </span>
-            {device.voltage && (
-              <span className="ml-0.5 text-[10px] text-gray-300">
-                (计算)
+            <span className="text-xs text-gray-400">芯片: </span>
+            <span className="text-[13px]">{device.chipId}</span>
+          </Col>
+          {voltage !== undefined ? (
+            <Col span={12}>
+              <span className="text-xs text-gray-400">电压: </span>
+              <span className="text-[13px] font-medium">
+                {voltage.toFixed(2)}V
               </span>
+              {device.voltage && (
+                <span className="ml-0.5 text-[10px] text-gray-300">
+                  (计算)
+                </span>
+              )}
+            </Col>
+          ) : (
+            <Col span={12} />
+          )}
+          <Col span={12}>
+            <span className="text-xs text-gray-400">网卡: </span>
+            <span className="text-xs">{device.macAddress}</span>
+          </Col>
+          <Col span={12}>
+            <span className="text-xs text-gray-400">状态: </span>
+            {device.isOnline ? (
+              <Tag className="m-0" color="green">
+                在线
+              </Tag>
+            ) : (
+              <Tag className="m-0" color="default">
+                离线
+              </Tag>
             )}
           </Col>
-        ) : (
-          <Col span={12} />
-        )}
-        <Col span={12}>
-          <span className="text-xs text-gray-400">网卡: </span>
-          <span className="text-xs">{device.macAddress}</span>
-        </Col>
-        <Col span={12}>
-          <span className="text-xs text-gray-400">状态: </span>
-          {device.isOnline ? (
-            <Tag className="m-0" color="green">
-              在线
-            </Tag>
-          ) : (
-            <Tag className="m-0" color="default">
-              离线
-            </Tag>
-          )}
-        </Col>
-      </Row>
+        </Row>
 
-      {/*
+        {/*
          * 流程快捷按钮网格
          *
          * 布局算法：
@@ -221,69 +237,80 @@ export function DeviceCard({
          * 1. 设备离线 → 所有按钮不可用
          * 2. 设备开启了 idleSleep 且该流程未在执行 → 设备待机省电，不接受实时控制
          */}
-      {processes.length > 0 && (
-        <div className="mt-2">
-          {(() => {
+        {processes.length > 0 && (
+          <div className="mt-2">
+            {(() => {
             // 计算每个按钮的栅格宽度
-            const items: { idx: number; span: number }[] = [];
-            if (processes.length % 2 === 1) {
-              items.push({ idx: 0, span: 24 });
-              for (let i = 1; i < processes.length; i++) {
-                items.push({ idx: i, span: 12 });
-              }
-            } else {
-              for (let i = 0; i < processes.length; i++) {
-                items.push({ idx: i, span: 12 });
-              }
-            }
-            // 将 items 按行分组：span=24 独占一行，否则两个一组
-            const rows: { idx: number; span: number }[][] = [];
-            let i = 0;
-            while (i < items.length) {
-              const item = items[i];
-              if (!item) break;
-              if (item.span === 24) {
-                rows.push([item]);
-                i++;
+              const items: { idx: number; span: number }[] = [];
+              if (processes.length % 2 === 1) {
+                items.push({ idx: 0, span: 24 });
+                for (let i = 1; i < processes.length; i++) {
+                  items.push({ idx: i, span: 12 });
+                }
               } else {
-                rows.push(items.slice(i, i + 2));
-                i += 2;
+                for (let i = 0; i < processes.length; i++) {
+                  items.push({ idx: i, span: 12 });
+                }
               }
-            }
-            return rows.map((row, rowIdx) => (
-              <Row className="mb-1" gutter={8} key={rowIdx}>
-                {row.map(({ idx, span }) => {
-                  const exec = isExec(idx);
-                  // idleSleep 模式下仅允许终止正在执行的流程
-                  const disabled = !device.isOnline || (!exec && device.idleSleep);
-                  return (
-                    <Col key={idx} span={span}>
-                      <Button
-                        block
-                        danger={exec}
-                        disabled={disabled}
-                        icon={
-                          exec ? (
-                            <PauseCircleOutlined />
-                          ) : (
-                            <ThunderboltOutlined />
-                          )
-                        }
-                        size="small"
-                        type="primary"
-                        onClick={() => { void onClickSwitch(idx); }}
-                      >
-                        {exec ? '停止' : processes[idx]?.name ?? ''}
-                      </Button>
-                    </Col>
-                  );
-                })}
-              </Row>
-            ));
-          })()}
-        </div>
-      )}
+              // 将 items 按行分组：span=24 独占一行，否则两个一组
+              const rows: { idx: number; span: number }[][] = [];
+              let i = 0;
+              while (i < items.length) {
+                const item = items[i];
+                if (!item) break;
+                if (item.span === 24) {
+                  rows.push([item]);
+                  i++;
+                } else {
+                  rows.push(items.slice(i, i + 2));
+                  i += 2;
+                }
+              }
+              return rows.map((row, rowIdx) => (
+                <Row className="mb-1" gutter={8} key={rowIdx}>
+                  {row.map(({ idx, span }) => {
+                    const exec = isExec(idx);
+                    // idleSleep 模式下仅允许终止正在执行的流程
+                    const disabled = !device.isOnline || (!exec && device.idleSleep);
+                    return (
+                      <Col key={idx} span={span}>
+                        <Button
+                          block
+                          danger={exec}
+                          disabled={disabled}
+                          icon={
+                            exec ? (
+                              <PauseCircleOutlined />
+                            ) : (
+                              <ThunderboltOutlined />
+                            )
+                          }
+                          size="small"
+                          type="primary"
+                          onClick={() => { void onClickSwitch(idx); }}
+                        >
+                          {exec ? '停止' : processes[idx]?.name ?? ''}
+                        </Button>
+                      </Col>
+                    );
+                  })}
+                </Row>
+              ));
+            })()}
+          </div>
+        )}
 
-    </Card>
+      </Card>
+
+      <ActionSheet
+        closeOnAction
+        safeArea
+        actions={actions}
+        cancelText="取消"
+        visible={actionVisible}
+        onAction={handleAction}
+        onClose={() => { setActionVisible(false); }}
+      />
+    </>
   );
 }

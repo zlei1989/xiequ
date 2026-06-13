@@ -323,7 +323,7 @@ export function DeviceEditor({
   ];
 
   return (
-    <div className="px-4">
+    <div className="px-3">
       {/* ---- 基本设置表单（匹配 IeForm）---- */}
       <div className="mb-4 flex flex-col gap-3">
         <div>
@@ -628,7 +628,7 @@ export function DeviceEditor({
             schedules={[form.schedules[scheduleIndex]!]}
             onChange={(updated) => {
               if (updated.length > 0) {
-                 
+
                 updateSchedule(scheduleIndex, updated[0]!);
               }
             }}

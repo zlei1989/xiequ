@@ -13,7 +13,7 @@ import { useState, useCallback } from 'react';
 import { clearLogs } from '../actions/clear-logs';
 import { getLogs } from '../actions/get-logs';
 
-import type { LogItem } from '../components/log-viewer';
+import type { LogItem } from '../components/log-card';
 
 /** 设备日志管理 */
 export function useDeviceLogs(chipId: string) {
