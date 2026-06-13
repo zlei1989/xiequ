@@ -280,10 +280,10 @@ export const TripMap = forwardRef<
 
       return (
         <div
-          ref={containerRef}
           // w-full + h-[calc(100vh-64px)] 替代内联 width/height，
           // bg-[var(--background)] 跟随系统主题，避免 AMap 接管前透出白色
           className={`h-[calc(100vh-64px)] w-full bg-[var(--background)] ${className || ''}`}
+          ref={containerRef}
           style={style}
         />
       );

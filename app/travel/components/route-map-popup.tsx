@@ -220,13 +220,9 @@ export function RouteMapPopup({
             <List header={date} key={date}>
               {entries.map((entry, i) => (
                 <List.Item
-                  key={`${entry.locationId}-${i}`}
-                  prefix={(
-
-                    <EnvironmentOutline />
-
-                  )}
                   arrowIcon={false}
+                  key={`${entry.locationId}-${i}`}
+                  prefix={<EnvironmentOutline />}
                   // eslint-disable-next-line react-hooks/refs -- onClick 是事件处理器，ref 在此场景合法
                   onClick={() => { handleEntryClick(entry); }}
                 >
