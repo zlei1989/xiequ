@@ -119,6 +119,29 @@ describe('buildRoutes', () => {
     const r = routes[0] as Route;
     expect(r.polyline).toEqual([]);
     expect(r.locationCount).toBe(3);
+    // entries 应包含原始瞬间条目（未去重）
+    expect(r.entries).toHaveLength(3);
+    expect(r.entries[0]).toEqual({
+      locationId: '1',
+      name: '北京',
+      longitude: 116.4,
+      latitude: 39.9,
+      date: '2024-01-01',
+    });
+    expect(r.entries[1]).toEqual({
+      locationId: '2',
+      name: '南京',
+      longitude: 118.8,
+      latitude: 32.1,
+      date: '2024-01-02',
+    });
+    expect(r.entries[2]).toEqual({
+      locationId: '3',
+      name: '上海',
+      longitude: 121.5,
+      latitude: 31.2,
+      date: '2024-01-03',
+    });
   });
 
   it('route id is derived from startDate', () => {
@@ -148,5 +171,10 @@ describe('buildRoutes', () => {
     expect((markers[1] as RouteMarker).name).toBe('颐和园');
     expect((markers[2] as RouteMarker).name).toBe('西湖');
     expect((markers[3] as RouteMarker).name).toBe('外滩');
+    // 同日两个条目的 entries 排序验证（与 markers 排序一致）
+    const day2Entries = r.entries.filter((e) => e.date === '2024-01-02');
+    expect(day2Entries).toHaveLength(2);
+    expect(day2Entries[0]?.name).toBe('颐和园');
+    expect(day2Entries[1]?.name).toBe('西湖');
   });
 });

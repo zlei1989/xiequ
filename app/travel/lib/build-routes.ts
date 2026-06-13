@@ -204,6 +204,13 @@ export function buildRoutes(locations: Location[]): Route[] {
         locationCount: markers.length,
         startName: firstMarker?.name ?? '',
         endName: lastMarker?.name ?? '',
+        entries: sorted.map((e) => ({
+          locationId: e.locationId,
+          name: e.locationName,
+          longitude: e.longitude,
+          latitude: e.latitude,
+          date: e.date,
+        })),
       };
     })
     .filter((route) => route.days > 2);
