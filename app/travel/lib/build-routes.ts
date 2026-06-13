@@ -213,5 +213,6 @@ export function buildRoutes(locations: Location[]): Route[] {
         })),
       };
     })
-    .filter((route) => route.days > 2);
+    .filter((route) => route.days > 2)
+    .sort((a, b) => b.startDate.localeCompare(a.startDate));
 }
