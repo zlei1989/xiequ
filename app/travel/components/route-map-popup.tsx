@@ -148,7 +148,7 @@ export function RouteMapPopup({
         visible={visible}
         onClose={onClose}
         position="bottom"
-        bodyStyle={{ height: '80vh' }}
+        bodyStyle={{ height: '75vh' }}
       >
         <NavBar
           onBack={onClose}
@@ -159,7 +159,7 @@ export function RouteMapPopup({
                 style={{ color: 'var(--adm-color-primary)' }}
                 onClick={() => { setShowEntryList(true); }}
               >
-                列表
+                位置
               </span>
             ) : null
           }
@@ -196,13 +196,8 @@ export function RouteMapPopup({
         visible={showEntryList}
         onClose={() => { setShowEntryList(false); }}
         position="right"
-        bodyStyle={{ width: '60vw' }}
+        bodyStyle={{ width: '50vw' }}
       >
-        <NavBar
-          onBack={() => { setShowEntryList(false); }}
-        >
-          位置列表
-        </NavBar>
         <div className="overflow-y-auto" style={{ height: 'calc(100% - 45px)' }}>
           {groupedEntries.size === 0 ? (
             <div
