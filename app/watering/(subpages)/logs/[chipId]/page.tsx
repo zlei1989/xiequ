@@ -14,7 +14,7 @@ import {
   PullToRefresh,
   DotLoading,
   ErrorBlock,
-  SafeArea,
+  List,
   Dialog,
   Toast,
 } from 'antd-mobile';
@@ -108,9 +108,9 @@ export default function DeviceLogsPage({
     // 有日志数据 — 下拉刷新包裹
     return (
       <PullToRefresh onRefresh={handleRefresh}>
-        <div className="px-3 pb-3">
+        <List>
           <LogCard logs={logs} />
-        </div>
+        </List>
       </PullToRefresh>
     );
   }
