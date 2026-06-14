@@ -120,6 +120,7 @@ export function ProcessConfigPicker({
         </Form>
 
         <SortableList
+          getKey={(s, idx) => s.key ?? String(idx)}
           header="步骤"
           items={draft.steps}
           renderItem={(s, idx) => (
