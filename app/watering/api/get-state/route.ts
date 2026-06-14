@@ -17,7 +17,10 @@ import type { NextRequest } from 'next/server';
 const POLL_INTERVAL = parseInt(process.env.WATERING_POLL_INTERVAL || '15000');
 
 /** 深睡眠最大时长（毫秒），由 WATERING_SLEEP_DURATION 环境变量控制，默认 5 分钟 */
-const SLEEP_DURATION = parseInt(process.env.WATERING_SLEEP_DURATION || '300000');
+const SLEEP_DURATION = (() => {
+  const v = parseInt(process.env.WATERING_SLEEP_DURATION || '300000');
+  return Number.isFinite(v) ? v : 300000;
+})();
 
 /**
  * 计算单个定时任务距现在还有多少毫秒
@@ -43,7 +46,7 @@ function calcNextScheduleDelay(schedule: ScheduleConfig, now: Date): number {
     }
 
     // 今天已过触发时间 → 下一次是明天（或按 interval 天后）
-    const intervalMs = (schedule.interval || 1) * 24 * 3600_000;
+    const intervalMs = (schedule.interval || 1) * 24 * 3600000;
     return todayTrigger + intervalMs - nowMs;
   }
 
@@ -70,7 +73,7 @@ function calcSleepDuration(schedules: ScheduleConfig[], now: Date): number {
     }
   }
 
-  return Math.min(SLEEP_DURATION, minDelay);
+  return minDelay;
 }
 
 /**
