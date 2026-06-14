@@ -16,6 +16,8 @@ export type StepConfig = {
   value: { begin: unknown; end: unknown };
   /** 超时时间（毫秒） */
   timeout?: number;
+  /** 执行前延迟（毫秒），用于 execDelay 叠加 */
+  delay?: number;
   /** 中断条件列表 */
   interrupts?: InterruptConfig[];
   disabled?: boolean;

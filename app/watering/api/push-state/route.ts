@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { getDeviceConfig, saveDeviceConfig, getDeviceState, saveDeviceState, writeDeviceLog, updateTick, updateIdleSince, calcVoltage } from '@/app/watering/services/db';
+import { execCallback } from '@/app/watering/services/callback-map';
 import { newId } from '@/lib/utils';
 
 import type { NextRequest } from 'next/server';
@@ -76,7 +77,37 @@ export async function GET(request: NextRequest) {
         stateId: newId(),
         lastWriteTime: new Date().toISOString(),
       });
+
+      // 开机执行检查：bootExec 配置了开机流程 + 设备空闲 + 外部触发/上电
+      if (
+        state.switch === 'off' &&
+        config.bootExec > -1 &&
+        config.bootExec < config.processes.length &&
+        ['External System', 'Power On'].includes(searchParams.get('cause') || '')
+      ) {
+        console.info('[Watering] bootstrap 触发开机执行', {
+          chipId,
+          bootExec: config.bootExec,
+          cause: searchParams.get('cause'),
+        });
+        state.switch = 'on';
+        state.index = config.bootExec;
+        // 深拷贝流程配置，防止后续修改影响原始配置
+        state.process = JSON.parse(JSON.stringify(config.processes[config.bootExec])) as typeof state.process;
+        if (config.execDelay > 0 && state.process?.steps.length && state.process.steps.length > 0) {
+          const firstStep = state.process.steps[0];
+          if (firstStep) {
+            firstStep.delay = (firstStep.delay || 0) + config.execDelay;
+          }
+        }
+        state.stateId = newId();
+        state.lastWriteTime = new Date().toISOString();
+      }
+
       await saveDeviceState(state);
+
+      // 唤醒正在长轮询等待的设备
+      execCallback(chipId);
 
       const bootstrapVoltage = calcVoltage(config.voltage, gpioState.sensors);
       await writeDeviceLog(chipId, 'bootstrap', macAddress, { cause: searchParams.get('cause') || '', sensors: gpioState.sensors, loads: gpioState.loads }, bootstrapVoltage, state.stateId);
@@ -106,6 +137,8 @@ export async function GET(request: NextRequest) {
         state.stateId = newId();
         state.lastWriteTime = new Date().toISOString();
         await saveDeviceState(state);
+        // 唤醒正在长轮询等待的设备
+        execCallback(chipId);
       }
       const finishVoltage = calcVoltage(config?.voltage, gpioState.sensors);
       await writeDeviceLog(chipId, 'finish', macAddress, undefined, finishVoltage, state?.stateId);
