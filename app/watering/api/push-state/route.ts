@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-import { getDeviceConfig, saveDeviceConfig, getDeviceState, saveDeviceState, writeDeviceLog, updateTick, calcVoltage } from '@/app/watering/services/db';
+import { getDeviceConfig, saveDeviceConfig, getDeviceState, saveDeviceState, writeDeviceLog, updateTick, updateIdleSince, calcVoltage } from '@/app/watering/services/db';
 import { newId } from '@/lib/utils';
 
 import type { NextRequest } from 'next/server';
@@ -80,6 +80,7 @@ export async function GET(request: NextRequest) {
       if (state.switch === 'on' && state.process) {
         await writeDeviceLog(chipId, 'execute', macAddress, { index: state.index }, bootstrapVoltage, state.stateId);
       }
+      await updateIdleSince(chipId, 'bootstrap');
       break;
     }
     case 'change': {
@@ -88,6 +89,7 @@ export async function GET(request: NextRequest) {
       const message = searchParams.get('message') || '';
       const changeVoltage = calcVoltage(config?.voltage, gpioState.sensors);
       await writeDeviceLog(chipId, 'change', macAddress, { sensors: gpioState.sensors, loads: gpioState.loads, type }, changeVoltage, stateId, message);
+      await updateIdleSince(chipId, 'change');
       break;
     }
     case 'finish': {
@@ -104,10 +106,12 @@ export async function GET(request: NextRequest) {
       }
       const finishVoltage = calcVoltage(config?.voltage, gpioState.sensors);
       await writeDeviceLog(chipId, 'finish', macAddress, undefined, finishVoltage, state?.stateId);
+      await updateIdleSince(chipId, 'finish');
       break;
     }
     default: {
       await writeDeviceLog(chipId, event || 'heartbeat', macAddress, { sensors: gpioState.sensors, loads: gpioState.loads }, voltage);
+      await updateIdleSince(chipId, (event || 'heartbeat') as 'bootstrap' | 'button' | 'change' | 'finish');
       break;
     }
   }
