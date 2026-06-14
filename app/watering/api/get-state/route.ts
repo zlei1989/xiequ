@@ -9,13 +9,69 @@
 import { NextResponse } from 'next/server';
 
 import { getDeviceState, getDeviceConfig, updateTick } from '@/app/watering/services/db';
-import type { DeviceState, DeviceConfig } from '@/app/watering/types';
+import type { DeviceState, DeviceConfig, ScheduleConfig } from '@/app/watering/types';
 
 import type { NextRequest } from 'next/server';
 
 /** 环境变量 */
 const POLL_INTERVAL = parseInt(process.env.WATERING_POLL_INTERVAL || '15000');
+
+/** 深睡眠最大时长（毫秒），由 WATERING_SLEEP_DURATION 环境变量控制，默认 5 分钟 */
 const SLEEP_DURATION = parseInt(process.env.WATERING_SLEEP_DURATION || '300000');
+
+/**
+ * 计算单个定时任务距现在还有多少毫秒
+ *
+ * 目前完整支持 day 类型（value = 距 00:00 的毫秒偏移）。
+ * 其他类型（minute/week/month）暂简化处理，返回 SLEEP_DURATION。
+ */
+function calcNextScheduleDelay(schedule: ScheduleConfig, now: Date): number {
+  if (schedule.disabled) return SLEEP_DURATION;
+
+  if (schedule.type === 'day') {
+    const nowMs = now.getTime();
+    const todayStart = new Date(now);
+    todayStart.setHours(0, 0, 0, 0);
+    const todayStartMs = todayStart.getTime();
+
+    // value 是距 00:00 的毫秒偏移（如 8:00 = 28800000）
+    const todayTrigger = todayStartMs + schedule.value;
+
+    // 今天还没到触发时间 → 返回距离
+    if (todayTrigger > nowMs) {
+      return todayTrigger - nowMs;
+    }
+
+    // 今天已过触发时间 → 下一次是明天（或按 interval 天后）
+    const intervalMs = (schedule.interval || 1) * 24 * 3600_000;
+    return todayTrigger + intervalMs - nowMs;
+  }
+
+  // minute/week/month 暂简化：使用最大睡眠时长
+  return SLEEP_DURATION;
+}
+
+/**
+ * 计算深睡眠时长（毫秒）
+ *
+ * 1. 过滤出已启用的定时任务
+ * 2. 找到最近的下次触发时间
+ * 3. 取最小值与 SLEEP_DURATION 比较
+ */
+function calcSleepDuration(schedules: ScheduleConfig[], now: Date): number {
+  const enabled = schedules.filter((s) => !s.disabled);
+  if (enabled.length === 0) return SLEEP_DURATION;
+
+  let minDelay = SLEEP_DURATION;
+  for (const s of enabled) {
+    const delay = calcNextScheduleDelay(s, now);
+    if (delay < minDelay) {
+      minDelay = delay;
+    }
+  }
+
+  return Math.min(SLEEP_DURATION, minDelay);
+}
 
 /**
  * 构建精简的 get-state 响应（仅包含固件实际使用的字段）
@@ -45,13 +101,16 @@ function buildResponse(
     result.process = state.process;
   }
 
-  // 深度睡眠时长（仅无定时任务且无流程执行时下发）
+  // 深度睡眠：服务端主导判断
+  // 条件：① 用户开启空闲睡眠 ② 设备关机 ③ 有动作记录 ④ 已空闲超时
   if (
     config &&
-    (config.schedules.length === 0) &&
-    state?.switch !== 'on'
+    config.idleSleep &&
+    state?.switch !== 'on' &&
+    state?.idleSince != null &&
+    (Date.now() - state.idleSince) >= config.idleTimeout
   ) {
-    result.sleepDuration = SLEEP_DURATION;
+    result.sleepDuration = calcSleepDuration(config.schedules, new Date());
   }
 
   // processes 版本控制下发
