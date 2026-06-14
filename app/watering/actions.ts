@@ -32,9 +32,10 @@ export async function setDeviceSwitch(
   chipId: string,
   switchState: 'on' | 'off',
   processIndex?: number,
+  stepIndex?: number,
 ) {
-  console.log('[Watering] 设置设备开关:', { chipId, switchState, processIndex });
-  return _setDeviceSwitch(chipId, switchState, processIndex);
+  console.log('[Watering] 设置设备开关:', { chipId, switchState, processIndex, stepIndex });
+  return _setDeviceSwitch(chipId, switchState, processIndex, stepIndex);
 }
 
 /** 更新设备配置（部分字段更新） */
