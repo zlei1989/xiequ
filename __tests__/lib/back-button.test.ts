@@ -12,13 +12,15 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 let eventListeners: Record<string, EventListener[]>;
 let pushState: ReturnType<typeof vi.fn>;
+let back: ReturnType<typeof vi.fn>;
 
 beforeEach(() => {
   vi.resetModules();
   eventListeners = {};
   pushState = vi.fn();
+  back = vi.fn();
   vi.stubGlobal('window', {
-    history: { pushState, back: vi.fn() },
+    history: { pushState, back },
     location: { href: 'http://localhost:3000/test' },
     addEventListener: vi.fn((event: string, handler: EventListener) => {
       (eventListeners[event] ??= []).push(handler);
@@ -332,6 +334,77 @@ describe('useBackButton', () => {
     expect(onClose1).not.toHaveBeenCalled();
 
     unmount2();
+  });
+
+  it('通过 NavBar/代码关闭弹窗（非 popstate）时调用 history.back() 清理占位', async () => {
+    const useBackButton = await loadHook();
+    const onClose = vi.fn();
+
+    const { rerender, unmount } = renderHook<
+      ReturnType<typeof useBackButton>,
+      { visible: boolean }
+    >(({ visible }) => { useBackButton(visible, onClose); },
+      { initialProps: { visible: false } },
+    );
+
+    // 打开弹窗 → pushState 被调用（注入占位）
+    rerender({ visible: true });
+    expect(pushState).toHaveBeenCalledTimes(1);
+    expect(back).not.toHaveBeenCalled();
+
+    // 通过代码关闭弹窗（模拟 NavBar onBack）
+    // 注意：不触发 firePopstate()
+    rerender({ visible: false });
+
+    // 栈空 + 非 popstate 关闭 → history.back() 被调用
+    expect(back).toHaveBeenCalledOnce();
+
+    // 监听器应被清理
+    expect(popstateCount()).toBe(0);
+
+    unmount();
+  });
+
+  it('嵌套弹窗：系统返回键关闭顶层后，NavBar 关闭底层也调用 history.back()', async () => {
+    const useBackButton = await loadHook();
+    const onCloseA = vi.fn();
+    const onCloseB = vi.fn();
+
+    // 底层弹窗 A
+    const { rerender: rerenderA, unmount: unmountA } = renderHook<
+      ReturnType<typeof useBackButton>,
+      { visible: boolean }
+    >(({ visible }) => { useBackButton(visible, onCloseA); },
+      { initialProps: { visible: false } },
+    );
+    rerenderA({ visible: true });
+    expect(pushState).toHaveBeenCalledTimes(1);
+
+    // 顶层弹窗 B
+    const { rerender: rerenderB, unmount: unmountB } = renderHook<
+      ReturnType<typeof useBackButton>,
+      { visible: boolean }
+    >(({ visible }) => { useBackButton(visible, onCloseB); },
+      { initialProps: { visible: false } },
+    );
+    rerenderB({ visible: true });
+
+    // 系统返回键关闭 B（popstate 触发）
+    firePopstate();
+    expect(onCloseB).toHaveBeenCalledOnce();
+    // 模拟 React 更新：B visible=false
+    rerenderB({ visible: false });
+    // B 通过 popstate 关闭，不应调 back（栈非空）
+    const backCallsAfterBClose = back.mock.calls.length;
+
+    // 通过 NavBar 关闭底层 A
+    rerenderA({ visible: false });
+
+    // A 是最后一个弹窗 + 非 popstate 关闭 → 应调 history.back()
+    expect(back.mock.calls.length).toBe(backCallsAfterBClose + 1);
+
+    unmountB();
+    unmountA();
   });
 
   it('SSR 环境（window 为 undefined）不抛出异常', async () => {
