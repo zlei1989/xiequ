@@ -23,7 +23,7 @@ import { newId } from '@/lib/utils';
 import type { NextRequest } from 'next/server';
 
 /** 环境变量 */
-const POLL_INTERVAL = parseInt(process.env.WATERING_POLL_INTERVAL || '15000');
+const POLL_INTERVAL = parseInt(process.env.WATERING_POLL_INTERVAL || '1000');
 const LONG_POLL_TIMEOUT = parseInt(process.env.WATERING_LONG_POLL_TIMEOUT || '7000');
 
 /** 深睡眠最大时长（毫秒），由 WATERING_SLEEP_DURATION 环境变量控制，默认 5 分钟 */
