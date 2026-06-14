@@ -61,7 +61,7 @@ export function DeviceConfigForm({
   gpio: GpioInfo;
   onSave: (data: Partial<DeviceConfig>) => Promise<void>;
   onRemove: () => Promise<void>;
-  saveRef: React.MutableRefObject<() => Promise<void>>;
+  saveRef: React.RefObject<() => Promise<void>>;
 }) {
   const [form, setForm] = useState<DeviceConfig>(config);
   // onRemove 由父组件 Header 的删除按钮调用，当前编辑器内部不直接使用
@@ -300,7 +300,7 @@ export function DeviceConfigForm({
 
   // ---- 确认删除的通用辅助 ----
   function confirmDelete(title: string, onConfirm: () => void) {
-    Dialog.confirm({
+    void Dialog.confirm({
       title,
       onConfirm,
     });
@@ -511,6 +511,7 @@ export function DeviceConfigForm({
       <ProcessConfigPicker
         gpio={gpio}
         open={processVisible}
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         process={processIndex > -1 ? form.processes[processIndex]! : { name: '', steps: [] }}
         onAddStep={addStep}
         onClose={() => { setProcessVisible(false); }}
@@ -526,6 +527,7 @@ export function DeviceConfigForm({
       <StepConfigPicker
         gpio={gpio}
         open={stepVisible}
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         step={stepIndex > -1 && processIndex > -1 ? form.processes[processIndex]!.steps[stepIndex]! : { name: '', component: '', value: { begin: 0, end: 0 }, timeout: 0, interrupts: [] }}
         onAddInterrupt={addInterrupt}
         onClose={() => { setStepVisible(false); }}
@@ -542,16 +544,17 @@ export function DeviceConfigForm({
         form.processes[processIndex]!.steps[stepIndex]!.interrupts && (
         <InterruptConfigPicker
           gpio={gpio}
+          interrupt={
+            /* eslint-disable @typescript-eslint/no-non-null-assertion */
+            form.processes[processIndex]!.steps[stepIndex]!.interrupts[
+              interruptIndex
+            ]!
+            /* eslint-enable @typescript-eslint/no-non-null-assertion */
+          }
+          open={interruptVisible}
           onClose={() => { setInterruptVisible(false); }}
           onConfirm={(updated) => { updateInterrupt(interruptIndex, updated); }}
           onDelete={deleteInterrupt}
-          open={interruptVisible}
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          interrupt={
-            form.processes[processIndex]!.steps[stepIndex]!.interrupts![
-              interruptIndex
-            ]!
-          }
         />
       )}
 
@@ -559,6 +562,7 @@ export function DeviceConfigForm({
       <ScheduleConfigPicker
         open={scheduleVisible}
         processes={form.processes}
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         schedule={scheduleIndex > -1 ? form.schedules[scheduleIndex]! : { type: 'day', value: 0, interval: 1, process: 0 }}
         onClose={() => { setScheduleVisible(false); }}
         onConfirm={(updated) => { updateSchedule(scheduleIndex, updated); }}

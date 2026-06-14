@@ -49,9 +49,11 @@ export function ProcessConfigPicker({
 }: ProcessConfigPickerProps) {
   const [draft, setDraft] = useState(process);
 
+  /* eslint-disable react-hooks/set-state-in-effect -- ID-based stale closure prevention */
   useEffect(() => {
     setDraft(process);
   }, [open, process]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   useBackButton(open, onClose);
 
@@ -64,7 +66,7 @@ export function ProcessConfigPicker({
   const buttonOptions = gpio.buttons.map((k) => ({ label: k, value: k }));
 
   function confirmDelete() {
-    Dialog.confirm({
+    void Dialog.confirm({
       title: '确认删除此流程？',
       onConfirm: () => { onDelete?.(); },
     });
@@ -104,7 +106,7 @@ export function ProcessConfigPicker({
             label="触发按钮"
             onClick={() => {
               if (buttonOptions.length === 0) return;
-              Picker.prompt({
+              void Picker.prompt({
                 columns: [buttonOptions],
                 defaultValue: draft.trigger ? [draft.trigger] : [],
                 onConfirm: (val) => {
@@ -140,7 +142,7 @@ export function ProcessConfigPicker({
                   text: '删除',
                   color: 'danger',
                   onClick: () => {
-                    Dialog.confirm({
+                    void Dialog.confirm({
                       title: '确认删除此步骤？',
                       onConfirm: () => {
                         const newSteps = draft.steps.filter((_, i) => i !== idx);
@@ -176,6 +178,7 @@ ProcessConfigPicker.prompt = (props: ProcessConfigPromptProps): Promise<ProcessC
   return new Promise((resolve) => {
     const Wrapper = () => {
       const [visible, setVisible] = useState(false);
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- renderToBody 初始化模式
       useEffect(() => { setVisible(true); }, []);
       return React.createElement(ProcessConfigPicker, {
         open: visible,

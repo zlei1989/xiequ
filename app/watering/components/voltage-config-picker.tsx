@@ -185,6 +185,7 @@ VoltageConfigPicker.prompt = (props: VoltageConfigPromptProps): Promise<VoltageC
   return new Promise((resolve) => {
     const Wrapper = () => {
       const [visible, setVisible] = useState(false);
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- renderToBody 初始化模式
       useEffect(() => { setVisible(true); }, []);
       return (
         React.createElement(VoltageConfigPicker, {

@@ -53,9 +53,11 @@ export function ScheduleConfigPicker({
 }: ScheduleConfigPickerProps) {
   const [draft, setDraft] = useState(schedule);
 
+  /* eslint-disable react-hooks/set-state-in-effect -- ID-based stale closure prevention */
   useEffect(() => {
     setDraft(schedule);
   }, [open, schedule]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   useBackButton(open, onClose);
 
@@ -100,11 +102,11 @@ export function ScheduleConfigPicker({
           <Form.Item
             label="类型"
             onClick={() => {
-              Picker.prompt({
+              void Picker.prompt({
                 columns: [TYPE_OPTIONS],
                 defaultValue: [draft.type],
                 onConfirm: (val) => {
-                  if (val && val.length > 0 && typeof val[0] === 'string') {
+                  if (val.length > 0 && typeof val[0] === 'string') {
                     update({ ...draft, type: val[0] as ScheduleConfig['type'] });
                   }
                 },
@@ -128,14 +130,12 @@ export function ScheduleConfigPicker({
           <Form.Item
             label="时间"
             onClick={() => {
-              DatePicker.prompt({
+              void DatePicker.prompt({
                 precision: 'minute',
                 defaultValue: timeDate,
                 onConfirm: (val) => {
-                  if (val) {
-                    const ms = dayjs(val).diff(dayjs(val).startOf('day'), 'millisecond');
-                    update({ ...draft, value: ms });
-                  }
+                  const ms = dayjs(val).diff(dayjs(val).startOf('day'), 'millisecond');
+                  update({ ...draft, value: ms });
                 },
               });
             }}
@@ -146,11 +146,11 @@ export function ScheduleConfigPicker({
           <Form.Item
             label="执行流程"
             onClick={() => {
-              Picker.prompt({
+              void Picker.prompt({
                 columns: [processOptions],
                 defaultValue: [String(draft.process)],
                 onConfirm: (val) => {
-                  if (val && val.length > 0 && typeof val[0] === 'string') {
+                  if (val.length > 0 && typeof val[0] === 'string') {
                     update({ ...draft, process: Number(val[0]) });
                   }
                 },
@@ -180,6 +180,7 @@ ScheduleConfigPicker.prompt = (
   return new Promise((resolve) => {
     const Wrapper = () => {
       const [visible, setVisible] = useState(false);
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- renderToBody 初始化模式
       useEffect(() => { setVisible(true); }, []);
       return React.createElement(ScheduleConfigPicker, {
         open: visible,
