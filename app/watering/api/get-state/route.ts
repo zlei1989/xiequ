@@ -184,6 +184,9 @@ function buildResponse(
 
   if (changed && state?.process) {
     result.process = state.process;
+    if (typeof state.stepIndex === 'number') {
+      result.stepIndex = state.stepIndex;
+    }
   }
 
   if (
