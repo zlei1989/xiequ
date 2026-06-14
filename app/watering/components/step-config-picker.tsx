@@ -16,6 +16,7 @@ import type { GpioInfo } from '@/app/watering/hooks/use-device-config';
 import { useBackButton } from '@/lib/back-button';
 
 import type { StepConfig } from '../types';
+import { formatInterruptDesc } from '../utils/format-desc';
 
 interface StepConfigPickerProps {
   open: boolean;
@@ -171,7 +172,7 @@ export function StepConfigPicker({
               ]}
             >
               <List.Item
-                description={intr.component}
+                description={formatInterruptDesc(intr)}
                 onClick={() => { onEditInterrupt?.(idx); }}
               >
                 {intr.name}
