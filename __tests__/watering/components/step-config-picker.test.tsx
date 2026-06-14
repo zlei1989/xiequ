@@ -69,7 +69,7 @@ describe('StepConfigPicker', () => {
       />,
     );
     // 无负载时输入框 placeholder 显示"无可用负载"
-    expect(screen.getByPlaceholderText('无可用负载')).toBeDefined();
+    expect(screen.getByText('无可用负载')).toBeDefined();
   });
 
   it('点击添加中断按钮存在', () => {

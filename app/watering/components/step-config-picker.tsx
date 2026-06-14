@@ -7,7 +7,7 @@
 
 'use client';
 
-import { Input, Stepper, Switch, Picker, Button, Popup, NavBar, Form, SwipeAction, Dialog } from 'antd-mobile';
+import { Input, Stepper, Switch, Selector, ErrorBlock, Button, Popup, NavBar, Form, SwipeAction, Dialog } from 'antd-mobile';
 import { renderToBody } from 'antd-mobile/es/utils/render-to-body';
 import { AddOutline, DeleteOutline } from 'antd-mobile-icons';
 import React, { useState, useEffect } from 'react';
@@ -95,26 +95,20 @@ export function StepConfigPicker({
 
           {/* 负载选择 */}
           <Form.Item
-            help={hasLoad ? undefined : '请等待设备上报 GPIO 状态'}
+            help={loadOptions.length === 0 ? '请等待设备上报 GPIO 状态' : undefined}
             label="负载"
-            onClick={() => {
-              if (loadOptions.length === 0) return;
-              void Picker.prompt({
-                columns: [loadOptions],
-                defaultValue: step.component ? [step.component] : [],
-                onConfirm: (val) => {
-                  if (typeof val[0] === 'string') {
-                    update({ component: val[0] });
-                  }
-                },
-              });
-            }}
           >
-            <Input
-              readOnly
-              placeholder={loadOptions.length === 0 ? '无可用负载' : '未选择'}
-              value={step.component || ''}
-            />
+            {loadOptions.length > 0 ? (
+              <Selector
+                options={loadOptions}
+                value={step.component ? [step.component] : []}
+                onChange={(vals) => {
+                  update({ component: vals.length > 0 ? vals[0] : undefined });
+                }}
+              />
+            ) : (
+              <ErrorBlock description="请等待设备上报 GPIO 状态" status="empty" title="无可用负载" />
+            )}
           </Form.Item>
 
           {/* 启动参数 */}
