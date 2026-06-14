@@ -1,0 +1,198 @@
+/**
+ * 流程配置 Picker — 编辑单个 ProcessConfig 的名称、触发按钮、步骤列表
+ *
+ * 使用 antd-mobile Form 替代 List，vertical 布局适合移动端表单。
+ * 提供声明式组件 + 静态 .prompt() 双 API。
+ */
+
+'use client';
+
+import { Input, Picker, ErrorBlock, Button, Popup, NavBar, Form, SwipeAction, Dialog } from 'antd-mobile';
+import { renderToBody } from 'antd-mobile/es/utils/render-to-body';
+import { AddOutline, DeleteOutline } from 'antd-mobile-icons';
+import React, { useState, useEffect } from 'react';
+
+import type { GpioInfo } from '@/app/watering/hooks/use-device-config';
+import { useBackButton } from '@/lib/back-button';
+
+import type { ProcessConfig } from '../types';
+
+interface ProcessConfigPickerProps {
+  open: boolean;
+  process: ProcessConfig;
+  gpio: GpioInfo;
+  onConfirm: (result: ProcessConfig) => void;
+  onClose: () => void;
+  onDelete?: () => void;
+  onAddStep?: () => void;
+  onEditStep?: (index: number) => void;
+  afterClose?: () => void;
+}
+
+interface ProcessConfigPromptProps {
+  process: ProcessConfig;
+  gpio: GpioInfo;
+  onConfirm?: (result: ProcessConfig) => void;
+  onDelete?: () => void;
+}
+
+export function ProcessConfigPicker({
+  open,
+  process,
+  gpio,
+  onConfirm,
+  onClose,
+  onDelete,
+  onAddStep,
+  onEditStep,
+  afterClose,
+}: ProcessConfigPickerProps) {
+  const [draft, setDraft] = useState(process);
+
+  useEffect(() => {
+    setDraft(process);
+  }, [open, process]);
+
+  useBackButton(open, onClose);
+
+  function update(partial: Partial<ProcessConfig>) {
+    const updated = { ...draft, ...partial };
+    setDraft(updated);
+    onConfirm(updated);
+  }
+
+  const buttonOptions = gpio.buttons.map((k) => ({ label: k, value: k }));
+
+  function confirmDelete() {
+    Dialog.confirm({
+      title: '确认删除此流程？',
+      onConfirm: () => { onDelete?.(); },
+    });
+  }
+
+  return (
+    <Popup
+      afterClose={afterClose}
+      bodyStyle={{ height: '80vh' }}
+      position="bottom"
+      visible={open}
+      onClose={onClose}
+    >
+      <NavBar
+        right={onDelete ? (
+          <DeleteOutline
+            style={{ fontSize: 20, cursor: 'pointer' }}
+            onClick={confirmDelete}
+          />
+        ) : null}
+        onBack={onClose}
+      >
+        编辑流程
+      </NavBar>
+
+      <div style={{ padding: '0 16px', overflowY: 'auto', height: 'calc(80vh - 45px)' }}>
+        <Form layout="vertical">
+          <Form.Item label="功能名称">
+            <Input
+              placeholder="输入流程名称"
+              value={draft.name}
+              onChange={(v) => { update({ name: v }); }}
+            />
+          </Form.Item>
+
+          <Form.Item
+            label="触发按钮"
+            onClick={() => {
+              if (buttonOptions.length === 0) return;
+              Picker.prompt({
+                columns: [buttonOptions],
+                defaultValue: draft.trigger ? [draft.trigger] : [],
+                onConfirm: (val) => {
+                  if (val.length > 0 && typeof val[0] === 'string') {
+                    update({ trigger: val[0] });
+                  }
+                },
+              });
+            }}
+          >
+            <Input
+              readOnly
+              placeholder="未选择"
+              value={draft.trigger || ''}
+            />
+          </Form.Item>
+
+          {buttonOptions.length === 0 && (
+            <ErrorBlock
+              description="请等待设备上报 GPIO 状态"
+              status="empty"
+              title="无可用按钮"
+            />
+          )}
+
+          <Form.Header>步骤列表</Form.Header>
+          {draft.steps.map((s, idx) => (
+            <SwipeAction
+              key={idx}
+              rightActions={[
+                {
+                  key: 'delete',
+                  text: '删除',
+                  color: 'danger',
+                  onClick: () => {
+                    Dialog.confirm({
+                      title: '确认删除此步骤？',
+                      onConfirm: () => {
+                        const newSteps = draft.steps.filter((_, i) => i !== idx);
+                        update({ steps: newSteps });
+                      },
+                    });
+                  },
+                },
+              ]}
+            >
+              <Form.Item
+                help={s.component}
+                label={s.name}
+                onClick={() => { onEditStep?.(idx); }}
+              >
+                <div />
+              </Form.Item>
+            </SwipeAction>
+          ))}
+
+          <Form.Item>
+            <Button block color="primary" onClick={onAddStep}>
+              <span><AddOutline />添加步骤</span>
+            </Button>
+          </Form.Item>
+        </Form>
+      </div>
+    </Popup>
+  );
+}
+
+ProcessConfigPicker.prompt = (props: ProcessConfigPromptProps): Promise<ProcessConfig | null> => {
+  return new Promise((resolve) => {
+    const Wrapper = () => {
+      const [visible, setVisible] = useState(false);
+      useEffect(() => { setVisible(true); }, []);
+      return React.createElement(ProcessConfigPicker, {
+        open: visible,
+        process: props.process,
+        gpio: props.gpio,
+        onConfirm: (result: ProcessConfig) => {
+          props.onConfirm?.(result);
+          resolve(result);
+        },
+        onClose: () => {
+          setVisible(false);
+          resolve(null);
+        },
+        onDelete: props.onDelete,
+        afterClose: () => { unmount(); },
+      });
+    };
+    const unmount = renderToBody(React.createElement(Wrapper));
+  });
+};

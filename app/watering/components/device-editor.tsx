@@ -33,7 +33,7 @@ import { useState, useEffect } from 'react';
 import { useBackButton } from '@/lib/back-button';
 
 import { InterruptConfigPicker } from './interrupt-config-picker';
-import { ProcessEditor } from './process-editor';
+import { ProcessConfigPicker } from './process-config-picker';
 import { ScheduleEditor } from './schedule-editor';
 import { StepConfigPicker } from './step-config-picker';
 
@@ -89,7 +89,6 @@ export function DeviceEditor({
   const [voltageVisible, setVoltageConfigVisible] = useState(false);
 
   // ---- 返回键栈接入 ----
-  useBackButton(processVisible, () => { setProcessVisible(false); });
 
   useBackButton(scheduleVisible, () => { setScheduleVisible(false); });
   useBackButton(voltageVisible, () => { setVoltageConfigVisible(false); });
@@ -515,43 +514,20 @@ export function DeviceEditor({
           嵌套 Popup 层（原 Drawer 层）
           ============================================ */}
 
-      {/* 流程编辑 Popup (80vh) */}
-      <Popup
-        bodyStyle={{ height: '80vh' }}
-        position="bottom"
-        visible={processVisible}
+      {/* 流程配置 Picker */}
+      <ProcessConfigPicker
+        gpio={gpio}
+        open={processVisible}
+        process={processIndex > -1 ? form.processes[processIndex]! : { name: '', steps: [] }}
+        onAddStep={addStep}
         onClose={() => { setProcessVisible(false); }}
-      >
-        <NavBar
-          right={
-            <DeleteOutline
-              style={{ fontSize: 20, cursor: 'pointer' }}
-              onClick={() => {
-                confirmDelete('确认删除此流程？', deleteProcess);
-              }}
-            />
-          }
-          onBack={() => { setProcessVisible(false); }}
-        >
-          编辑流程
-        </NavBar>
-        <div style={{ padding: '0 16px', overflowY: 'auto', height: 'calc(80vh - 45px)' }}>
-          {processIndex > -1 && (
-            <ProcessEditor
-              gpio={gpio}
-              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-              process={form.processes[processIndex]!}
-              onAddStep={addStep}
-              onChange={(updated) => { updateProcess(processIndex, updated); }}
-              onEditStep={(stepIdx) => {
-                setStepIndex(stepIdx);
-                setStepVisible(true);
-              }}
-              onRemove={deleteProcess}
-            />
-          )}
-        </div>
-      </Popup>
+        onConfirm={(updated) => { updateProcess(processIndex, updated); }}
+        onDelete={deleteProcess}
+        onEditStep={(idx) => {
+          setStepIndex(idx);
+          setStepVisible(true);
+        }}
+      />
 
       {/* 步骤配置 Picker (75vh) */}
       <StepConfigPicker

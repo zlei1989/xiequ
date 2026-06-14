@@ -3,7 +3,7 @@
 import { render, screen, cleanup } from '@testing-library/react';
 import { describe, it, expect, vi, afterEach } from 'vitest';
 
-import { ProcessEditor } from '@/app/watering/components/process-editor';
+import { ProcessConfigPicker } from '@/app/watering/components/process-config-picker';
 import type { GpioInfo } from '@/app/watering/hooks/use-device-config';
 import type { ProcessConfig } from '@/app/watering/types';
 
@@ -20,20 +20,21 @@ const defaultProcess: ProcessConfig = {
   ],
 };
 
-describe('ProcessEditor', () => {
+describe('ProcessConfigPicker', () => {
   afterEach(() => {
     cleanup();
   });
 
   it('渲染流程名称输入', () => {
     render(
-      <ProcessEditor
+      <ProcessConfigPicker
         gpio={mockGpio}
+        open={true}
         process={defaultProcess}
         onAddStep={vi.fn()}
-        onChange={vi.fn()}
+        onClose={vi.fn()}
+        onConfirm={vi.fn()}
         onEditStep={vi.fn()}
-        onRemove={vi.fn()}
       />,
     );
     expect(screen.getByDisplayValue('浇水流程')).toBeDefined();
@@ -41,13 +42,14 @@ describe('ProcessEditor', () => {
 
   it('渲染步骤列表项', () => {
     render(
-      <ProcessEditor
+      <ProcessConfigPicker
         gpio={mockGpio}
+        open={true}
         process={defaultProcess}
         onAddStep={vi.fn()}
-        onChange={vi.fn()}
+        onClose={vi.fn()}
+        onConfirm={vi.fn()}
         onEditStep={vi.fn()}
-        onRemove={vi.fn()}
       />,
     );
     expect(screen.getByText('步骤1')).toBeDefined();
@@ -55,13 +57,14 @@ describe('ProcessEditor', () => {
 
   it('无按钮时显示空状态', () => {
     render(
-      <ProcessEditor
+      <ProcessConfigPicker
         gpio={{ ...mockGpio, buttons: [] }}
+        open={true}
         process={defaultProcess}
         onAddStep={vi.fn()}
-        onChange={vi.fn()}
+        onClose={vi.fn()}
+        onConfirm={vi.fn()}
         onEditStep={vi.fn()}
-        onRemove={vi.fn()}
       />,
     );
     expect(screen.getByText(/无可用按钮/)).toBeDefined();
@@ -69,13 +72,14 @@ describe('ProcessEditor', () => {
 
   it('点击添加步骤触发回调', () => {
     render(
-      <ProcessEditor
+      <ProcessConfigPicker
         gpio={mockGpio}
+        open={true}
         process={defaultProcess}
         onAddStep={vi.fn()}
-        onChange={vi.fn()}
+        onClose={vi.fn()}
+        onConfirm={vi.fn()}
         onEditStep={vi.fn()}
-        onRemove={vi.fn()}
       />,
     );
     const addBtn = screen.getByText('添加步骤');
