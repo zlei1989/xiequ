@@ -108,7 +108,7 @@ export function ProcessStepEditor({
       <List.Item title="中断列表" />
       {(step.interrupts || []).map((intr, idx) => (
         <SwipeAction
-          key={intr.key || idx}
+          key={idx}
           rightActions={[
             {
               key: 'delete',

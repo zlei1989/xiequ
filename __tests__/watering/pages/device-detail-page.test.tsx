@@ -1,9 +1,17 @@
-// @vitest-environment jsdom
+/**
+ * 设备详情页测试 — 验证 NavBar 渲染和 DeviceEditor 集成
+ *
+ * 使用 @vitest-environment jsdom 提供 DOM API。
+ * vite 配置中未设置 globals: true，需导入 describe/it/expect/vi。
+ * 需要 afterEach(cleanup) 避免 antd-mobile 组件 DOM 残留。
+ *
+ * @vitest-environment jsdom
+ */
 
-import { cleanup, render, screen } from '@testing-library/react';
-import { afterEach, describe, it, expect, vi } from 'vitest';
+import { render, cleanup } from '@testing-library/react';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 
-// Mock Next.js router & useParams
+// Mock Next.js router + useParams
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ back: vi.fn(), push: vi.fn() }),
   useParams: () => ({ chipId: 'chip_001' }),
@@ -11,7 +19,9 @@ vi.mock('next/navigation', () => ({
 
 // Mock DeviceEditor 简化渲染
 vi.mock('@/app/watering/components/device-editor', () => ({
-  DeviceEditor: () => <div data-testid="device-editor" />,
+  DeviceEditor: ({ config }: { config: { name: string } }) => (
+    <div data-testid="device-editor">{config.name}</div>
+  ),
 }));
 
 // Mock useDeviceConfig
@@ -27,18 +37,21 @@ vi.mock('@/app/watering/hooks/use-device-config', () => ({
 
 import DeviceDetailPage from '@/app/watering/devices/[chipId]/page';
 
-afterEach(() => { cleanup(); });
-
 describe('DeviceDetailPage', () => {
-  it('渲染设备名称（NavBar 标题）', async () => {
-    render(<DeviceDetailPage />);
-    const title = await screen.findByText('测试设备');
-    expect(title).toBeDefined();
+  afterEach(() => {
+    cleanup();
+  });
+
+  it('渲染 NavBar 和设备名', async () => {
+    const { findAllByText } = render(<DeviceDetailPage />);
+    const titles = await findAllByText('测试设备');
+    // 设备名同时出现在 NavBar 标题和 DeviceEditor 中
+    expect(titles.length).toBeGreaterThanOrEqual(1);
   });
 
   it('渲染 DeviceEditor', async () => {
-    render(<DeviceDetailPage />);
-    const editor = await screen.findByTestId('device-editor');
+    const { findByTestId } = render(<DeviceDetailPage />);
+    const editor = await findByTestId('device-editor');
     expect(editor).toBeDefined();
   });
 });

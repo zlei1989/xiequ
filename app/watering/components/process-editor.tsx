@@ -74,7 +74,7 @@ export function ProcessEditor({
       <List.Item title="步骤列表" />
       {process.steps.map((s, idx) => (
         <SwipeAction
-          key={s.key || idx}
+          key={idx}
           rightActions={[
             {
               key: 'delete',

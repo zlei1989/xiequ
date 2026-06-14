@@ -1,19 +1,23 @@
 /**
  * 定时任务编辑器 — 编辑触发周期、时间、执行流程
  *
- * 时间存储格式：schedule.value 为距 00:00 的毫秒数（毫秒时间戳偏移量）
- * 与 dayjs 的转换：
- * - 读取：dayjs().startOf("day").add(value, "millisecond") → dayjs 时刻对象
- * - 写入：dayjs.diff(dayjs().startOf("day"), "millisecond") → 毫秒偏移量
+ * 使用 antd-mobile List + Picker + DatePicker 构建移动端界面。
+ * 时间选择用 DatePicker(precision='minute')，显示和保存时转为距 00:00 毫秒偏移。
  */
 
 'use client';
 
-import { Select, InputNumber, Switch, TimePicker } from 'antd';
+import { Stepper, Switch, Picker, DatePicker, List } from 'antd-mobile';
 import dayjs from 'dayjs';
 
 import type { Schedule } from '../types';
-import type { Dayjs } from 'dayjs';
+
+const TYPE_OPTIONS = [
+  { label: '每天', value: 'day' },
+  { label: '每分钟', value: 'minute' },
+  { label: '每周', value: 'week' },
+  { label: '每月', value: 'month' },
+];
 
 type Process = { name: string };
 
@@ -33,93 +37,95 @@ export function ScheduleEditor({
     onChange([updated]);
   }
 
-  /**
-   * 毫秒值 → dayjs 时刻（仅时间部分）
-   *
-   * schedule.value 存储的是距 00:00 的毫秒偏移量（如 28800000 = 08:00）。
-   * 取当天零点再叠加毫秒偏移，构造出 dayjs 时刻对象供 TimePicker 使用，
-   * 日期部分会被 TimePicker 忽略（它只取 HH:mm）。
-   */
-  const timeValue = dayjs()
+  /** 毫秒偏移 → dayjs 时刻（仅时间部分，日期取当天） */
+  const timeDate = dayjs()
     .startOf('day')
-    .add(schedule.value || 0, 'millisecond');
+    .add(schedule.value || 0, 'millisecond')
+    .toDate();
+
+  const processOptions = processes.map((p, i) => ({
+    label: p.name || `流程 ${String(i)}`,
+    value: String(i),
+  }));
 
   return (
-    <div className="flex flex-col gap-3">
-      <div>
-        <label className="mb-1 block text-[13px] text-gray-500">
-          类型
-        </label>
-        <Select
-          className="w-full"
-          options={[
-            { value: 'day', label: '每天' },
-            { value: 'minute', label: '每分钟' },
-            { value: 'week', label: '每周' },
-            { value: 'month', label: '每月' },
-          ]}
-          value={schedule.type}
-          onChange={(v) => { update({ ...schedule, type: v }); }}
-        />
-      </div>
+    <List>
+      {/* 类型 */}
+      <List.Item
+        title="类型"
+        extra={TYPE_OPTIONS.find((o) => o.value === schedule.type)?.label ?? ''}
+        clickable
+        onClick={() => {
+          Picker.prompt({
+            columns: [TYPE_OPTIONS],
+            defaultValue: [schedule.type],
+            onConfirm: (val) => {
+              if (val && val.length > 0 && typeof val[0] === 'string') {
+                update({ ...schedule, type: val[0] as Schedule['type'] });
+              }
+            },
+          });
+        }}
+      />
 
-      <div>
-        <label className="mb-1 block text-[13px] text-gray-500">
-          间隔（天）
-        </label>
-        <InputNumber
-          className="w-full"
+      {/* 间隔 */}
+      <List.Item title="间隔（天）">
+        <Stepper
           min={1}
           step={1}
           value={schedule.interval}
-          onChange={(v) => { update({ ...schedule, interval: v ?? 1 }); }}
+          onChange={(v) => { update({ ...schedule, interval: v }); }}
         />
-      </div>
+      </List.Item>
 
-      <div>
-        <label className="mb-1 block text-[13px] text-gray-500">
-          时间
-        </label>
-        <TimePicker
-          className="w-full"
-          format="HH:mm"
-          value={timeValue}
-          onChange={(d: Dayjs | null) => {
-            if (d) {
-              // 反向转换：dayjs 时刻对象 → 距 00:00 的毫秒偏移量
-              const ms = d.diff(dayjs().startOf('day'), 'millisecond');
-              update({ ...schedule, value: ms });
-            }
-          }}
-        />
-      </div>
+      {/* 时间 — DatePicker(minute) */}
+      <List.Item
+        title="时间"
+        extra={dayjs(timeDate).format('HH:mm')}
+        clickable
+        onClick={() => {
+          DatePicker.prompt({
+            precision: 'minute',
+            defaultValue: timeDate,
+            onConfirm: (val) => {
+              if (val) {
+                // Date → 距 00:00 的毫秒偏移量
+                const ms = dayjs(val).diff(dayjs(val).startOf('day'), 'millisecond');
+                update({ ...schedule, value: ms });
+              }
+            },
+          });
+        }}
+      />
 
-      <div>
-        <label className="mb-1 block text-[13px] text-gray-500">
-          执行流程
-        </label>
-        <Select
-          className="w-full"
-          options={processes.map((p, i) => ({
-            value: i,
-            label: p.name || `流程 ${String(i)}`,
-          }))}
-          value={schedule.process}
-          onChange={(v) => { update({ ...schedule, process: v }); }}
-        />
-      </div>
+      {/* 执行流程 */}
+      <List.Item
+        title="执行流程"
+        extra={processOptions.find((o) => o.value === String(schedule.process))?.label ?? ''}
+        clickable
+        onClick={() => {
+          Picker.prompt({
+            columns: [processOptions],
+            defaultValue: [String(schedule.process)],
+            onConfirm: (val) => {
+              if (val && val.length > 0 && typeof val[0] === 'string') {
+                update({ ...schedule, process: Number(val[0]) });
+              }
+            },
+          });
+        }}
+      />
 
-      <div>
-        <label className="mb-1 block text-[13px] text-gray-500">
-          禁用
-        </label>
+      {/* 禁用 */}
+      <List.Item
+        title="禁用"
+        description={schedule.disabled ? '已禁用' : '已启用'}
+      >
         <Switch
           checked={!schedule.disabled}
-          checkedChildren="启用"
-          unCheckedChildren="禁用"
           onChange={(checked) => { update({ ...schedule, disabled: !checked }); }}
         />
-      </div>
-    </div>
+      </List.Item>
+    </List>
   );
 }
