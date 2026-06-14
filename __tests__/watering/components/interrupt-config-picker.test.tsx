@@ -3,7 +3,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 
-import { ProcessInterruptEditor } from '@/app/watering/components/process-interrupt-editor';
+import { InterruptConfigPicker } from '@/app/watering/components/interrupt-config-picker';
 import type { GpioInfo } from '@/app/watering/hooks/use-device-config';
 import type { InterruptConfig } from '@/app/watering/types';
 
@@ -25,15 +25,16 @@ const defaultInterrupt: InterruptConfig = {
   duration: 1000,
 };
 
-describe('ProcessInterruptEditor', () => {
+describe('InterruptConfigPicker', () => {
   it('渲染中断名称输入框', () => {
-    const onChange = vi.fn();
+    const onConfirm = vi.fn();
     render(
-      <ProcessInterruptEditor
+      <InterruptConfigPicker
         gpio={mockGpio}
         interrupt={defaultInterrupt}
-        onChange={onChange}
-        onRemove={vi.fn()}
+        open={true}
+        onClose={vi.fn()}
+        onConfirm={onConfirm}
       />,
     );
     // 名称输入框存在
@@ -43,11 +44,12 @@ describe('ProcessInterruptEditor', () => {
 
   it('数字信号模式显示触发状态开关', () => {
     render(
-      <ProcessInterruptEditor
+      <InterruptConfigPicker
         gpio={mockGpio}
         interrupt={{ ...defaultInterrupt, signalType: 'digital' }}
-        onChange={vi.fn()}
-        onRemove={vi.fn()}
+        open={true}
+        onClose={vi.fn()}
+        onConfirm={vi.fn()}
       />,
     );
     const switches = screen.getAllByRole('switch');
@@ -57,11 +59,12 @@ describe('ProcessInterruptEditor', () => {
 
   it('模拟信号模式显示逻辑选择器', () => {
     render(
-      <ProcessInterruptEditor
+      <InterruptConfigPicker
         gpio={mockGpio}
         interrupt={{ ...defaultInterrupt, signalType: 'analog' }}
-        onChange={vi.fn()}
-        onRemove={vi.fn()}
+        open={true}
+        onClose={vi.fn()}
+        onConfirm={vi.fn()}
       />,
     );
     // 模拟信号模式下有"大于"选项
@@ -71,14 +74,15 @@ describe('ProcessInterruptEditor', () => {
   it('无传感器时显示空状态提示', () => {
     const emptyGpio: GpioInfo = { buttons: [], loads: [], sensors: [] };
     render(
-      <ProcessInterruptEditor
+      <InterruptConfigPicker
         gpio={emptyGpio}
         interrupt={defaultInterrupt}
-        onChange={vi.fn()}
-        onRemove={vi.fn()}
+        open={true}
+        onClose={vi.fn()}
+        onConfirm={vi.fn()}
       />,
     );
-    // ErrorBlock empty 有 description 元素
-    expect(screen.getByText(/无可用传感器/)).toBeDefined();
+    // 无传感器时显示等待上报提示
+    expect(screen.getByText(/请等待设备上报/)).toBeDefined();
   });
 });

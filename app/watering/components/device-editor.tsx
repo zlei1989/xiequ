@@ -32,8 +32,8 @@ import { useState, useEffect } from 'react';
 
 import { useBackButton } from '@/lib/back-button';
 
+import { InterruptConfigPicker } from './interrupt-config-picker';
 import { ProcessEditor } from './process-editor';
-import { ProcessInterruptEditor } from './process-interrupt-editor';
 import { ProcessStepEditor } from './process-step-editor';
 import { ScheduleEditor } from './schedule-editor';
 
@@ -91,7 +91,7 @@ export function DeviceEditor({
   // ---- 返回键栈接入 ----
   useBackButton(processVisible, () => { setProcessVisible(false); });
   useBackButton(stepVisible, () => { setStepVisible(false); });
-  useBackButton(interruptVisible, () => { setInterruptVisible(false); });
+
   useBackButton(scheduleVisible, () => { setScheduleVisible(false); });
   useBackButton(voltageVisible, () => { setVoltageConfigVisible(false); });
 
@@ -592,46 +592,26 @@ export function DeviceEditor({
         </div>
       </Popup>
 
-      {/* 中断编辑 Popup (70vh) */}
-      <Popup
-        bodyStyle={{ height: '70vh' }}
-        position="bottom"
-        visible={interruptVisible}
-        onClose={() => { setInterruptVisible(false); }}
-      >
-        <NavBar
-          right={
-            <DeleteOutline
-              style={{ fontSize: 20, cursor: 'pointer' }}
-              onClick={() => {
-                confirmDelete('确认删除此中断？', deleteInterrupt);
-              }}
-            />
+      {/* 中断编辑 Picker (70vh) */}
+      {interruptIndex > -1 &&
+        stepIndex > -1 &&
+        processIndex > -1 &&
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        form.processes[processIndex]!.steps[stepIndex]!.interrupts && (
+        <InterruptConfigPicker
+          gpio={gpio}
+          onClose={() => { setInterruptVisible(false); }}
+          onConfirm={(updated) => { updateInterrupt(interruptIndex, updated); }}
+          onDelete={deleteInterrupt}
+          open={interruptVisible}
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          interrupt={
+            form.processes[processIndex]!.steps[stepIndex]!.interrupts![
+              interruptIndex
+            ]!
           }
-          onBack={() => { setInterruptVisible(false); }}
-        >
-          编辑中断
-        </NavBar>
-        <div style={{ padding: '0 16px', overflowY: 'auto', height: 'calc(70vh - 45px)' }}>
-          {/* eslint-disable @typescript-eslint/no-non-null-assertion */}
-          {interruptIndex > -1 &&
-            stepIndex > -1 &&
-            processIndex > -1 &&
-            form.processes[processIndex]!.steps[stepIndex]!.interrupts && (
-            <ProcessInterruptEditor
-              gpio={gpio}
-              interrupt={
-                form.processes[processIndex]!.steps[stepIndex]!.interrupts[
-                  interruptIndex
-                ]!
-              }
-              onChange={(updated) => { updateInterrupt(interruptIndex, updated); }}
-              onRemove={deleteInterrupt}
-            />
-          )}
-          {/* eslint-enable @typescript-eslint/no-non-null-assertion */}
-        </div>
-      </Popup>
+        />
+      )}
 
       {/* 定时编辑 Popup (70vh) */}
       <Popup
