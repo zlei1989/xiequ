@@ -422,7 +422,7 @@ export function DeviceConfigForm({
             </SwipeAction>
           ))
         )}
-        <div className='p-2' >
+        <div className="p-2" >
           <Button
             block
             size="small"
@@ -467,10 +467,10 @@ export function DeviceConfigForm({
             </SwipeAction>
           ))
         )}
-        <div className='p-2' >
+        <div className="p-2" >
           <Button
-            size="small"
             block
+            size="small"
             onClick={addSchedule}
           >
             <AddOutline /> 添加
@@ -518,21 +518,21 @@ export function DeviceConfigForm({
         processIndex > -1 &&
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         form.processes[processIndex]!.steps[stepIndex]!.interrupts && (
-          <InterruptConfigPicker
-            gpio={gpio}
-            interrupt={
-              /* eslint-disable @typescript-eslint/no-non-null-assertion */
-              form.processes[processIndex]!.steps[stepIndex]!.interrupts[
+        <InterruptConfigPicker
+          gpio={gpio}
+          interrupt={
+            /* eslint-disable @typescript-eslint/no-non-null-assertion */
+            form.processes[processIndex]!.steps[stepIndex]!.interrupts[
               interruptIndex
-              ]!
-              /* eslint-enable @typescript-eslint/no-non-null-assertion */
-            }
-            open={interruptVisible}
-            onClose={() => { setInterruptVisible(false); }}
-            onConfirm={(updated) => { updateInterrupt(interruptIndex, updated); }}
-            onDelete={deleteInterrupt}
-          />
-        )}
+            ]!
+            /* eslint-enable @typescript-eslint/no-non-null-assertion */
+          }
+          open={interruptVisible}
+          onClose={() => { setInterruptVisible(false); }}
+          onConfirm={(updated) => { updateInterrupt(interruptIndex, updated); }}
+          onDelete={deleteInterrupt}
+        />
+      )}
 
       {/* 定时任务配置 Picker */}
       <ScheduleConfigPicker

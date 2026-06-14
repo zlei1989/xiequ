@@ -11,13 +11,11 @@
  * 注意：suppressHydrationWarning 用于抑制内联 script 修改 DOM 产生的水合警告。
  */
 
-import { ConfigProvider } from 'antd-mobile';
-import zhCN from 'antd-mobile/es/locales/zh-CN';
 import { Geist, Geist_Mono } from 'next/font/google';
 
 import 'antd-mobile/es/global';
 import './globals.css';
-import { AntdMobileCompat } from '../components/antd-mobile-compat';
+import { ClientLayoutProviders } from '../components/client-layout-providers';
 import { PwaRegister } from '../components/pwa-register';
 
 import type { Metadata } from 'next';
@@ -71,11 +69,10 @@ export default function RootLayout({
             __html: '!function(){var d=document.documentElement,m=window.matchMedia("(prefers-color-scheme:dark)");function u(e){d.setAttribute("data-prefers-color-scheme",e.matches?"dark":"light")}u(m);m.addEventListener("change",u)}();',
           }}
         />
-        <ConfigProvider locale={zhCN}>
-          <AntdMobileCompat />
+        <ClientLayoutProviders>
           {children}
           <PwaRegister />
-        </ConfigProvider>
+        </ClientLayoutProviders>
       </body>
     </html>
   );

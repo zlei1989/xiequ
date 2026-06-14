@@ -112,7 +112,8 @@ export function useBackButton(visible: boolean, onClose: () => void): void {
       if (idx !== -1) {
         // 判断本次关闭是否由 handlePopstate（系统返回键）触发
         // handlePopstate 会在调用 onClose 前将 onCloseRef.current 置为 null
-        const closedByPopstate = stack[idx]!.onCloseRef.current === null;
+        const entry = stack[idx];
+        const closedByPopstate = entry?.onCloseRef.current === null;
         stack.splice(idx, 1);
 
         // 栈空则清理监听器

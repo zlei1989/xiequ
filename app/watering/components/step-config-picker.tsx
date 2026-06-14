@@ -180,7 +180,7 @@ export function StepConfigPicker({
           ))}
 
           {/* 添加中断 */}
-          <div className='p-2'>
+          <div className="p-2">
             <Button block size="small" onClick={onAddInterrupt}>
               <AddOutline /> 添加中断
             </Button>

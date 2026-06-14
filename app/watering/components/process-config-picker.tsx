@@ -146,8 +146,8 @@ export function ProcessConfigPicker({
               </List.Item>
             </SwipeAction>
           ))}
-          <div className='p-2'>
-            <Button block size='small' onClick={onAddStep}>
+          <div className="p-2">
+            <Button block size="small" onClick={onAddStep}>
               <AddOutline /> 添加步骤
             </Button>
           </div>
