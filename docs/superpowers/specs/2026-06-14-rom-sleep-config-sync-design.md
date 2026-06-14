@@ -5,152 +5,290 @@
 
 ## 概述
 
-ROM 端休眠逻辑当前与数据库配置脱节：`DeviceConfig.idleSleep`（休眠总开关）和 `idleTimeout`（空闲超时时长）未被服务端 `get-state` 接口下发，导致用户配置无法控制 ROM 的休眠行为。本设计建立配置→服务端→ROM 的完整数据通路。
+当前 ROM 端休眠逻辑与数据库配置完全脱节，且 ROM 承担了本应由服务端负责的判断逻辑。本设计重构为**服务端主导决策、ROM 纯粹执行**的架构。
 
 ## 问题诊断
 
-### 当前行为
+### 三个脱节
+
+1. **`sleepDuration` 语义混淆**：环境变量值被当作"空闲倒计时"下发，实际应是"深睡眠持续时长"
+2. **`idleSleep`/`idleTimeout` 从未生效**：数据库配置被 `get-state` 完全忽略
+3. **ROM 做了不该做的判断**：自己维护 `_lastOperationTime` 做空闲倒计时，无法感知定时任务时间约束
+
+### 架构问题
 
 ```
-DeviceConfig.idleSleep   ──→  get-state 忽略
-DeviceConfig.idleTimeout ──→  get-state 忽略
-WATERING_SLEEP_DURATION  ──→  get-state 硬编码下发 sleepDuration ──→ ROM 当空闲倒计时用
+当前：ROM 自己判断空闲 → 自己倒计时 → 盲目深睡（无定时唤醒）
+
+目标：服务端判断空闲 → 服务端计算睡多久 → ROM 收到命令直接睡（定时唤醒）
 ```
 
-三个脱节：
+## 设计原则
 
-1. **`sleepDuration` 语义混淆**：环境变量 `WATERING_SLEEP_DURATION`（意"深睡眠持续多久"）被下发为 `sleepDuration`，ROM 将其当作"空闲多久后进入睡眠"的倒计时，两个不同概念混为一个字段
-2. **`idleSleep` 总开关被忽略**：`buildResponse` 不检查 `config.idleSleep`，用户关闭休眠后 ROM 仍可能收到 `sleepDuration`
-3. **`idleTimeout` 从未下发**：用户配置的空闲超时值对 ROM 不可见
+- **ROM 不问"我闲了多久"** — 服务端根据设备动作记录判断
+- **ROM 只认一个数** — `sleepDuration`：要睡多少毫秒，收到就睡
+- **ROM 不自己倒计时** — 移除 `_lastOperationTime`，简化 loop()
 
-### 概念澄清
+## 角色分工
 
-| 字段 | 含义 | 来源 | 使用者 |
-|------|------|------|--------|
-| `idleSleep` | 是否启用空闲休眠 | DB `DeviceConfig` | 服务端判断是否下发休眠指令 |
-| `idleTimeout` | 无操作多久后进入睡眠 | DB `DeviceConfig` | 服务端下发 → ROM 做倒计时 |
-| `WATERING_SLEEP_DURATION` | 深睡眠持续多久（唤醒间隔） | 环境变量 | 未来 ROM 支持定时唤醒时使用 |
+| 职责 | 服务端 | ROM |
+|------|--------|-----|
+| 记录设备动作时间 | ✅ `pushState` 更新 `idle_since` | — |
+| 判断是否空闲 | ✅ `now - idleSince >= idleTimeout` | — |
+| 决定是否休眠 | ✅ `idleSleep && switch==off && 空闲` | — |
+| 计算睡多久 | ✅ `min(下次定时任务时间, SLEEP_DURATION)` | — |
+| 执行睡眠 | — | ✅ 收到 `sleepDuration > 0` 直接睡 |
+| 定时唤醒 | — | ✅ `esp_sleep_enable_timer_wakeup` |
 
-## 设计
+## 数据库变更
 
-### 服务端职责
+### `watering_device_state` 加列
 
-**决策**：是否应该休眠、用多大倒计时。在 `get-state` 响应的 `sleepDuration` 字段中体现。
+```sql
+ALTER TABLE watering_device_state ADD COLUMN idle_since INTEGER;
+ALTER TABLE watering_device_state ADD COLUMN last_action_type TEXT;
+```
 
-ROM 不需要知道 `idleSleep`、`idleTimeout` 等概念——它只认 `sleepDuration` 一个字段，含义恒为"空闲多久后睡眠"。
+| 列（DB） | 代码字段 | 类型 | 说明 |
+|----------|----------|------|------|
+| `idle_since` | `idleSince` | `number` | 设备最后一次动作的时间戳（`Date.now()`），pushState 时更新 |
+| `last_action_type` | `lastActionType` | `string` | 动作类型：`bootstrap` / `button` / `change` / `finish` |
 
-### ROM 职责
-
-**执行**（不变）：收到 `sleepDuration` 后做空闲倒计时，超时进入 `esp_deep_sleep_start()`。代码无需改动。
-
-### 休眠下发条件
-
-仅当满足以下**全部**条件时，服务端才下发 `sleepDuration`：
-
-1. `config.idleSleep === true` — 用户开启了空闲睡眠
-2. `state?.switch !== 'on'` — 设备处于关机状态（休眠 = 关机 + 省电）
-
-满足条件时，`sleepDuration` 的值取 `config.idleTimeout`。
-
-### 移除的限制
-
-- ~~`schedules.length === 0`~~ — 有定时任务也可以休眠。当前 ROM 不支持定时唤醒，进入深睡眠后需外部唤醒；未来 ROM 升级后，服务端可计算 `sleepDuration = min(idleTimeout, 距下次定时任务时间, WATERING_SLEEP_DURATION)` 实现精确调度
+> **命名约定**：数据库用 `snake_case`，TypeScript 用 `camelCase`，与现有 `chip_id`→`chipId`、`last_write_time`→`lastWriteTime` 保持一致。
 
 ## 完整数据流
 
 ```
-用户 UI 设置:
+用户在 UI 配置:
   idleSleep = true
   idleTimeout = 60000 (1分钟)
   switch = 'off'
+  schedules = [{ type: 'day', value: 28800000, interval: 1 }]  // 每天 8:00
          │
          ▼
-  ┌──────────────────────────┐
-  │       SQLite 数据库       │
-  │  idle_sleep = 1          │
-  │  idle_timeout = 60000    │
-  │  switch = 'off'          │
-  └──────────────────────────┘
+  ┌───────────────────────────────────────┐
+  │           push-state/route.ts          │
+  │  每次收到 ROM 动作 (bootstrap/change/   │
+  │  finish/heartbeat) → 更新 idle_since   │
+  └───────────────────────────────────────┘
          │
-         ▼  ROM 轮询 GET /api/watering/get-state
-  ┌──────────────────────────┐
-  │   get-state/route.ts    │
-  │                          │
-  │  idleSleep === true?    │→ yes
-  │  switch === 'off'?      │→ yes
-  │  ↓                       │
-  │  sleepDuration = 60000  │← config.idleTimeout
-  └──────────────────────────┘
-         │ JSON
+         ▼  ROM 每 15 秒轮询 get-state
+  ┌───────────────────────────────────────┐
+  │          get-state/route.ts            │
+  │                                       │
+  │  ① idleSleep === true?               │→ yes
+  │  ② switch === 'off'?                 │→ yes
+  │  ③ now - idleSince >= idleTimeout?   │→ yes（已空闲超时）
+  │  ④ calcSleepDuration():              │
+  │     距下次定时任务 10 分钟              │
+  │     min(300000, 600000) = 300000      │
+  │                                       │
+  │  → sleepDuration = 300000             │
+  └───────────────────────────────────────┘
+         │ JSON: { sleepDuration: 300000 }
          ▼
-  ┌──────────────────────────┐
-  │      ESP32 ROM           │
-  │                          │
-  │  _sleepDuration = 60000  │
-  │  loop() 中倒计时:        │
-  │    空闲 > 60000ms →      │
-  │    esp_deep_sleep_start()│
-  └──────────────────────────┘
+  ┌───────────────────────────────────────┐
+  │            ESP32 ROM                  │
+  │                                       │
+  │  networkStateChangeHandler():         │
+  │    收到 sleepDuration > 0 && _idled   │
+  │    → 不倒数，直接进入深睡眠             │
+  │                                       │
+  │  esp_sleep_enable_timer_wakeup(       │
+  │    sleepDuration * 1000)  // ms→μs    │
+  │  esp_deep_sleep_start()               │
+  │                                       │
+  │  （5分钟后自动唤醒→重启→联网→拉状态）   │
+  └───────────────────────────────────────┘
 ```
 
-## 改动范围
+## 文件变更
 
-| 文件 | 改动 | 量级 |
-|------|------|------|
-| `app/watering/api/get-state/route.ts` — `buildResponse` 函数 | 修改 `sleepDuration` 下发条件 | ~5 行 |
-| ROM `rom-v2.ino` | **不改** | 0 |
-| 数据库表结构 | **不改** | 0 |
-| `types.ts` | **不改** | 0 |
-| `DeviceConfigForm` / `device-editor.tsx` | **不改**（idleSleep/idleTimeout 字段已存在） | 0 |
-
-### 与服务端当前重构计划的关系
-
-本改动与 `DeviceConfigForm` 重构计划（`docs/superpowers/plans/2026-06-14-device-config-form-plan.md`）无冲突：重构计划改的是 UI 组件命名和结构，不涉及 `idleSleep`/`idleTimeout` 字段的定义、保存逻辑或 API 下发逻辑。
-
-## 具体代码改动
-
-文件：[app/watering/api/get-state/route.ts](app/watering/api/get-state/route.ts)
-
-### 当前 `buildResponse` 中的休眠逻辑（第 48-55 行）
+### 1. `types.ts` — DeviceState 加字段
 
 ```ts
-// 深度睡眠时长（仅无定时任务且无流程执行时下发）
-if (
-  config &&
-  (config.schedules.length === 0) &&
-  state?.switch !== 'on'
-) {
-  result.sleepDuration = SLEEP_DURATION;
+export type DeviceState = {
+  // ... 现有字段不变 ...
+  /** 设备最后一次动作的时间戳（毫秒），服务端 pushState 时更新 */
+  idleSince?: number;
+  /** 最后一次动作类型 */
+  lastActionType?: string;
+  lastWriteTime: string;
+};
+```
+
+### 2. `services/db.ts` — 建表 + 读写 + 新增函数
+
+**建表**：`initDb()` 中加 ALTER TABLE（兼容旧表）。
+
+**新增函数**：
+
+```ts
+/**
+ * 更新设备空闲计时起点
+ * 每次 ROM 有动作（pushState）时调用，重置空闲倒计时
+ */
+export async function updateIdleSince(chipId: string, actionType: string) {
+  const db = getDbSync();
+  const now = Date.now();
+  db.prepare(`
+    UPDATE watering_device_state
+    SET idle_since = ?, last_action_type = ?
+    WHERE chip_id = ?
+  `).run([now, actionType, chipId]);
 }
 ```
 
-### 修改后
+**读写映射**：`getDeviceState()` 和 `saveDeviceState()` 中增加 `idleSince`/`lastActionType` ↔ `idle_since`/`last_action_type` 映射。
+
+### 3. `api/push-state/route.ts` — 每次动作更新 idle_since
+
+在每个事件分支末尾调用 `updateIdleSince(chipId, event)`。
+
+### 4. `api/get-state/route.ts` — 核心逻辑重构
+
+**新增辅助函数**：
 
 ```ts
-// 深度睡眠：仅当用户启用空闲休眠且设备关机时下发
-// sleepDuration 使用用户配置的空闲超时时长，ROM 在空闲超过该时长后进入深睡眠
-if (
-  config &&
-  config.idleSleep &&
-  state?.switch !== 'on'
-) {
-  result.sleepDuration = config.idleTimeout;
+/**
+ * 计算深睡眠时长（毫秒）
+ *
+ * 1. 过滤出已启用的定时任务
+ * 2. 计算每个任务的下次触发时间（距现在毫秒数）
+ * 3. 取最小值与 SLEEP_DURATION 比较，取较小者
+ * 4. 无定时任务时直接返回 SLEEP_DURATION
+ */
+function calcSleepDuration(
+  schedules: ScheduleConfig[],
+  now: Date,
+): number {
+  const enabled = schedules.filter((s) => !s.disabled);
+  if (enabled.length === 0) return SLEEP_DURATION;
+
+  let minDelay = Infinity;
+  for (const s of enabled) {
+    const delay = calcNextScheduleDelay(s, now);
+    if (delay < minDelay) minDelay = delay;
+  }
+
+  return Math.min(SLEEP_DURATION, minDelay);
+}
+
+/**
+ * 计算单个定时任务距现在还有多少毫秒
+ */
+function calcNextScheduleDelay(
+  schedule: ScheduleConfig,
+  now: Date,
+): number {
+  const nowMs = now.getTime();
+  const todayStart = new Date(now);
+  todayStart.setHours(0, 0, 0, 0);
+  const todayStartMs = todayStart.getTime();
+
+  if (schedule.type === 'day') {
+    // value 是距 00:00 的毫秒偏移
+    const todayTrigger = todayStartMs + schedule.value;
+    if (todayTrigger > nowMs) {
+      return todayTrigger - nowMs;           // 今天还没到
+    }
+    // 已过 → 下一次是明天
+    return todayTrigger + 24 * 3600_000 - nowMs;
+  }
+
+  // 其他类型暂简化：使用 SLEEP_DURATION
+  return SLEEP_DURATION;
 }
 ```
 
-### 环境变量
-
-`SLEEP_DURATION` 环境变量和常量定义保留，注释更新为：
+**修改 `buildResponse`**：
 
 ```ts
-/** 深睡眠最大时长（毫秒），未来 ROM 支持定时唤醒时计算实际睡眠时长的上限约束 */
-const SLEEP_DURATION = parseInt(process.env.WATERING_SLEEP_DURATION || '300000');
+function buildResponse(
+  state: DeviceState | null,
+  changed: boolean,
+  config: DeviceConfig | null,
+  clientProcessesVersion?: string,
+) {
+  const result: Record<string, unknown> = {};
+
+  // ... 现有字段不变 (stateId, changed, switch, sleep, process) ...
+
+  // 休眠判断：服务端主导
+  const now = Date.now();
+  if (
+    config &&
+    config.idleSleep &&                          // 用户开启休眠
+    state?.switch !== 'on' &&                    // 设备关机
+    state?.idleSince != null &&                  // 有动作记录
+    (now - state.idleSince) >= config.idleTimeout // 已空闲超时
+  ) {
+    result.sleepDuration = calcSleepDuration(config.schedules, new Date(now));
+  }
+
+  // ... processes 版本控制不变 ...
+
+  return result;
+}
 ```
+
+### 5. `rom-v2.ino` — 简化睡眠逻辑
+
+**移除**：
+- `_lastOperationTime` 全局变量
+- `loop()` 中空闲倒计时逻辑
+- `buttonChangeHandler` 和 `processFinishHandler` 中刷新 `_lastOperationTime` 的代码
+
+**新增**：
+- `esp_sleep_enable_timer_wakeup()` 调用
+
+改动后 `loop()` 中睡眠部分：
+
+```cpp
+// ===== 改前 =====
+if (_sleepDuration > 0 && _idled) {
+    unsigned long now = millis();
+    if (now - _lastOperationTime >= _sleepDuration) {
+      esp_deep_sleep_start();
+    }
+}
+
+// ===== 改后 =====
+if (_sleepDuration > 0 && _idled) {
+    esp_sleep_enable_timer_wakeup(_sleepDuration * 1000ULL);
+    esp_deep_sleep_start();
+}
+```
+
+`networkStateChangeHandler` 不变（仍从 `sleepDuration` 字段读取）。
+
+### 6. `NetworkExt.cpp` — 排除列表
+
+`getStateQuery` 中 `sleepDuration` 已排除（不变），无需额外修改。
+
+## 不变的部分
+
+| 组件 | 状态 |
+|------|------|
+| `DeviceConfigForm` / `device-editor.tsx` | 不改（idleSleep/idleTimeout 字段已存在） |
+| `DeviceConfig` 类型 | 不改 |
+| `WATERING_SLEEP_DURATION` 环境变量 | 保留，作为最大睡眠时长上限 |
+| `WATERING_POLL_INTERVAL` 环境变量 | 不改 |
+
+## 与 DeviceConfigForm 计划的关系
+
+[DeviceConfigForm 重构计划](../plans/2026-06-14-device-config-form-plan.md) Task 1 对 `types.ts` 中的 `DeviceState` 有完整重写。本设计新增的 `idleSince`/`lastActionType` 字段需要合并到该重写中。建议在 Task 1 的类型定义中直接包含这两个新字段。
+
+其他无冲突。
 
 ## 验证清单
 
-- [ ] `get-state` 在 `idleSleep=true, switch='off'` 时下发 `sleepDuration=idleTimeout`
-- [ ] `get-state` 在 `idleSleep=false` 时不包含 `sleepDuration` 字段
-- [ ] `get-state` 在 `switch='on'` 时不包含 `sleepDuration` 字段
-- [ ] 有定时任务时仍可下发 `sleepDuration`（`schedules.length === 0` 限制已移除）
-- [ ] Environment variable `WATERING_SLEEP_DURATION` still works
+- [ ] `pushState` 在每次事件时更新 `idle_since` 和 `last_action_type`
+- [ ] `get-state` 在 `idleSleep=true, switch='off', 已空闲超时` 时下发 `sleepDuration`
+- [ ] `sleepDuration` 值为 `min(SLEEP_DURATION, 距下次定时任务时间)`
+- [ ] `get-state` 在 `idleSleep=false` 时不包含 `sleepDuration`
+- [ ] `get-state` 在 `switch='on'` 时不包含 `sleepDuration`
+- [ ] `get-state` 在 `idleSince` 未超时时不包含 `sleepDuration`
+- [ ] ROM 收到 `sleepDuration > 0` 直接深睡，不做倒数
+- [ ] ROM 深睡带定时唤醒，到期自动重启联网
+- [ ] ROM 移除 `_lastOperationTime` 相关代码
