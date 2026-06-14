@@ -8,7 +8,7 @@
 
 'use client';
 
-import { Stepper, Switch, Picker, DatePicker, Popup, NavBar, Form, Dialog, Button } from 'antd-mobile';
+import { Stepper, Switch, Picker, Selector, DatePicker, Popup, NavBar, Form, Dialog, Button } from 'antd-mobile';
 import { renderToBody } from 'antd-mobile/es/utils/render-to-body';
 import { DeleteOutline } from 'antd-mobile-icons';
 import dayjs from 'dayjs';
@@ -101,23 +101,14 @@ export function ScheduleConfigPicker({
 
       <div style={{ overflowY: 'auto', height: 'calc(70vh - 45px)' }}>
         <Form layout="vertical">
-          <Form.Item
-            label="类型"
-            onClick={() => {
-              void Picker.prompt({
-                columns: [TYPE_OPTIONS],
-                defaultValue: [draft.type],
-                onConfirm: (val) => {
-                  if (val.length > 0 && typeof val[0] === 'string') {
-                    update({ ...draft, type: val[0] as ScheduleConfig['type'] });
-                  }
-                },
-              });
-            }}
-          >
-            <div>
-              {TYPE_OPTIONS.find((o) => o.value === draft.type)?.label ?? ''}
-            </div>
+          <Form.Item label="类型">
+            <Selector
+              options={TYPE_OPTIONS}
+              value={[draft.type]}
+              onChange={(vals) => {
+                if (vals.length > 0) update({ ...draft, type: vals[0] as ScheduleConfig['type'] });
+              }}
+            />
           </Form.Item>
 
           <Form.Item label="间隔（天）">
