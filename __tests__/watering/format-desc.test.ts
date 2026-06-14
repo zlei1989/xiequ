@@ -1,5 +1,3 @@
-// @vitest-environment jsdom
-
 /**
  * format-desc 工具函数单元测试
  *
