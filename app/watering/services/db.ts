@@ -337,7 +337,7 @@ export async function updateTick(chipId: string) {
  */
 export async function updateIdleSince(
   chipId: string,
-  actionType: 'bootstrap' | 'button' | 'change' | 'finish',
+  actionType: 'bootstrap' | 'button' | 'change' | 'finish' | 'heartbeat',
 ) {
   const db = getDbSync();
   const now = Date.now();

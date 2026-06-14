@@ -111,7 +111,7 @@ export async function GET(request: NextRequest) {
     }
     default: {
       await writeDeviceLog(chipId, event || 'heartbeat', macAddress, { sensors: gpioState.sensors, loads: gpioState.loads }, voltage);
-      await updateIdleSince(chipId, (event || 'heartbeat') as 'bootstrap' | 'button' | 'change' | 'finish');
+      await updateIdleSince(chipId, event || 'heartbeat');
       break;
     }
   }
