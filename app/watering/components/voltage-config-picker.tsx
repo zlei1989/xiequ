@@ -84,25 +84,26 @@ export function VoltageConfigPicker({
       onClose={handleClose}
     >
       <NavBar onBack={handleClose}>电压检测配置</NavBar>
-
       <Form footer={
-        (<Card
-          title="计算公式"
-        >
-          <div className="text-xs text-gray-500">
-            <div>
-              V<sub>实际</sub> = V<sub>传感器</sub> × (R1 + R2) / R2
+        (
+          <Card
+            title="计算公式"
+          >
+            {/* 计算公式说明 — 使用 Card 卡片组件 */}
+            <div className="text-xs text-gray-500">
+              <div>
+                V<sub>实际</sub> = V<sub>传感器</sub> × (R1 + R2) / R2
+              </div>
+              <div className="mt-1">
+                当前分压比:{' '}
+                {config.r1 > 0 && config.r2 > 0
+                  ? ((config.r1 + config.r2) / config.r2).toFixed(2)
+                  : '—'}
+              </div>
             </div>
-            <div className="mt-1">
-              当前分压比:{' '}
-              {config.r1 > 0 && config.r2 > 0
-                ? ((config.r1 + config.r2) / config.r2).toFixed(2)
-                : '—'}
-            </div>
-          </div>
-        </Card>)
+          </Card>)
       }
-      layout="vertical"
+        layout="vertical"
       >
         {/* 传感器选择 — 点击 Form.Item 触发 Picker.prompt 弹窗 */}
         <Form.Item
@@ -153,23 +154,6 @@ export function VoltageConfigPicker({
           />
         </Form.Item>
       </Form>
-
-      {/* 计算公式说明 — 使用 Card 卡片组件 */}
-      <Card
-        title="计算公式"
-      >
-        <div className="text-xs text-gray-500">
-          <div>
-            V<sub>实际</sub> = V<sub>传感器</sub> × (R1 + R2) / R2
-          </div>
-          <div className="mt-1">
-            当前分压比:{' '}
-            {config.r1 > 0 && config.r2 > 0
-              ? ((config.r1 + config.r2) / config.r2).toFixed(2)
-              : '—'}
-          </div>
-        </div>
-      </Card>
     </Popup>
   );
 }
