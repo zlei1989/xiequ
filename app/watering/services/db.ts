@@ -110,6 +110,20 @@ export async function initDb() {
   try {
     db.exec('CREATE INDEX IF NOT EXISTS idx_watering_logs_state_id ON watering_logs(state_id)');
   } catch { /* 索引已存在 */ }
+
+  // 为旧数据库添加 idle_since 列（设备空闲计时起点）
+  try {
+    db.exec('ALTER TABLE watering_device_state ADD COLUMN idle_since INTEGER');
+  } catch {
+    // 列已存在，忽略
+  }
+
+  // 为旧数据库添加 last_action_type 列（设备最后一次动作类型）
+  try {
+    db.exec('ALTER TABLE watering_device_state ADD COLUMN last_action_type TEXT');
+  } catch {
+    // 列已存在，忽略
+  }
 }
 
 /**
@@ -263,6 +277,8 @@ export async function getDeviceState(chipId: string): Promise<DeviceState | null
     index: row.current_index ?? undefined,
     process: parseJSON(row.current_process, undefined as DeviceState['process']),
     message: row.message ?? undefined,
+    idleSince: row.idle_since ?? undefined,
+    lastActionType: row.last_action_type ?? undefined,
     lastWriteTime: row.last_write_time,
   };
 }
@@ -273,12 +289,13 @@ export async function getDeviceState(chipId: string): Promise<DeviceState | null
 export async function saveDeviceState(state: DeviceState) {
   const db = await getDb();
   db.prepare(`
-    INSERT INTO watering_device_state (chip_id, state_id, switch, buttons, sensors, loads, current_index, current_process, message, last_tick_time, last_write_time)
-    VALUES (@chip_id, @state_id, @switch, @buttons, @sensors, @loads, @current_index, @current_process, @message, @last_tick_time, @last_write_time)
+    INSERT INTO watering_device_state (chip_id, state_id, switch, buttons, sensors, loads, current_index, current_process, message, last_tick_time, last_write_time, idle_since, last_action_type)
+    VALUES (@chip_id, @state_id, @switch, @buttons, @sensors, @loads, @current_index, @current_process, @message, @last_tick_time, @last_write_time, @idle_since, @last_action_type)
     ON CONFLICT(chip_id) DO UPDATE SET
       state_id=@state_id, switch=@switch, buttons=@buttons, sensors=@sensors, loads=@loads,
       current_index=@current_index, current_process=@current_process, message=@message,
-      last_tick_time=@last_tick_time, last_write_time=@last_write_time
+      last_tick_time=@last_tick_time, last_write_time=@last_write_time,
+      idle_since=@idle_since, last_action_type=@last_action_type
   `).run({
     '@chip_id': state.chipId,
     '@state_id': state.stateId,
@@ -289,6 +306,8 @@ export async function saveDeviceState(state: DeviceState) {
     '@current_index': state.index ?? null,
     '@current_process': state.process ? JSON.stringify(state.process) : null,
     '@message': state.message ?? null,
+    '@idle_since': state.idleSince ?? null,
+    '@last_action_type': state.lastActionType ?? null,
     '@last_tick_time': Date.now(),
     '@last_write_time': state.lastWriteTime,
   });
@@ -303,6 +322,23 @@ export async function updateTick(chipId: string) {
   const existing = db.prepare('SELECT 1 FROM watering_device_state WHERE chip_id = ?').get(chipId);
   if (existing) {
     db.prepare('UPDATE watering_device_state SET last_tick_time = ? WHERE chip_id = ?').run([now, chipId]);
+  }
+}
+
+/**
+ * 更新设备空闲计时起点
+ *
+ * 每次 ROM 有动作（pushState）时调用，重置空闲倒计时。
+ * 使用 getDbSync() 保持与 writeDeviceLog 一致的调用模式。
+ * SQLite 为同步驱动，函数签名保持 async 以兼容上层契约。
+ */
+export async function updateIdleSince(chipId: string, actionType: string) {
+  const db = getDbSync();
+  const now = Date.now();
+  const existing = db.prepare('SELECT 1 FROM watering_device_state WHERE chip_id = ?').get(chipId);
+  if (existing) {
+    db.prepare('UPDATE watering_device_state SET idle_since = ?, last_action_type = ? WHERE chip_id = ?')
+      .run([now, actionType, chipId]);
   }
 }
 
