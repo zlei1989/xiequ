@@ -199,7 +199,7 @@ export async function initDb() {
 // eslint-disable-next-line @typescript-eslint/require-await -- SQLite WASM 驱动为同步，保持 async 契约
 export async function getAllDevices(): Promise<DeviceItem[]> {
   const db = getDb();
-  const rows = db.prepare(`
+  const rows = db.all(`
     SELECT d.chip_id, d.name, d.mac_address, d.processes, d.idle_sleep, d.idle_timeout,
            d.boot_exec, d.exec_delay, d.schedules, d.voltage, d.processes_version, d.created_time, d.last_write_time,
            s.state_id, s.switch, s.buttons, s.sensors, s.loads,
@@ -209,7 +209,7 @@ export async function getAllDevices(): Promise<DeviceItem[]> {
     FROM watering_devices d
     LEFT JOIN watering_device_state s ON d.chip_id = s.chip_id
     ORDER BY d.name
-  `).all() as JoinRow[];
+  `) as unknown as JoinRow[];
 
   const now = Date.now();
   return rows.map((row) => {
@@ -235,7 +235,7 @@ export async function getAllDevices(): Promise<DeviceItem[]> {
       item.state = {
         chipId: row.chip_id,
         stateId: row.state_id,
-        switch: row.switch,
+        switch: row.switch as DeviceState['switch'],
         buttons: parseJSON(row.buttons, undefined as Record<string, number> | undefined),
         sensors: parseJSON(row.sensors, undefined as Record<string, number> | undefined),
         loads: parseJSON(row.loads, undefined as Record<string, number> | undefined),
@@ -243,12 +243,12 @@ export async function getAllDevices(): Promise<DeviceItem[]> {
         process: parseJSON(row.current_process, undefined as DeviceState['process']),
         message: row.message ?? undefined,
         idleSince: row.idle_since ?? undefined,
-        lastActionType: row.last_action_type ?? undefined,
-        lastWriteTime: row.state_last_write_time,
+        lastActionType: (row.last_action_type ?? undefined) as DeviceState['lastActionType'],
+        lastWriteTime: row.state_last_write_time as string,
       };
-      item.lastTickTime = row.state_last_tick_time;
+      item.lastTickTime = row.state_last_tick_time ?? undefined;
       // 60 秒内心跳视为在线
-      item.isOnline = row.state_last_tick_time && (now - row.state_last_tick_time) <= 60 * 1000;
+      item.isOnline = !!(row.state_last_tick_time && (now - row.state_last_tick_time) <= 60 * 1000);
     }
 
     return item;
@@ -261,7 +261,7 @@ export async function getAllDevices(): Promise<DeviceItem[]> {
 // eslint-disable-next-line @typescript-eslint/require-await -- SQLite WASM 驱动为同步，保持 async 契约
 export async function getDeviceConfig(chipId: string): Promise<DeviceConfig | null> {
   const db = getDb();
-  const row = db.prepare('SELECT * FROM watering_devices WHERE chip_id = ?').get(chipId) as DeviceRow | undefined;
+  const row = db.get('SELECT * FROM watering_devices WHERE chip_id = ?', chipId) as unknown as DeviceRow | undefined;
   if (!row) return null;
   return {
     chipId: row.chip_id,
@@ -298,7 +298,7 @@ export async function saveDeviceConfig(config: DeviceConfig) {
     }
   }
 
-  db.prepare(`
+  db.run(`
     INSERT INTO watering_devices (chip_id, name, mac_address, processes, idle_sleep, idle_timeout, boot_exec, exec_delay, schedules, voltage, processes_version, created_time, last_write_time)
     VALUES (@chip_id, @name, @mac_address, @processes, @idle_sleep, @idle_timeout, @boot_exec, @exec_delay, @schedules, @voltage, @processes_version, @created_time, @last_write_time)
     ON CONFLICT(chip_id) DO UPDATE SET
@@ -306,7 +306,7 @@ export async function saveDeviceConfig(config: DeviceConfig) {
       idle_timeout=@idle_timeout, boot_exec=@boot_exec, exec_delay=@exec_delay,
       schedules=@schedules, voltage=@voltage, processes_version=@processes_version,
       last_write_time=@last_write_time
-  `).run({
+  `, {
     '@chip_id': config.chipId,
     '@name': config.name,
     '@mac_address': config.macAddress,
@@ -329,8 +329,8 @@ export async function saveDeviceConfig(config: DeviceConfig) {
 // eslint-disable-next-line @typescript-eslint/require-await -- SQLite WASM 驱动为同步，保持 async 契约
 export async function deleteDevice(chipId: string) {
   const db = getDb();
-  db.prepare('DELETE FROM watering_device_state WHERE chip_id = ?').run(chipId);
-  db.prepare('DELETE FROM watering_devices WHERE chip_id = ?').run(chipId);
+  db.run('DELETE FROM watering_device_state WHERE chip_id = ?', chipId);
+  db.run('DELETE FROM watering_devices WHERE chip_id = ?', chipId);
 }
 
 /**
@@ -339,12 +339,12 @@ export async function deleteDevice(chipId: string) {
 // eslint-disable-next-line @typescript-eslint/require-await -- SQLite WASM 驱动为同步，保持 async 契约
 export async function getDeviceState(chipId: string): Promise<DeviceState | null> {
   const db = getDb();
-  const row = db.prepare('SELECT * FROM watering_device_state WHERE chip_id = ?').get(chipId) as StateRow | undefined;
+  const row = db.get('SELECT * FROM watering_device_state WHERE chip_id = ?', chipId) as unknown as StateRow | undefined;
   if (!row) return null;
   return {
     chipId: row.chip_id,
     stateId: row.state_id,
-    switch: row.switch,
+    switch: row.switch as DeviceState['switch'],
     buttons: parseJSON(row.buttons, undefined as Record<string, number> | undefined),
     sensors: parseJSON(row.sensors, undefined as Record<string, number> | undefined),
     loads: parseJSON(row.loads, undefined as Record<string, number> | undefined),
@@ -352,7 +352,7 @@ export async function getDeviceState(chipId: string): Promise<DeviceState | null
     process: parseJSON(row.current_process, undefined as DeviceState['process']),
     message: row.message ?? undefined,
     idleSince: row.idle_since ?? undefined,
-    lastActionType: row.last_action_type ?? undefined,
+    lastActionType: (row.last_action_type ?? undefined) as DeviceState['lastActionType'],
     lastWriteTime: row.last_write_time,
   };
 }
@@ -363,7 +363,7 @@ export async function getDeviceState(chipId: string): Promise<DeviceState | null
 // eslint-disable-next-line @typescript-eslint/require-await -- SQLite WASM 驱动为同步，保持 async 契约
 export async function saveDeviceState(state: DeviceState) {
   const db = getDb();
-  db.prepare(`
+  db.run(`
     INSERT INTO watering_device_state (chip_id, state_id, switch, buttons, sensors, loads, current_index, current_process, message, last_tick_time, last_write_time, idle_since, last_action_type)
     VALUES (@chip_id, @state_id, @switch, @buttons, @sensors, @loads, @current_index, @current_process, @message, @last_tick_time, @last_write_time, @idle_since, @last_action_type)
     ON CONFLICT(chip_id) DO UPDATE SET
@@ -371,7 +371,7 @@ export async function saveDeviceState(state: DeviceState) {
       current_index=@current_index, current_process=@current_process, message=@message,
       last_tick_time=@last_tick_time, last_write_time=@last_write_time,
       idle_since=@idle_since, last_action_type=@last_action_type
-  `).run({
+  `, {
     '@chip_id': state.chipId,
     '@state_id': state.stateId,
     '@switch': state.switch,
@@ -395,9 +395,9 @@ export async function saveDeviceState(state: DeviceState) {
 export async function updateTick(chipId: string) {
   const db = getDb();
   const now = Date.now();
-  const existing = db.prepare('SELECT 1 FROM watering_device_state WHERE chip_id = ?').get(chipId);
+  const existing = db.get('SELECT 1 FROM watering_device_state WHERE chip_id = ?', chipId);
   if (existing) {
-    db.prepare('UPDATE watering_device_state SET last_tick_time = ? WHERE chip_id = ?').run([now, chipId]);
+    db.run('UPDATE watering_device_state SET last_tick_time = ? WHERE chip_id = ?', [now, chipId]);
   }
 }
 
@@ -415,10 +415,10 @@ export async function updateIdleSince(
 ) {
   const db = getDbSync();
   const now = Date.now();
-  const existing = db.prepare('SELECT 1 FROM watering_device_state WHERE chip_id = ?').get(chipId);
+  const existing = db.get('SELECT 1 FROM watering_device_state WHERE chip_id = ?', chipId);
   if (existing) {
-    db.prepare('UPDATE watering_device_state SET idle_since = ?, last_action_type = ? WHERE chip_id = ?')
-      .run([now, actionType, chipId]);
+    db.run('UPDATE watering_device_state SET idle_since = ?, last_action_type = ? WHERE chip_id = ?',
+      [now, actionType, chipId]);
   }
 }
 
@@ -428,9 +428,10 @@ export async function updateIdleSince(
 // eslint-disable-next-line @typescript-eslint/require-await -- SQLite WASM 驱动为同步，保持 async 契约
 export async function getDeviceLogs(chipId: string, limit = 100) {
   const db = getDb();
-  const rows = db.prepare(
+  const rows = db.all(
     'SELECT id, chip_id, mac_address, event, state_id, message, state, voltage, created_time FROM watering_logs WHERE chip_id = ? ORDER BY created_time DESC LIMIT ?',
-  ).all([chipId, limit]) as LogRow[];
+    [chipId, limit],
+  ) as unknown as LogRow[];
   return rows.map((row) => ({
     id: row.id,
     chipId: row.chip_id,
@@ -482,10 +483,10 @@ export async function writeDeviceLog(
   message?: string,
 ) {
   const db = getDbSync();
-  db.prepare(`
+  db.run(`
     INSERT INTO watering_logs (chip_id, mac_address, event, state_id, message, state, voltage, created_time)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-  `).run([
+  `, [
     chipId,
     macAddress,
     event,
@@ -503,5 +504,5 @@ export async function writeDeviceLog(
 // eslint-disable-next-line @typescript-eslint/require-await -- SQLite WASM 驱动为同步，保持 async 契约
 export async function clearDeviceLogs(chipId: string) {
   const db = getDb();
-  db.prepare('DELETE FROM watering_logs WHERE chip_id = ?').run(chipId);
+  db.run('DELETE FROM watering_logs WHERE chip_id = ?', chipId);
 }
