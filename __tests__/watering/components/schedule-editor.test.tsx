@@ -24,8 +24,8 @@ describe('ScheduleEditor', () => {
   it('渲染类型选择器', () => {
     render(
       <ScheduleEditor
-        schedules={[defaultSchedule]}
         processes={mockProcesses}
+        schedules={[defaultSchedule]}
         onChange={vi.fn()}
       />,
     );
@@ -37,8 +37,8 @@ describe('ScheduleEditor', () => {
     const onChange = vi.fn();
     render(
       <ScheduleEditor
-        schedules={[defaultSchedule]}
         processes={mockProcesses}
+        schedules={[defaultSchedule]}
         onChange={onChange}
       />,
     );
@@ -50,8 +50,8 @@ describe('ScheduleEditor', () => {
   it('渲染禁用开关', () => {
     render(
       <ScheduleEditor
-        schedules={[{ ...defaultSchedule, disabled: false }]}
         processes={mockProcesses}
+        schedules={[{ ...defaultSchedule, disabled: false }]}
         onChange={vi.fn()}
       />,
     );
@@ -63,8 +63,8 @@ describe('ScheduleEditor', () => {
   it('空 schedules 返回 null', () => {
     const { container } = render(
       <ScheduleEditor
-        schedules={[]}
         processes={mockProcesses}
+        schedules={[]}
         onChange={vi.fn()}
       />,
     );

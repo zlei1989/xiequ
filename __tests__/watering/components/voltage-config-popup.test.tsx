@@ -3,12 +3,12 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 
-import { VoltageConfigDrawer } from '@/app/watering/components/voltage-config-drawer';
+import { VoltageConfigPopup } from '@/app/watering/components/voltage-config-popup';
 
-describe('VoltageConfigDrawer', () => {
+describe('VoltageConfigPopup', () => {
   it('关闭时渲染空内容（Popup hidden）', () => {
     const { container } = render(
-      <VoltageConfigDrawer
+      <VoltageConfigPopup
         open={false}
         sensors={['sensor_0']}
         voltage={undefined}
@@ -22,7 +22,7 @@ describe('VoltageConfigDrawer', () => {
 
   it('打开时渲染标题和传感器选择器', () => {
     render(
-      <VoltageConfigDrawer
+      <VoltageConfigPopup
         open={true}
         sensors={['sensor_0', 'sensor_1']}
         voltage={undefined}
@@ -37,7 +37,7 @@ describe('VoltageConfigDrawer', () => {
   it('无电压配置且无传感器时关闭会 reset', () => {
     const onChange = vi.fn();
     render(
-      <VoltageConfigDrawer
+      <VoltageConfigPopup
         open={true}
         sensors={[]}
         voltage={undefined}

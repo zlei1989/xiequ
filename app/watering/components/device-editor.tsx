@@ -9,7 +9,6 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
 import {
   Input,
   Stepper,
@@ -29,13 +28,17 @@ import {
   AddOutline,
   DeleteOutline,
 } from 'antd-mobile-icons';
+import { useState, useEffect } from 'react';
+
 import { useBackButton } from '@/lib/back-button';
-import type { DeviceConfig, Process, Step, Interrupt, Schedule, VoltageConfig } from '../types';
-import type { GpioInfo } from '../hooks/use-device-config';
+
 import { ProcessEditor } from './process-editor';
-import { ProcessStepEditor } from './process-step-editor';
 import { ProcessInterruptEditor } from './process-interrupt-editor';
+import { ProcessStepEditor } from './process-step-editor';
 import { ScheduleEditor } from './schedule-editor';
+
+import type { GpioInfo } from '../hooks/use-device-config';
+import type { DeviceConfig, Process, Step, Interrupt, Schedule, VoltageConfig } from '../types';
 
 /** 带 key 的扩展类型（运行时由 crypto.randomUUID() 生成，不存入数据库，仅供 antd Table rowKey 使用） */
 interface WithKey { key?: string; }
@@ -311,18 +314,18 @@ export function DeviceEditor({
           <Input
             placeholder="输入设备名称"
             value={form.name}
-            onChange={(v) => setForm({ ...form, name: v })}
+            onChange={(v) => { setForm({ ...form, name: v }); }}
           />
         </List.Item>
 
         {/* 空闲睡眠 */}
         <List.Item
-          title="空闲睡眠"
           description={form.idleSleep ? '设备将不接受实时控制，仅执行计划任务，达到省电目的' : ''}
+          title="空闲睡眠"
         >
           <Switch
             checked={form.idleSleep}
-            onChange={(checked) => setForm({ ...form, idleSleep: checked })}
+            onChange={(checked) => { setForm({ ...form, idleSleep: checked }); }}
           />
         </List.Item>
 
@@ -330,20 +333,20 @@ export function DeviceEditor({
         {form.idleSleep && (
           <List.Item title="空闲超时（毫秒）">
             <Stepper
-              value={form.idleTimeout}
-              onChange={(v) => setForm({ ...form, idleTimeout: v })}
               max={86400000}
               min={0}
               step={1000}
+              value={form.idleTimeout}
+              onChange={(v) => { setForm({ ...form, idleTimeout: v }); }}
             />
           </List.Item>
         )}
 
         {/* 开机执行 */}
         <List.Item
-          title="开机执行"
-          extra={form.bootExec >= 0 && form.processes[form.bootExec] ? form.processes[form.bootExec].name : '无'}
           clickable
+          extra={form.bootExec >= 0 && form.processes[form.bootExec] ? form.processes[form.bootExec].name : '无'}
+          title="开机执行"
           onClick={() => {
             const options = [
               { label: '无', value: '-1' },
@@ -364,11 +367,11 @@ export function DeviceEditor({
         {/* 延迟执行 */}
         <List.Item title="延迟执行（毫秒）">
           <Stepper
-            value={form.execDelay}
-            onChange={(v) => setForm({ ...form, execDelay: v })}
+            disabled={form.bootExec < 0}
             min={0}
             step={1000}
-            disabled={form.bootExec < 0}
+            value={form.execDelay}
+            onChange={(v) => { setForm({ ...form, execDelay: v }); }}
           />
         </List.Item>
       </List>
@@ -399,9 +402,9 @@ export function DeviceEditor({
           )}
         </div>
         <Button
-          size="small"
           fill="none"
-          onClick={() => setVoltageConfigVisible(true)}
+          size="small"
+          onClick={() => { setVoltageConfigVisible(true); }}
         >
           {form.voltage ? '修改' : '配置'}
         </Button>
@@ -410,7 +413,7 @@ export function DeviceEditor({
       {/* ======== 功能列表 ======== */}
       <List header="功能">
         {form.processes.length === 0 ? (
-          <ErrorBlock status="empty" title="暂无功能" description="点击下方按钮添加功能流程" />
+          <ErrorBlock description="点击下方按钮添加功能流程" status="empty" title="暂无功能" />
         ) : (
           form.processes.map((proc, index) => (
             <SwipeAction
@@ -442,8 +445,8 @@ export function DeviceEditor({
       </List>
       <Button
         block
-        onClick={addProcess}
         style={{ margin: '8px 0 16px' }}
+        onClick={addProcess}
       >
         <AddOutline style={{ marginRight: 4 }} /> 添加
       </Button>
@@ -451,7 +454,7 @@ export function DeviceEditor({
       {/* ======== 计划任务列表 ======== */}
       <List header="计划任务">
         {form.schedules.length === 0 ? (
-          <ErrorBlock status="empty" title="暂无计划任务" description="点击下方按钮添加定时任务" />
+          <ErrorBlock description="点击下方按钮添加定时任务" status="empty" title="暂无计划任务" />
         ) : (
           form.schedules.map((sch, index) => (
             <SwipeAction
@@ -469,9 +472,9 @@ export function DeviceEditor({
             >
               <List.Item
                 clickable
-                prefix={`${index + 1}.`}
                 description={`间隔 ${sch.interval} 天`}
                 extra={sch.process < form.processes.length ? form.processes[sch.process]?.name ?? '' : ''}
+                prefix={`${index + 1}.`}
                 onClick={() => {
                   setScheduleIndex(index);
                   setScheduleVisible(true);
@@ -485,8 +488,8 @@ export function DeviceEditor({
       </List>
       <Button
         block
-        onClick={addSchedule}
         style={{ margin: '8px 0 16px' }}
+        onClick={addSchedule}
       >
         <AddOutline style={{ marginRight: 4 }} /> 添加
       </Button>
@@ -497,13 +500,12 @@ export function DeviceEditor({
 
       {/* 流程编辑 Popup (80vh) */}
       <Popup
-        visible={processVisible}
-        position="bottom"
         bodyStyle={{ height: '80vh' }}
-        onClose={() => setProcessVisible(false)}
+        position="bottom"
+        visible={processVisible}
+        onClose={() => { setProcessVisible(false); }}
       >
         <NavBar
-          onBack={() => setProcessVisible(false)}
           right={
             <DeleteOutline
               style={{ fontSize: 20, cursor: 'pointer' }}
@@ -512,21 +514,22 @@ export function DeviceEditor({
               }}
             />
           }
+          onBack={() => { setProcessVisible(false); }}
         >
           编辑流程
         </NavBar>
         <div style={{ padding: '0 16px', overflowY: 'auto', height: 'calc(80vh - 45px)' }}>
           {processIndex > -1 && (
             <ProcessEditor
-              process={form.processes[processIndex]}
               gpio={gpio}
-              onChange={(updated) => updateProcess(processIndex, updated)}
-              onRemove={deleteProcess}
+              process={form.processes[processIndex]}
+              onAddStep={addStep}
+              onChange={(updated) => { updateProcess(processIndex, updated); }}
               onEditStep={(stepIdx) => {
                 setStepIndex(stepIdx);
                 setStepVisible(true);
               }}
-              onAddStep={addStep}
+              onRemove={deleteProcess}
             />
           )}
         </div>
@@ -534,13 +537,12 @@ export function DeviceEditor({
 
       {/* 步骤编辑 Popup (75vh) */}
       <Popup
-        visible={stepVisible}
-        position="bottom"
         bodyStyle={{ height: '75vh' }}
-        onClose={() => setStepVisible(false)}
+        position="bottom"
+        visible={stepVisible}
+        onClose={() => { setStepVisible(false); }}
       >
         <NavBar
-          onBack={() => setStepVisible(false)}
           right={
             <DeleteOutline
               style={{ fontSize: 20, cursor: 'pointer' }}
@@ -549,21 +551,22 @@ export function DeviceEditor({
               }}
             />
           }
+          onBack={() => { setStepVisible(false); }}
         >
           编辑步骤
         </NavBar>
         <div style={{ padding: '0 16px', overflowY: 'auto', height: 'calc(75vh - 45px)' }}>
           {stepIndex > -1 && processIndex > -1 && (
             <ProcessStepEditor
-              step={form.processes[processIndex].steps[stepIndex]}
               gpio={gpio}
-              onChange={(updated) => updateStep(stepIndex, updated)}
-              onRemove={deleteStep}
+              step={form.processes[processIndex].steps[stepIndex]}
+              onAddInterrupt={addInterrupt}
+              onChange={(updated) => { updateStep(stepIndex, updated); }}
               onEditInterrupt={(intIdx) => {
                 setInterruptIndex(intIdx);
                 setInterruptVisible(true);
               }}
-              onAddInterrupt={addInterrupt}
+              onRemove={deleteStep}
             />
           )}
         </div>
@@ -571,13 +574,12 @@ export function DeviceEditor({
 
       {/* 中断编辑 Popup (70vh) */}
       <Popup
-        visible={interruptVisible}
-        position="bottom"
         bodyStyle={{ height: '70vh' }}
-        onClose={() => setInterruptVisible(false)}
+        position="bottom"
+        visible={interruptVisible}
+        onClose={() => { setInterruptVisible(false); }}
       >
         <NavBar
-          onBack={() => setInterruptVisible(false)}
           right={
             <DeleteOutline
               style={{ fontSize: 20, cursor: 'pointer' }}
@@ -586,6 +588,7 @@ export function DeviceEditor({
               }}
             />
           }
+          onBack={() => { setInterruptVisible(false); }}
         >
           编辑中断
         </NavBar>
@@ -594,29 +597,28 @@ export function DeviceEditor({
             stepIndex > -1 &&
             processIndex > -1 &&
             form.processes[processIndex].steps[stepIndex].interrupts && (
-              <ProcessInterruptEditor
-                interrupt={
-                  form.processes[processIndex].steps[stepIndex].interrupts![
-                    interruptIndex
-                  ]
-                }
-                gpio={gpio}
-                onChange={(updated) => updateInterrupt(interruptIndex, updated)}
-                onRemove={deleteInterrupt}
-              />
-            )}
+            <ProcessInterruptEditor
+              gpio={gpio}
+              interrupt={
+                form.processes[processIndex].steps[stepIndex].interrupts[
+                  interruptIndex
+                ]
+              }
+              onChange={(updated) => { updateInterrupt(interruptIndex, updated); }}
+              onRemove={deleteInterrupt}
+            />
+          )}
         </div>
       </Popup>
 
       {/* 定时编辑 Popup (70vh) */}
       <Popup
-        visible={scheduleVisible}
-        position="bottom"
         bodyStyle={{ height: '70vh' }}
-        onClose={() => setScheduleVisible(false)}
+        position="bottom"
+        visible={scheduleVisible}
+        onClose={() => { setScheduleVisible(false); }}
       >
         <NavBar
-          onBack={() => setScheduleVisible(false)}
           right={
             <DeleteOutline
               style={{ fontSize: 20, cursor: 'pointer' }}
@@ -625,14 +627,15 @@ export function DeviceEditor({
               }}
             />
           }
+          onBack={() => { setScheduleVisible(false); }}
         >
           编辑定时任务
         </NavBar>
         <div style={{ padding: '0 16px', overflowY: 'auto', height: 'calc(70vh - 45px)' }}>
           {scheduleIndex > -1 && (
             <ScheduleEditor
-              schedules={[form.schedules[scheduleIndex]]}
               processes={form.processes}
+              schedules={[form.schedules[scheduleIndex]]}
               onChange={(updated) => {
                 if (updated.length > 0) {
                   updateSchedule(scheduleIndex, updated[0]);
@@ -645,12 +648,12 @@ export function DeviceEditor({
 
       {/* 电压检测配置 Popup (60vh) */}
       <Popup
-        visible={voltageVisible}
-        position="bottom"
         bodyStyle={{ height: '60vh' }}
-        onClose={() => setVoltageConfigVisible(false)}
+        position="bottom"
+        visible={voltageVisible}
+        onClose={() => { setVoltageConfigVisible(false); }}
       >
-        <NavBar onBack={() => setVoltageConfigVisible(false)}>
+        <NavBar onBack={() => { setVoltageConfigVisible(false); }}>
           电压检测配置
         </NavBar>
         <div style={{ padding: '0 16px', overflowY: 'auto', height: 'calc(60vh - 45px)' }}>
@@ -669,37 +672,37 @@ export function DeviceEditor({
                 />
               ) : (
                 <ErrorBlock
+                  description="请等待设备上报 GPIO 状态"
                   status="empty"
                   title="无可用传感器"
-                  description="请等待设备上报 GPIO 状态"
                 />
               )}
             </List.Item>
             <List.Item
-              title="电压检测传感器"
               description="选择用于电压检测的 ADC 传感器引脚"
+              title="电压检测传感器"
             >
               {/* 说明由 description 承载 */}
               <span />
             </List.Item>
 
             {/* R1 电阻值 */}
-            <List.Item title="R1 电阻值（Ω）" description="分压电阻 R1，上拉至被测电压。默认 30kΩ">
+            <List.Item description="分压电阻 R1，上拉至被测电压。默认 30kΩ" title="R1 电阻值（Ω）">
               <Stepper
-                value={voltageConfig.r1}
-                onChange={(v) => updateVoltage({ r1: v })}
                 min={0}
                 step={1000}
+                value={voltageConfig.r1}
+                onChange={(v) => { updateVoltage({ r1: v }); }}
               />
             </List.Item>
 
             {/* R2 电阻值 */}
-            <List.Item title="R2 电阻值（Ω）" description="分压电阻 R2，下拉至 GND。默认 10kΩ">
+            <List.Item description="分压电阻 R2，下拉至 GND。默认 10kΩ" title="R2 电阻值（Ω）">
               <Stepper
-                value={voltageConfig.r2}
-                onChange={(v) => updateVoltage({ r2: v })}
                 min={0}
                 step={1000}
+                value={voltageConfig.r2}
+                onChange={(v) => { updateVoltage({ r2: v }); }}
               />
             </List.Item>
 
@@ -723,7 +726,7 @@ export function DeviceEditor({
                 <div style={{ marginTop: 4 }}>
                   当前分压比:{' '}
                   {voltageConfig.r1 > 0 && voltageConfig.r2 > 0
-                    ? `${((voltageConfig.r1 + voltageConfig.r2) / voltageConfig.r2).toFixed(2)}`
+                    ? ((voltageConfig.r1 + voltageConfig.r2) / voltageConfig.r2).toFixed(2)
                     : '—'}
                 </div>
               </div>

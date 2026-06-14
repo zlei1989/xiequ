@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 
 import { render, screen, act, cleanup } from '@testing-library/react';
-import { afterEach, describe, it, expect, vi } from 'vitest';
 import React from 'react';
+import { afterEach, describe, it, expect, vi } from 'vitest';
 
 import { DeviceEditor } from '@/app/watering/components/device-editor';
 import type { GpioInfo } from '@/app/watering/hooks/use-device-config';
@@ -53,8 +53,8 @@ describe('DeviceEditor', () => {
         config={defaultConfig}
         gpio={mockGpio}
         saveRef={saveRef}
-        onSave={vi.fn().mockResolvedValue(undefined)}
         onRemove={vi.fn().mockResolvedValue(undefined)}
+        onSave={vi.fn().mockResolvedValue(undefined)}
       />,
     );
     expect(screen.getByDisplayValue('测试设备')).toBeDefined();
@@ -67,8 +67,8 @@ describe('DeviceEditor', () => {
         config={defaultConfig}
         gpio={mockGpio}
         saveRef={saveRef}
-        onSave={vi.fn().mockResolvedValue(undefined)}
         onRemove={vi.fn().mockResolvedValue(undefined)}
+        onSave={vi.fn().mockResolvedValue(undefined)}
       />,
     );
     expect(screen.getByText('浇水')).toBeDefined();
@@ -81,8 +81,8 @@ describe('DeviceEditor', () => {
         config={defaultConfig}
         gpio={mockGpio}
         saveRef={saveRef}
-        onSave={vi.fn().mockResolvedValue(undefined)}
         onRemove={vi.fn().mockResolvedValue(undefined)}
+        onSave={vi.fn().mockResolvedValue(undefined)}
       />,
     );
     const switches = screen.getAllByRole('switch');
@@ -97,8 +97,8 @@ describe('DeviceEditor', () => {
         config={defaultConfig}
         gpio={mockGpio}
         saveRef={saveRef}
-        onSave={onSave}
         onRemove={vi.fn().mockResolvedValue(undefined)}
+        onSave={onSave}
       />,
     );
     expect(saveRef.current).toBeDefined();

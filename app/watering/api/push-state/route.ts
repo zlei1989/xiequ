@@ -1,15 +1,18 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getDeviceConfig, saveDeviceConfig, getDeviceState, saveDeviceState, writeDeviceLog, updateTick, calcVoltage } from "@/app/watering/services/db";
-import { newId } from "@/lib/utils";
+import { NextResponse } from 'next/server';
+
+import { getDeviceConfig, saveDeviceConfig, getDeviceState, saveDeviceState, writeDeviceLog, updateTick, calcVoltage } from '@/app/watering/services/db';
+import { newId } from '@/lib/utils';
+
+import type { NextRequest } from 'next/server';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
-  const chipId = searchParams.get("chipId") || "";
-  const macAddress = searchParams.get("macAddress") || "";
-  const event = searchParams.get("event") || "";
+  const chipId = searchParams.get('chipId') || '';
+  const macAddress = searchParams.get('macAddress') || '';
+  const event = searchParams.get('event') || '';
 
   if (!chipId || !macAddress) {
-    return NextResponse.json({ error: "chipId and macAddress required" }, { status: 400 });
+    return NextResponse.json({ error: 'chipId and macAddress required' }, { status: 400 });
   }
 
   // 刷新心跳
@@ -20,7 +23,7 @@ export async function GET(request: NextRequest) {
   searchParams.forEach((value, key) => {
     const match = key.match(/^(sensor|load):(.+)$/);
     if (match) {
-      const category = match[1] === "sensor" ? "sensors" : "loads";
+      const category = match[1] === 'sensor' ? 'sensors' : 'loads';
       gpioState[category][match[2]] = parseInt(value) || 0;
     }
   });
@@ -31,7 +34,7 @@ export async function GET(request: NextRequest) {
 
   // 处理事件
   switch (event) {
-    case "bootstrap": {
+    case 'bootstrap': {
       let config = await getDeviceConfig(chipId);
       if (!config) {
         console.info('[Watering] bootstrap 自动创建默认配置', { chipId });
@@ -57,7 +60,7 @@ export async function GET(request: NextRequest) {
         state = {
           chipId,
           stateId: newId(),
-          switch: "off",
+          switch: 'off',
           lastWriteTime: new Date().toISOString(),
         };
       }
@@ -76,7 +79,7 @@ export async function GET(request: NextRequest) {
       }
       break;
     }
-    case "change": {
+    case 'change': {
       const stateId = searchParams.get('stateId') || '';
       const type = searchParams.get('type') || '';
       const message = searchParams.get('message') || '';
@@ -84,11 +87,11 @@ export async function GET(request: NextRequest) {
       await writeDeviceLog(chipId, 'change', macAddress, { sensors: gpioState.sensors, loads: gpioState.loads, type }, changeVoltage, stateId, message);
       break;
     }
-    case "finish": {
+    case 'finish': {
       console.info('[Watering] finish 清除执行状态', { chipId });
       const state = await getDeviceState(chipId);
-      if (state && state.switch !== "off") {
-        state.switch = "off";
+      if (state && state.switch !== 'off') {
+        state.switch = 'off';
         state.index = undefined;
         state.process = undefined;
         state.message = undefined;

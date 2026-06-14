@@ -52,9 +52,9 @@ export function ScheduleEditor({
     <List>
       {/* 类型 */}
       <List.Item
-        title="类型"
-        extra={TYPE_OPTIONS.find((o) => o.value === schedule.type)?.label ?? ''}
         clickable
+        extra={TYPE_OPTIONS.find((o) => o.value === schedule.type)?.label ?? ''}
+        title="类型"
         onClick={() => {
           Picker.prompt({
             columns: [TYPE_OPTIONS],
@@ -80,9 +80,9 @@ export function ScheduleEditor({
 
       {/* 时间 — DatePicker(minute) */}
       <List.Item
-        title="时间"
-        extra={dayjs(timeDate).format('HH:mm')}
         clickable
+        extra={dayjs(timeDate).format('HH:mm')}
+        title="时间"
         onClick={() => {
           DatePicker.prompt({
             precision: 'minute',
@@ -100,9 +100,9 @@ export function ScheduleEditor({
 
       {/* 执行流程 */}
       <List.Item
-        title="执行流程"
-        extra={processOptions.find((o) => o.value === String(schedule.process))?.label ?? ''}
         clickable
+        extra={processOptions.find((o) => o.value === String(schedule.process))?.label ?? ''}
+        title="执行流程"
         onClick={() => {
           Picker.prompt({
             columns: [processOptions],
@@ -118,8 +118,8 @@ export function ScheduleEditor({
 
       {/* 禁用 */}
       <List.Item
-        title="禁用"
         description={schedule.disabled ? '已禁用' : '已启用'}
+        title="禁用"
       >
         <Switch
           checked={!schedule.disabled}

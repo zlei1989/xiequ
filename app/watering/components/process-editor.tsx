@@ -1,12 +1,13 @@
 /**
  * 流程编辑器 — 编辑单个 Process 的名称、触发按钮、步骤列表
  *
- * 迁移至 antd-mobile：Table→List+SwipeAction，Select→Picker，Empty→ErrorBlock。
+ * 使用 antd-mobile Form 替代 List，vertical 布局适合移动端表单。
+ * 数据流保持受控模式，通过 process/onChange props 驱动。
  */
 
 'use client';
 
-import { Input, Picker, ErrorBlock, List, SwipeAction, Button, Dialog } from 'antd-mobile';
+import { Input, Picker, ErrorBlock, Form, SwipeAction, Button, Dialog } from 'antd-mobile';
 import { AddOutline } from 'antd-mobile-icons';
 
 import type { GpioInfo } from '../hooks/use-device-config';
@@ -33,21 +34,19 @@ export function ProcessEditor({
   }));
 
   return (
-    <List>
+    <Form layout="vertical">
       {/* 功能名称 */}
-      <List.Item title="功能名称">
+      <Form.Item label="功能名称">
         <Input
           placeholder="输入流程名称"
           value={process.name}
           onChange={(v) => { onChange({ ...process, name: v }); }}
         />
-      </List.Item>
+      </Form.Item>
 
-      {/* 触发按钮 */}
-      <List.Item
-        clickable={buttonOptions.length > 0}
-        extra={process.trigger || '未选择'}
-        title="触发按钮"
+      {/* 触发按钮 — 点击 Form.Item 触发 Picker.prompt 弹窗选择 */}
+      <Form.Item
+        label="触发按钮"
         onClick={() => {
           if (buttonOptions.length === 0) return;
           void Picker.prompt({
@@ -61,17 +60,24 @@ export function ProcessEditor({
           });
         }}
       >
-        {buttonOptions.length === 0 && (
-          <ErrorBlock
-            description="请等待设备上报 GPIO 状态"
-            status="empty"
-            title="无可用按钮"
-          />
-        )}
-      </List.Item>
+        <Input
+          readOnly
+          placeholder="未选择"
+          value={process.trigger || ''}
+        />
+      </Form.Item>
 
-      {/* 步骤列表 */}
-      <List.Item title="步骤列表" />
+      {/* 无可用按钮时的提示 */}
+      {buttonOptions.length === 0 && (
+        <ErrorBlock
+          description="请等待设备上报 GPIO 状态"
+          status="empty"
+          title="无可用按钮"
+        />
+      )}
+
+      {/* 步骤列表 — 使用 Form.Header 作为分组标题 */}
+      <Form.Header>步骤列表</Form.Header>
       {process.steps.map((s, idx) => (
         <SwipeAction
           key={idx}
@@ -93,21 +99,23 @@ export function ProcessEditor({
             },
           ]}
         >
-          <List.Item
-            clickable
-            description={s.component}
-            title={s.name}
+          <Form.Item
+            help={s.component}
+            label={s.name}
             onClick={() => { onEditStep(idx); }}
-          />
+          >
+            {/* Form.Item 要求单个子元素，空占位满足结构要求 */}
+            <div />
+          </Form.Item>
         </SwipeAction>
       ))}
 
       {/* 添加步骤 */}
-      <List.Item>
+      <Form.Item>
         <Button block color="primary" onClick={onAddStep}>
           <span><AddOutline /> 添加步骤</span>
         </Button>
-      </List.Item>
-    </List>
+      </Form.Item>
+    </Form>
   );
 }

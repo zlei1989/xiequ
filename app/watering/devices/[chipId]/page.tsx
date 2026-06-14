@@ -5,15 +5,15 @@
  * 通过 saveRef 模式将保存函数从 DeviceEditor 传递到 Header 按钮。
  */
 
-"use client";
+'use client';
 
-import { NavBar, DotLoading, Dialog, Toast } from "antd-mobile";
-import { CheckOutline, DeleteOutline } from "antd-mobile-icons";
-import { useRouter, useParams } from "next/navigation";
-import { useRef } from "react";
+import { NavBar, DotLoading, Dialog, Toast } from 'antd-mobile';
+import { CheckOutline, DeleteOutline } from 'antd-mobile-icons';
+import { useRouter, useParams } from 'next/navigation';
+import { useRef } from 'react';
 
-import { DeviceEditor } from "../../components/device-editor";
-import { useDeviceConfig } from "../../hooks/use-device-config";
+import { DeviceEditor } from '../../components/device-editor';
+import { useDeviceConfig } from '../../hooks/use-device-config';
 
 export default function DeviceDetailPage() {
   const { chipId } = useParams<{ chipId: string }>();
@@ -25,24 +25,24 @@ export default function DeviceDetailPage() {
   /** 删除设备：Dialog 确认 → remove → Toast → 返回 */
   async function handleRemove() {
     const confirmed = await Dialog.confirm({
-      title: "确认删除设备？",
-      content: "不可恢复",
+      title: '确认删除设备？',
+      content: '不可恢复',
     });
     if (!confirmed) return;
 
     try {
       await remove();
-      Toast.show({ icon: "success", content: "设备已删除" });
-      router.push("/watering");
+      Toast.show({ icon: 'success', content: '设备已删除' });
+      router.push('/watering');
     } catch (err: unknown) {
-      console.error("[Watering] 删除设备失败:", {
+      console.error('[Watering] 删除设备失败:', {
         chipId,
         message: err instanceof Error ? err.message : String(err),
         stack: err instanceof Error ? err.stack : undefined,
       });
       Toast.show({
-        icon: "fail",
-        content: err instanceof Error ? err.message : String(err) || "删除失败",
+        icon: 'fail',
+        content: err instanceof Error ? err.message : String(err) || '删除失败',
       });
     }
   }
@@ -65,14 +65,14 @@ export default function DeviceDetailPage() {
       <div className="sticky top-0 z-10 bg-[var(--background)]">
         <NavBar
           right={
-            <div style={{ display: "flex", gap: 12 }}>
+            <div style={{ display: 'flex', gap: 12 }}>
               <CheckOutline onClick={() => { void handleSave(); }} />
               <DeleteOutline onClick={() => { void handleRemove(); }} />
             </div>
           }
           onBack={() => { router.back(); }}
         >
-          {config.name || "设备配置"}
+          {config.name || '设备配置'}
         </NavBar>
       </div>
 
@@ -84,11 +84,11 @@ export default function DeviceDetailPage() {
         onSave={async (data) => {
           try {
             await save(data);
-            Toast.show({ icon: "success", content: "配置已保存" });
+            Toast.show({ icon: 'success', content: '配置已保存' });
           } catch (err: unknown) {
             Toast.show({
-              icon: "fail",
-              content: err instanceof Error ? err.message : String(err) || "保存失败",
+              icon: 'fail',
+              content: err instanceof Error ? err.message : String(err) || '保存失败',
             });
           }
         }}

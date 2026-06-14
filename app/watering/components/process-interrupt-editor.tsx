@@ -57,9 +57,9 @@ export function ProcessInterruptEditor({
           />
         ) : (
           <ErrorBlock
+            description="请等待设备上报 GPIO 状态"
             status="empty"
             title="无可用传感器"
-            description="请等待设备上报 GPIO 状态"
           />
         )}
       </List.Item>
@@ -76,7 +76,7 @@ export function ProcessInterruptEditor({
             if (vals.length > 0) {
               onChange({
                 ...interrupt,
-                signalType: vals[0] as Interrupt['signalType'],
+                signalType: vals[0],
               });
             }
           }}
@@ -86,8 +86,8 @@ export function ProcessInterruptEditor({
       {/* 数字信号：触发状态 */}
       {signalType === 'digital' && (
         <List.Item
-          title="触发状态"
           description={interrupt.state === 1 || interrupt.state === true ? '触发 (1)' : '未触发 (0)'}
+          title="触发状态"
         >
           <Switch
             checked={interrupt.state === 1 || interrupt.state === true}
@@ -112,7 +112,7 @@ export function ProcessInterruptEditor({
                 if (vals.length > 0) {
                   onChange({
                     ...interrupt,
-                    logic: vals[0] as Interrupt['logic'],
+                    logic: vals[0],
                   });
                 }
               }}
@@ -120,8 +120,8 @@ export function ProcessInterruptEditor({
           </List.Item>
 
           <List.Item
-            title="触发阈值"
             description={`当传感器值${logic === '>' ? '大于' : '小于'}阈值时触发中断`}
+            title="触发阈值"
           >
             <Stepper
               min={0}
@@ -167,8 +167,8 @@ export function ProcessInterruptEditor({
 
       {/* 禁用 */}
       <List.Item
-        title="禁用"
         description={interrupt.disabled ? '已禁用' : '已启用'}
+        title="禁用"
       >
         <Switch
           checked={!interrupt.disabled}

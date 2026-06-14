@@ -30,8 +30,8 @@ describe('ProcessInterruptEditor', () => {
     const onChange = vi.fn();
     render(
       <ProcessInterruptEditor
-        interrupt={defaultInterrupt}
         gpio={mockGpio}
+        interrupt={defaultInterrupt}
         onChange={onChange}
         onRemove={vi.fn()}
       />,
@@ -44,8 +44,8 @@ describe('ProcessInterruptEditor', () => {
   it('数字信号模式显示触发状态开关', () => {
     render(
       <ProcessInterruptEditor
-        interrupt={{ ...defaultInterrupt, signalType: 'digital' }}
         gpio={mockGpio}
+        interrupt={{ ...defaultInterrupt, signalType: 'digital' }}
         onChange={vi.fn()}
         onRemove={vi.fn()}
       />,
@@ -58,8 +58,8 @@ describe('ProcessInterruptEditor', () => {
   it('模拟信号模式显示逻辑选择器', () => {
     render(
       <ProcessInterruptEditor
-        interrupt={{ ...defaultInterrupt, signalType: 'analog' }}
         gpio={mockGpio}
+        interrupt={{ ...defaultInterrupt, signalType: 'analog' }}
         onChange={vi.fn()}
         onRemove={vi.fn()}
       />,
@@ -72,8 +72,8 @@ describe('ProcessInterruptEditor', () => {
     const emptyGpio: GpioInfo = { buttons: [], loads: [], sensors: [] };
     render(
       <ProcessInterruptEditor
-        interrupt={defaultInterrupt}
         gpio={emptyGpio}
+        interrupt={defaultInterrupt}
         onChange={vi.fn()}
         onRemove={vi.fn()}
       />,
