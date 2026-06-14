@@ -120,8 +120,6 @@ bool _bootstrap = false;
 bool _asyncResponseProcessed = false;
 /** 深度睡眠时长（毫秒），0 表示不启用 */
 unsigned long _sleepDuration = 0;
-/** 上次用户操作的时间戳（用于空闲睡眠倒计时） */
-unsigned long _lastOperationTime = 0;
 
 // ==================== 回调函数前向声明 ====================
 
@@ -258,8 +256,6 @@ void setup()
   network.setWatchStateHandler(networkAsyncWatchStateHandler);
   network.setStateChangeHandler(networkStateChangeHandler);
 
-  // 初始化空闲计时器
-  _lastOperationTime = millis();
 }
 
 /**
@@ -270,15 +266,13 @@ void setup()
  */
 void loop()
 {
-  // 空闲睡眠倒计时检查
+  // 收到睡眠指令后立即进入深睡眠（带定时唤醒）
   if (_sleepDuration > 0 && _idled) {
-    unsigned long now = millis();
-    if (now - _lastOperationTime >= _sleepDuration) {
-      log("Sleep {\"duration\":%lu,\"idle\":%lu}",
-          _sleepDuration, (unsigned long)(now - _lastOperationTime));
-      Serial.flush();
-      esp_deep_sleep_start();
-    }
+    log("Sleep {\"duration\":%lu}", _sleepDuration);
+    Serial.flush();
+    // 配置定时唤醒（参数单位：微秒）
+    esp_sleep_enable_timer_wakeup(_sleepDuration * 1000ULL);
+    esp_deep_sleep_start();
   }
 
   // 网络连接与状态轮询
@@ -464,7 +458,7 @@ void networkStateChangeHandler(JsonDocument *state, NetworkExt *network,
     yield();
   }
 
-  // 设备开关关闭：记录 sleepDuration（倒计时逻辑在 loop 中，不立即睡眠）
+  // 设备开关关闭：记录 sleepDuration（loop 中检测到后立即深度睡眠）
   if ((*state)["switch"] != "on")
   {
     if ((*state)["sleepDuration"].is<unsigned long>())
@@ -487,7 +481,6 @@ void networkStateChangeHandler(JsonDocument *state, NetworkExt *network,
 
   // 启动新流程
   _idled = false;
-  _lastOperationTime = millis();  // 刷新操作时间
   process.setSchema((*state).as<JsonObject>());
   process.execute();
 }
@@ -540,7 +533,6 @@ void processFinishHandler(Process *process, void *context)
         Process *process = reinterpret_cast<Process *>(context);
         object["stateId"] = process->getStateId();
         _idled = true;
-        _lastOperationTime = millis();
         // 推送完成事件
         return network->pushState("finish", &fields);
       },
@@ -564,9 +556,6 @@ void buttonChangeHandler(int type, float value, Button *button, void *context)
   if (type != Button::TYPE_PRESS) {
     return;
   }
-
-  // 重置空闲倒计时（任何按钮操作都刷新）
-  _lastOperationTime = millis();
 
   Process *processPtr = reinterpret_cast<Process *>(context);
 
@@ -607,7 +596,6 @@ void buttonChangeHandler(int type, float value, Button *button, void *context)
         processPtr->setSchema(schema);
         processPtr->execute();
         _idled = false;
-        _lastOperationTime = millis();
         return;
       }
     }
