@@ -10,6 +10,7 @@
 
 'use client';
 
+import { arrayMove } from '@dnd-kit/sortable';
 import {
   Input,
   Stepper,
@@ -31,6 +32,7 @@ import { useState, useEffect } from 'react';
 import { InterruptConfigPicker } from './interrupt-config-picker';
 import { ProcessConfigPicker } from './process-config-picker';
 import { ScheduleConfigPicker } from './schedule-config-picker';
+import { SortableList } from './sortable-list';
 import { StepConfigPicker } from './step-config-picker';
 import { VoltageConfigPicker } from './voltage-config-picker';
 
@@ -392,46 +394,45 @@ export function DeviceConfigForm({
 
 
       {/* ======== 功能列表 ======== */}
-      <List header="功能">
-        {form.processes.length === 0 ? (
-          <ErrorBlock description="" status="empty" title="暂无功能" />
-        ) : (
-          form.processes.map((proc, index) => (
-            <SwipeAction
-              key={(proc as WithKey).key ?? index}
-              rightActions={[
-                {
-                  key: 'delete',
-                  text: '删除',
-                  color: 'danger',
-                  onClick: () => {
-                    confirmDelete('确认删除此流程？', () => { deleteProcessFromList(index); });
-                  },
+      <SortableList
+        emptyText="暂无功能"
+        getKey={(proc, index) => (proc as WithKey).key ?? String(index)}
+        header="功能"
+        items={form.processes}
+        renderItem={(proc, index) => (
+          <SwipeAction
+            rightActions={[
+              {
+                key: 'delete',
+                text: '删除',
+                color: 'danger',
+                onClick: () => {
+                  confirmDelete('确认删除此流程？', () => { deleteProcessFromList(index); });
                 },
-              ]}
-            >
-              <List.Item
-                clickable
-                onClick={() => {
-                  setProcessIndex(index);
-                  setProcessVisible(true);
-                }}
-              >
-                {proc.name}
-              </List.Item>
-            </SwipeAction>
-          ))
-        )}
-        <div className="p-2" >
-          <Button
-            block
-            size="small"
-            onClick={addProcess}
+              },
+            ]}
           >
-            <AddOutline /> 添加
-          </Button>
-        </div>
-      </List>
+            <List.Item
+              clickable
+              onClick={() => {
+                setProcessIndex(index);
+                setProcessVisible(true);
+              }}
+            >
+              {proc.name}
+            </List.Item>
+          </SwipeAction>
+        )}
+        onReorder={(from, to) => {
+          const newProcesses = arrayMove(form.processes, from, to);
+          setForm({ ...form, processes: newProcesses });
+        }}
+      />
+      <div className="p-2">
+        <Button block size="small" onClick={addProcess}>
+          <AddOutline /> 添加
+        </Button>
+      </div>
 
 
       {/* ======== 计划任务列表 ======== */}
