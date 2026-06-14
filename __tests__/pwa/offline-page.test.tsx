@@ -19,14 +19,10 @@ describe('OfflinePage', () => {
     expect(screen.getByText('当前无网络连接')).toBeDefined();
   });
 
-  it('包含重新加载链接', () => {
+  it('包含重新加载按钮', () => {
     render(<OfflinePage />);
 
-    const links = screen.getAllByRole('link', { name: /重新加载/ });
-    expect(links.length).toBeGreaterThanOrEqual(1);
-    // 验证链接指向首页
-    const link = links[0];
-    if (!link) throw new Error('Expected at least one link');
-    expect(link.getAttribute('href')).toBe('/');
+    const buttons = screen.getAllByRole('button', { name: /重新加载/ });
+    expect(buttons.length).toBeGreaterThanOrEqual(1);
   });
 });
