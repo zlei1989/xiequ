@@ -7,13 +7,13 @@
 
 'use client';
 
-import { NavBar, Button, DotLoading, Dialog, Toast, Space } from 'antd-mobile';
-import { CheckOutline, DeleteOutline } from 'antd-mobile-icons';
+import { NavBar, Button, DotLoading, Dialog, Toast } from 'antd-mobile';
+import { CheckOutline } from 'antd-mobile-icons';
 import { useRouter, useParams } from 'next/navigation';
 import { useRef } from 'react';
 
-import { DeviceConfigForm } from '../../components/device-config-form';
-import { useDeviceConfig } from '../../hooks/use-device-config';
+import { DeviceConfigForm } from '../../../components/device-config-form';
+import { useDeviceConfig } from '../../../hooks/use-device-config';
 
 export default function DeviceDetailPage() {
   const { chipId } = useParams<{ chipId: string }>();

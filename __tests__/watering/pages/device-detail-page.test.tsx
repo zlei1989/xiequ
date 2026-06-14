@@ -35,7 +35,7 @@ vi.mock('@/app/watering/hooks/use-device-config', () => ({
   }),
 }));
 
-import DeviceDetailPage from '@/app/watering/devices/[chipId]/page';
+import DeviceDetailPage from '@/app/watering/(subpages)/devices/[chipId]/page';
 
 describe('DeviceDetailPage', () => {
   afterEach(() => {

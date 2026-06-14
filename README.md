@@ -103,26 +103,29 @@ npm run dev
 │   ├── globals.css         # 全局样式
 │   ├── watering/           # 浇花帮手模块
 │   │   ├── actions.ts      # Server Actions
+│   │   ├── actions/        # 按功能拆分（清空日志、删除设备等）
 │   │   ├── api/            # API 路由（get-state / push-state）
 │   │   ├── components/     # UI 组件
-│   │   ├── debug/          # IoT 调试页
-│   │   ├── devices/        # 设备详情/编辑页（动态路由）
 │   │   ├── hooks/          # 自定义 Hooks
-│   │   ├── logs/           # 设备日志页（动态路由）
+│   │   ├── (subpages)/     # 路由组（子页面，URL 不变）
+│   │   │   ├── debug/      # IoT 调试页
+│   │   │   ├── devices/    # 设备详情/编辑页（动态路由）
+│   │   │   └── logs/       # 设备日志页（动态路由）
 │   │   ├── rom-v2/         # ESP32 固件（Arduino C++）
 │   │   ├── services/       # 数据库操作、IoT 协议实现
 │   │   └── types.ts        # 类型定义
 │   └── travel/             # 旅行计划模块
 │       ├── page.tsx         # 地图主页
 │       ├── layout.tsx       # 模块布局（Context 注入）
-│       ├── list/            # 地点列表页
-│       ├── routes/          # 路线列表页
 │       ├── actions.ts       # Server Actions
 │       ├── api/download/    # 图片下载 API
 │       ├── components/      # UI 组件（地图、弹层、列表项等）
 │       ├── hooks/           # 自定义 Hooks（路线、驾车、地图主题等）
 │       ├── lib/             # 路线构建、地点过滤
 │       ├── services/        # 高德地图、OSS、标注引擎
+│       ├── (subpages)/      # 路由组（子页面，URL 不变）
+│       │   ├── favourites/  # 收藏地点列表页
+│       │   └── routes/      # 路线列表页
 │       ├── types.ts         # 类型定义
 │       └── types/           # 第三方类型声明（amap.d.ts）
 ├── components/             # 共享组件（SSR 兼容层等）

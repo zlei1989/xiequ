@@ -58,4 +58,5 @@
 | `app/watering/` | 浇花模块 |
 | `app/watering/rom-v2/` | ESP32 固件（Arduino C++） |
 | `app/travel/` | 旅行模块 |
+| `app/*/(subpages)/` | 各模块子页面路由组，URL 不变 |
 | `__tests__/` | 测试文件 |

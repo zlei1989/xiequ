@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "format": "eslint . --fix",
+    "format": "eslint . --fix --ignore-pattern public",
     "check": "npm run typecheck && npm run lint",
     "test": "vitest run",
     "test:watch": "vitest",
