@@ -191,6 +191,17 @@ export async function initDb() {
   } catch {
     // 列已存在，忽略
   }
+
+  // 计划任务执行日志表（防重复执行）
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS watering_schedule_log (
+      chip_id TEXT NOT NULL,
+      trigger_time INTEGER NOT NULL,
+      process_index INTEGER NOT NULL,
+      created_time INTEGER NOT NULL,
+      PRIMARY KEY (chip_id, trigger_time, process_index)
+    )
+  `);
 }
 
 /**
@@ -505,4 +516,44 @@ export async function writeDeviceLog(
 export async function clearDeviceLogs(chipId: string) {
   const db = getDb();
   db.run('DELETE FROM watering_logs WHERE chip_id = ?', chipId);
+}
+
+/**
+ * 标记计划任务已执行
+ *
+ * 写入 (chipId, triggerTime, processIndex) 三元组，
+ * 防止同一个定时任务在同一触发时间被重复执行。
+ * SQLite 同步驱动，函数签名保持 async 以兼容上层契约。
+ */
+// eslint-disable-next-line @typescript-eslint/require-await -- SQLite WASM 驱动为同步，保持 async 契约
+export async function insertScheduleLog(
+  chipId: string,
+  triggerTime: number,
+  processIndex: number,
+): Promise<void> {
+  const db = getDb();
+  db.run(
+    'INSERT OR IGNORE INTO watering_schedule_log (chip_id, trigger_time, process_index, created_time) VALUES (?, ?, ?, ?)',
+    [chipId, triggerTime, processIndex, Date.now()],
+  );
+}
+
+/**
+ * 查询指定触发时间是否已有执行记录
+ *
+ * 用于计划任务去重：同一 chipId + triggerTime 下任意 processIndex
+ * 有记录返回 true。interval 多天检查由调用方循环多个 triggerTime 完成。
+ * SQLite 同步驱动，函数签名保持 async 以兼容上层契约。
+ */
+// eslint-disable-next-line @typescript-eslint/require-await -- SQLite WASM 驱动为同步，保持 async 契约
+export async function hasScheduleLog(
+  chipId: string,
+  triggerTime: number,
+): Promise<boolean> {
+  const db = getDb();
+  const row = db.get(
+    'SELECT 1 FROM watering_schedule_log WHERE chip_id = ? AND trigger_time = ? LIMIT 1',
+    [chipId, triggerTime],
+  );
+  return !!row;
 }
