@@ -76,11 +76,12 @@ export function useDeviceConfig(chipId: string) {
       if (found) {
         // sql.js 会把 JSON 列作为字符串返回，需要确保 processes/schedules 是数组
         // 使用 Record<string, unknown> 绕过类型系统处理 SQLite WASM 的原始返回值
+        const raw = found as Record<string, unknown>;
         const safeConfig: DeviceConfig = {
           ...(found as unknown as DeviceConfig),
-          processes: parseJsonArray((found as Record<string, unknown>).processes) as ProcessConfig[],
-          schedules: parseJsonArray((found as Record<string, unknown>).schedules) as ScheduleConfig[],
-          voltage: parseJsonVoltage((found as Record<string, unknown>).voltage),
+          processes: parseJsonArray(raw.processes) as ProcessConfig[],
+          schedules: parseJsonArray(raw.schedules) as ScheduleConfig[],
+          voltage: parseJsonVoltage(raw.voltage),
         };
         setConfig(safeConfig);
         // 从设备 state 中提取 GPIO 键名

@@ -3,6 +3,72 @@ import { newId } from '@/lib/utils';
 
 import type { DeviceConfig, DeviceState, DeviceItem } from '../types';
 
+/** watering_devices 表 SQLite 原始行 */
+interface DeviceRow {
+  chip_id: string;
+  name: string;
+  mac_address: string;
+  processes: string;
+  idle_sleep: number;
+  idle_timeout: number;
+  boot_exec: number;
+  exec_delay: number;
+  schedules: string;
+  voltage: string | null;
+  processes_version: string | null;
+  created_time: string;
+  last_write_time: string;
+}
+
+/** watering_device_state 表 SQLite 原始行 */
+interface StateRow {
+  chip_id: string;
+  state_id: string;
+  switch: string;
+  buttons: string | null;
+  sensors: string | null;
+  loads: string | null;
+  current_index: number | null;
+  current_process: string | null;
+  message: string | null;
+  idle_since: number | null;
+  last_action_type: string | null;
+  last_tick_time: number;
+  last_write_time: string;
+}
+
+/** watering_devices LEFT JOIN watering_device_state 原始行 */
+interface JoinRow extends DeviceRow {
+  /** 对应 state 表列（LEFT JOIN 为 null 表示无状态行） */
+  state_id: string | null;
+  switch: string | null;
+  buttons: string | null;
+  sensors: string | null;
+  loads: string | null;
+  current_index: number | null;
+  current_process: string | null;
+  message: string | null;
+  idle_since: number | null;
+  last_action_type: string | null;
+  /** s.last_tick_time 别名 */
+  state_last_tick_time: number | null;
+  /** s.last_write_time 别名 */
+  state_last_write_time: string | null;
+}
+
+/** watering_logs 表 SQLite 原始行 */
+interface LogRow {
+  id: number;
+  chip_id: string;
+  mac_address: string | null;
+  event: string;
+  state_id: string | null;
+  message: string | null;
+  state: string | null;
+  voltage: number;
+  created_time: string;
+}
+
 /**
  * sql.js 的 getAsObject() 将 JSON 列作为字符串返回（不自动解析）。
  * 此辅助函数安全地将 JSON 字符串解析为对象/数组，如果已经是对象则直接返回。
@@ -23,8 +89,9 @@ function parseJSON<T>(value: unknown, fallback: T): T {
 /**
  * 初始化浇花模块数据库表
  */
+// eslint-disable-next-line @typescript-eslint/require-await -- SQLite WASM 驱动为同步，保持 async 契约
 export async function initDb() {
-  const db = await getDb();
+  const db = getDb();
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS watering_devices (
@@ -129,8 +196,9 @@ export async function initDb() {
 /**
  * 获取所有设备（含状态和在线信息）
  */
+// eslint-disable-next-line @typescript-eslint/require-await -- SQLite WASM 驱动为同步，保持 async 契约
 export async function getAllDevices(): Promise<DeviceItem[]> {
-  const db = await getDb();
+  const db = getDb();
   const rows = db.prepare(`
     SELECT d.chip_id, d.name, d.mac_address, d.processes, d.idle_sleep, d.idle_timeout,
            d.boot_exec, d.exec_delay, d.schedules, d.voltage, d.processes_version, d.created_time, d.last_write_time,
@@ -141,7 +209,7 @@ export async function getAllDevices(): Promise<DeviceItem[]> {
     FROM watering_devices d
     LEFT JOIN watering_device_state s ON d.chip_id = s.chip_id
     ORDER BY d.name
-  `).all() as any[];
+  `).all() as JoinRow[];
 
   const now = Date.now();
   return rows.map((row) => {
@@ -190,9 +258,10 @@ export async function getAllDevices(): Promise<DeviceItem[]> {
 /**
  * 获取单个设备配置
  */
+// eslint-disable-next-line @typescript-eslint/require-await -- SQLite WASM 驱动为同步，保持 async 契约
 export async function getDeviceConfig(chipId: string): Promise<DeviceConfig | null> {
-  const db = await getDb();
-  const row = db.prepare('SELECT * FROM watering_devices WHERE chip_id = ?').get(chipId) as any;
+  const db = getDb();
+  const row = db.prepare('SELECT * FROM watering_devices WHERE chip_id = ?').get(chipId) as DeviceRow | undefined;
   if (!row) return null;
   return {
     chipId: row.chip_id,
@@ -215,7 +284,7 @@ export async function getDeviceConfig(chipId: string): Promise<DeviceConfig | nu
  * 保存设备配置
  */
 export async function saveDeviceConfig(config: DeviceConfig) {
-  const db = await getDb();
+  const db = getDb();
 
   // processesVersion 生成：对比旧值，变更时生成新版本
   const oldConfig = await getDeviceConfig(config.chipId);
@@ -257,8 +326,9 @@ export async function saveDeviceConfig(config: DeviceConfig) {
 /**
  * 删除设备
  */
+// eslint-disable-next-line @typescript-eslint/require-await -- SQLite WASM 驱动为同步，保持 async 契约
 export async function deleteDevice(chipId: string) {
-  const db = await getDb();
+  const db = getDb();
   db.prepare('DELETE FROM watering_device_state WHERE chip_id = ?').run(chipId);
   db.prepare('DELETE FROM watering_devices WHERE chip_id = ?').run(chipId);
 }
@@ -266,9 +336,10 @@ export async function deleteDevice(chipId: string) {
 /**
  * 获取设备状态
  */
+// eslint-disable-next-line @typescript-eslint/require-await -- SQLite WASM 驱动为同步，保持 async 契约
 export async function getDeviceState(chipId: string): Promise<DeviceState | null> {
-  const db = await getDb();
-  const row = db.prepare('SELECT * FROM watering_device_state WHERE chip_id = ?').get(chipId) as any;
+  const db = getDb();
+  const row = db.prepare('SELECT * FROM watering_device_state WHERE chip_id = ?').get(chipId) as StateRow | undefined;
   if (!row) return null;
   return {
     chipId: row.chip_id,
@@ -289,8 +360,9 @@ export async function getDeviceState(chipId: string): Promise<DeviceState | null
 /**
  * 保存设备状态（upsert）
  */
+// eslint-disable-next-line @typescript-eslint/require-await -- SQLite WASM 驱动为同步，保持 async 契约
 export async function saveDeviceState(state: DeviceState) {
-  const db = await getDb();
+  const db = getDb();
   db.prepare(`
     INSERT INTO watering_device_state (chip_id, state_id, switch, buttons, sensors, loads, current_index, current_process, message, last_tick_time, last_write_time, idle_since, last_action_type)
     VALUES (@chip_id, @state_id, @switch, @buttons, @sensors, @loads, @current_index, @current_process, @message, @last_tick_time, @last_write_time, @idle_since, @last_action_type)
@@ -319,8 +391,9 @@ export async function saveDeviceState(state: DeviceState) {
 /**
  * 更新心跳时间
  */
+// eslint-disable-next-line @typescript-eslint/require-await -- SQLite WASM 驱动为同步，保持 async 契约
 export async function updateTick(chipId: string) {
-  const db = await getDb();
+  const db = getDb();
   const now = Date.now();
   const existing = db.prepare('SELECT 1 FROM watering_device_state WHERE chip_id = ?').get(chipId);
   if (existing) {
@@ -335,6 +408,7 @@ export async function updateTick(chipId: string) {
  * 使用 getDbSync() 保持与 writeDeviceLog 一致的调用模式。
  * SQLite 为同步驱动，函数签名保持 async 以兼容上层契约。
  */
+// eslint-disable-next-line @typescript-eslint/require-await -- SQLite WASM 驱动为同步，保持 async 契约
 export async function updateIdleSince(
   chipId: string,
   actionType: 'bootstrap' | 'button' | 'change' | 'finish' | 'heartbeat',
@@ -351,11 +425,12 @@ export async function updateIdleSince(
 /**
  * 获取设备日志
  */
+// eslint-disable-next-line @typescript-eslint/require-await -- SQLite WASM 驱动为同步，保持 async 契约
 export async function getDeviceLogs(chipId: string, limit = 100) {
-  const db = await getDb();
+  const db = getDb();
   const rows = db.prepare(
     'SELECT id, chip_id, mac_address, event, state_id, message, state, voltage, created_time FROM watering_logs WHERE chip_id = ? ORDER BY created_time DESC LIMIT ?',
-  ).all([chipId, limit]) as any[];
+  ).all([chipId, limit]) as LogRow[];
   return rows.map((row) => ({
     id: row.id,
     chipId: row.chip_id,
@@ -396,6 +471,7 @@ export function calcVoltage(
  * SQLite WASM 驱动 API 为同步调用，但函数签名保持 async 以兼容上层契约。
  * voltage 从设备配置的电压分压公式计算，未配置时为 0。
  */
+// eslint-disable-next-line @typescript-eslint/require-await -- SQLite WASM 驱动为同步，保持 async 契约
 export async function writeDeviceLog(
   chipId: string,
   event: string,
@@ -424,7 +500,8 @@ export async function writeDeviceLog(
 /**
  * 清空设备日志
  */
+// eslint-disable-next-line @typescript-eslint/require-await -- SQLite WASM 驱动为同步，保持 async 契约
 export async function clearDeviceLogs(chipId: string) {
-  const db = await getDb();
+  const db = getDb();
   db.prepare('DELETE FROM watering_logs WHERE chip_id = ?').run(chipId);
 }

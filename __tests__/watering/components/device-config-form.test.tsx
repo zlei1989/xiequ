@@ -11,9 +11,8 @@ import type { DeviceConfig } from '@/app/watering/types';
 afterEach(cleanup);
 
 /** 创建与组件签名匹配的 saveRef */
-function makeSaveRef(): React.MutableRefObject<() => Promise<void>> {
-   
-  const ref: React.MutableRefObject<() => Promise<void>> = { current: async () => {} };
+function makeSaveRef(): React.RefObject<() => Promise<void>> {
+  const ref: React.RefObject<() => Promise<void>> = { current: async () => {} };
   return ref;
 }
 

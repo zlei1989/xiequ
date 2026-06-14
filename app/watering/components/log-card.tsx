@@ -274,7 +274,8 @@ function renderBootstrapDescription(
 ): string {
   const parts: string[] = [];
   const stateObj = item.state as Record<string, unknown> | undefined;
-  const causeLabel = formatCause(String(stateObj?.cause ?? ''));
+  const cause = stateObj?.cause;
+  const causeLabel = formatCause(typeof cause === 'string' || typeof cause === 'number' ? String(cause) : '');
   if (causeLabel) parts.push(causeLabel);
   const sleepSec = calcSleepDuration(item, allLogs);
   if (sleepSec >= 60) {
@@ -346,7 +347,8 @@ export function LogCard({ group }: { group: LogGroup }) {
                 </Tag>
                 {item.event === 'change' && (() => {
                   const stateObj = item.state as Record<string, unknown> | undefined;
-                  const changeType = String(stateObj?.type ?? '');
+                  const type = stateObj?.type;
+                  const changeType = typeof type === 'string' || typeof type === 'number' ? String(type) : '';
                   if (changeType && changeTypeLabels[changeType]) {
                     return (
                       <Tag color={changeTypeColors[changeType] || 'default'}>
