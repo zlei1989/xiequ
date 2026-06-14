@@ -16,11 +16,11 @@ describe('SortableList', () => {
   it('渲染空列表', () => {
     render(
       <SortableList<TestItem>
+        getKey={(item: TestItem) => item.id}
         header="测试"
         items={[]}
-        getKey={(item) => item.id}
-        renderItem={(item) => <div>{item.name}</div>}
         onReorder={vi.fn()}
+        renderItem={(item: TestItem) => <div>{item.name}</div>}
       />,
     );
     // 空列表显示 antd-mobile ErrorBlock
@@ -35,11 +35,11 @@ describe('SortableList', () => {
     ];
     render(
       <SortableList<TestItem>
+        getKey={(item: TestItem) => item.id}
         header="测试"
         items={items}
-        getKey={(item) => item.id}
-        renderItem={(item) => <div>{item.name}</div>}
         onReorder={vi.fn()}
+        renderItem={(item: TestItem) => <div>{item.name}</div>}
       />,
     );
     expect(screen.getByText('项目A')).toBeDefined();
@@ -51,11 +51,11 @@ describe('SortableList', () => {
     const items: TestItem[] = [{ id: 'a', name: '项目A' }];
     render(
       <SortableList<TestItem>
+        getKey={(item: TestItem) => item.id}
         header="功能"
         items={items}
-        getKey={(item) => item.id}
-        renderItem={(item) => <div>{item.name}</div>}
         onReorder={vi.fn()}
+        renderItem={(item: TestItem) => <div>{item.name}</div>}
       />,
     );
     expect(screen.getByText('功能')).toBeDefined();
@@ -65,11 +65,11 @@ describe('SortableList', () => {
     const items: TestItem[] = [{ id: 'a', name: '项目A' }];
     const { container } = render(
       <SortableList<TestItem>
+        getKey={(item: TestItem) => item.id}
         header="测试"
         items={items}
-        getKey={(item) => item.id}
-        renderItem={(item) => <div>{item.name}</div>}
         onReorder={vi.fn()}
+        renderItem={(item: TestItem) => <div>{item.name}</div>}
       />,
     );
     // 单项时不应有 useSortable 添加的 [role] 属性（拖拽未激活）
@@ -83,11 +83,11 @@ describe('SortableList', () => {
     render(
       <SortableList<TestItem>
         emptyText="暂无功能"
+        getKey={(item: TestItem) => item.id}
         header="功能"
         items={[]}
-        getKey={(item) => item.id}
-        renderItem={(item) => <div>{item.name}</div>}
         onReorder={vi.fn()}
+        renderItem={(item: TestItem) => <div>{item.name}</div>}
       />,
     );
     expect(screen.getByText('暂无功能')).toBeDefined();
