@@ -103,7 +103,7 @@ export function VoltageConfigPicker({
             </div>
           </Card>)
       }
-        layout="vertical"
+      layout="vertical"
       >
         {/* 传感器选择 — 点击 Form.Item 触发 Picker.prompt 弹窗 */}
         <Form.Item
