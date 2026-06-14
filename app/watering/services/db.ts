@@ -33,6 +33,7 @@ interface StateRow {
   message: string | null;
   idle_since: number | null;
   last_action_type: string | null;
+  step_index: number | null;
   last_tick_time: number;
   last_write_time: string;
 }
@@ -50,6 +51,7 @@ interface JoinRow extends DeviceRow {
   message: string | null;
   idle_since: number | null;
   last_action_type: string | null;
+  step_index: number | null;
   /** s.last_tick_time 别名 */
   state_last_tick_time: number | null;
   /** s.last_write_time 别名 */
@@ -192,6 +194,13 @@ export async function initDb() {
     // 列已存在，忽略
   }
 
+  // 为旧数据库添加 step_index 列（步骤进度追踪）
+  try {
+    db.exec('ALTER TABLE watering_device_state ADD COLUMN step_index INTEGER');
+  } catch {
+    // 列已存在，忽略
+  }
+
   // 计划任务执行日志表（防重复执行）
   db.exec(`
     CREATE TABLE IF NOT EXISTS watering_schedule_log (
@@ -215,7 +224,7 @@ export async function getAllDevices(): Promise<DeviceItem[]> {
            d.boot_exec, d.exec_delay, d.schedules, d.voltage, d.processes_version, d.created_time, d.last_write_time,
            s.state_id, s.switch, s.buttons, s.sensors, s.loads,
            s.current_index, s.current_process, s.message,
-           s.idle_since, s.last_action_type,
+           s.idle_since, s.last_action_type, s.step_index,
            s.last_tick_time as state_last_tick_time, s.last_write_time as state_last_write_time
     FROM watering_devices d
     LEFT JOIN watering_device_state s ON d.chip_id = s.chip_id
@@ -255,6 +264,7 @@ export async function getAllDevices(): Promise<DeviceItem[]> {
         message: row.message ?? undefined,
         idleSince: row.idle_since ?? undefined,
         lastActionType: (row.last_action_type ?? undefined) as DeviceState['lastActionType'],
+        stepIndex: row.step_index ?? undefined,
         lastWriteTime: row.state_last_write_time as string,
       };
       item.lastTickTime = row.state_last_tick_time ?? undefined;
@@ -364,6 +374,7 @@ export async function getDeviceState(chipId: string): Promise<DeviceState | null
     message: row.message ?? undefined,
     idleSince: row.idle_since ?? undefined,
     lastActionType: (row.last_action_type ?? undefined) as DeviceState['lastActionType'],
+    stepIndex: row.step_index ?? undefined,
     lastWriteTime: row.last_write_time,
   };
 }
@@ -375,13 +386,13 @@ export async function getDeviceState(chipId: string): Promise<DeviceState | null
 export async function saveDeviceState(state: DeviceState) {
   const db = getDb();
   db.run(`
-    INSERT INTO watering_device_state (chip_id, state_id, switch, buttons, sensors, loads, current_index, current_process, message, last_tick_time, last_write_time, idle_since, last_action_type)
-    VALUES (@chip_id, @state_id, @switch, @buttons, @sensors, @loads, @current_index, @current_process, @message, @last_tick_time, @last_write_time, @idle_since, @last_action_type)
+    INSERT INTO watering_device_state (chip_id, state_id, switch, buttons, sensors, loads, current_index, current_process, message, last_tick_time, last_write_time, idle_since, last_action_type, step_index)
+    VALUES (@chip_id, @state_id, @switch, @buttons, @sensors, @loads, @current_index, @current_process, @message, @last_tick_time, @last_write_time, @idle_since, @last_action_type, @step_index)
     ON CONFLICT(chip_id) DO UPDATE SET
       state_id=@state_id, switch=@switch, buttons=@buttons, sensors=@sensors, loads=@loads,
       current_index=@current_index, current_process=@current_process, message=@message,
       last_tick_time=@last_tick_time, last_write_time=@last_write_time,
-      idle_since=@idle_since, last_action_type=@last_action_type
+      idle_since=@idle_since, last_action_type=@last_action_type, step_index=@step_index
   `, {
     '@chip_id': state.chipId,
     '@state_id': state.stateId,
@@ -394,6 +405,7 @@ export async function saveDeviceState(state: DeviceState) {
     '@message': state.message ?? null,
     '@idle_since': state.idleSince ?? null,
     '@last_action_type': state.lastActionType ?? null,
+    '@step_index': state.stepIndex ?? null,
     '@last_tick_time': Date.now(),
     '@last_write_time': state.lastWriteTime,
   });
