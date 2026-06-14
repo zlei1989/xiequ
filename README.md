@@ -1,6 +1,6 @@
 # 谐趣
 
-我的生活工具集，基于 [Next.js](https://nextjs.org) 构建的 Web 应用。
+我的生活工具集，基于 [Next.js](https://nextjs.org) 构建的 Web 应用。由 DeepSeek V4 开发。
 
 ## 功能模块
 
