@@ -226,7 +226,7 @@ export function DeviceEditor({
     step.interrupts = [...(step.interrupts || []), item];
     proc.steps[stepIndex] = step;
     updateProcess(processIndex, proc);
-    setInterruptIndex((step.interrupts || []).length - 1);
+    setInterruptIndex(step.interrupts.length - 1);
     setInterruptVisible(true);
   }
 
@@ -363,7 +363,7 @@ export function DeviceEditor({
         {/* 开机执行 */}
         <List.Item
           clickable
-          extra={form.bootExec >= 0 && form.processes[form.bootExec]! ? form.processes[form.bootExec]!.name : '无'}
+          extra={form.bootExec >= 0 ? (form.processes[form.bootExec]?.name ?? '无') : '无'}
           title="开机执行"
           onClick={() => {
             const options = [
@@ -540,6 +540,7 @@ export function DeviceEditor({
           {processIndex > -1 && (
             <ProcessEditor
               gpio={gpio}
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               process={form.processes[processIndex]!}
               onAddStep={addStep}
               onChange={(updated) => { updateProcess(processIndex, updated); }}
@@ -577,6 +578,7 @@ export function DeviceEditor({
           {stepIndex > -1 && processIndex > -1 && (
             <ProcessStepEditor
               gpio={gpio}
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               step={form.processes[processIndex]!.steps[stepIndex]!}
               onAddInterrupt={addInterrupt}
               onChange={(updated) => { updateStep(stepIndex, updated); }}
@@ -611,6 +613,7 @@ export function DeviceEditor({
           编辑中断
         </NavBar>
         <div style={{ padding: '0 16px', overflowY: 'auto', height: 'calc(70vh - 45px)' }}>
+          {/* eslint-disable @typescript-eslint/no-non-null-assertion */}
           {interruptIndex > -1 &&
             stepIndex > -1 &&
             processIndex > -1 &&
@@ -626,6 +629,7 @@ export function DeviceEditor({
               onRemove={deleteInterrupt}
             />
           )}
+          {/* eslint-enable @typescript-eslint/no-non-null-assertion */}
         </div>
       </Popup>
 
@@ -653,9 +657,11 @@ export function DeviceEditor({
           {scheduleIndex > -1 && (
             <ScheduleEditor
               processes={form.processes}
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               schedules={[form.schedules[scheduleIndex]!]}
               onChange={(updated) => {
                 if (updated.length > 0) {
+                  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                   updateSchedule(scheduleIndex, updated[0]!);
                 }
               }}
@@ -684,6 +690,7 @@ export function DeviceEditor({
                   value={[voltageConfig.sensor]}
                   onChange={(vals) => {
                     if (vals.length > 0) {
+                      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                       updateVoltage({ sensor: vals[0]! });
                     }
                   }}
