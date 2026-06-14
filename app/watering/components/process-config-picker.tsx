@@ -7,6 +7,7 @@
 
 'use client';
 
+import { arrayMove } from '@dnd-kit/sortable';
 import { Input, ErrorBlock, Selector, Button, List, Popup, NavBar, Form, SwipeAction, Dialog } from 'antd-mobile';
 import { renderToBody } from 'antd-mobile/es/utils/render-to-body';
 import { AddOutline, DeleteOutline } from 'antd-mobile-icons';
@@ -14,6 +15,8 @@ import React, { useState, useEffect } from 'react';
 
 import type { GpioInfo } from '@/app/watering/hooks/use-device-config';
 import { useBackButton } from '@/lib/back-button';
+
+import { SortableList } from './sortable-list';
 
 import type { ProcessConfig } from '../types';
 
@@ -116,10 +119,11 @@ export function ProcessConfigPicker({
           </Form.Item>
         </Form>
 
-        <List header="步骤">
-          {draft.steps.map((s, idx) => (
+        <SortableList
+          header="步骤"
+          items={draft.steps}
+          renderItem={(s, idx) => (
             <SwipeAction
-              key={idx}
               rightActions={[
                 {
                   key: 'delete',
@@ -145,13 +149,17 @@ export function ProcessConfigPicker({
                 {s.name}
               </List.Item>
             </SwipeAction>
-          ))}
-          <div className="p-2">
-            <Button block size="small" onClick={onAddStep}>
-              <AddOutline /> 添加步骤
-            </Button>
-          </div>
-        </List>
+          )}
+          onReorder={(from, to) => {
+            const newSteps = arrayMove(draft.steps, from, to);
+            update({ steps: newSteps });
+          }}
+        />
+        <div className="p-2">
+          <Button block size="small" onClick={onAddStep}>
+            <AddOutline /> 添加步骤
+          </Button>
+        </div>
 
       </div>
     </Popup>
