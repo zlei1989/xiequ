@@ -17,6 +17,9 @@
   "dependencies": {
     "@amap/amap-jsapi-loader": "^1.0.1",
     "@ant-design/icons": "^6.2.5",
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
     "antd": "^6.4.3",
     "antd-mobile": "^5.42.3",
     "antd-mobile-icons": "^0.3.0",
