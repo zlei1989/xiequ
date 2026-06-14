@@ -3,24 +3,117 @@
  *
  * ESP32 固件定期轮询此接口获取最新 switch 状态和 process 指令。
  * 通过比较 stateId 判断是否有变化，仅在有变化时下发 process 对象。
- * 同时刷新设备心跳时间。
+ *
+ * 长轮询模式：
+ * - 有状态变化时立即返回
+ * - 无变化时 Promise 阻塞等待（最长 WATERING_LONG_POLL_TIMEOUT 毫秒）
+ * - set-state / push-state 通过 execCallback 唤醒等待中的请求
+ * - 超时后返回 changed:false，设备发起下一轮请求
+ *
+ * 同时检查计划任务：设备空闲时自动判断定时触发并下发 process。
  */
 
 import { NextResponse } from 'next/server';
 
-import { getDeviceState, getDeviceConfig, updateTick } from '@/app/watering/services/db';
+import { getDeviceState, getDeviceConfig, updateTick, insertScheduleLog, hasScheduleLog } from '@/app/watering/services/db';
+import { setCallback, deleteCallback } from '@/app/watering/services/callback-map';
+import { newId } from '@/lib/utils';
 import type { DeviceState, DeviceConfig, ScheduleConfig } from '@/app/watering/types';
 
 import type { NextRequest } from 'next/server';
 
 /** 环境变量 */
 const POLL_INTERVAL = parseInt(process.env.WATERING_POLL_INTERVAL || '15000');
+const LONG_POLL_TIMEOUT = parseInt(process.env.WATERING_LONG_POLL_TIMEOUT || '7000');
 
 /** 深睡眠最大时长（毫秒），由 WATERING_SLEEP_DURATION 环境变量控制，默认 5 分钟 */
 const SLEEP_DURATION = (() => {
   const v = parseInt(process.env.WATERING_SLEEP_DURATION || '300000');
   return Number.isFinite(v) ? v : 300000;
 })();
+
+/** 计划任务检查的最大误差容忍（毫秒） */
+const SCHEDULE_OFFSET = 45 * 60 * 1000;
+
+/**
+ * 计算 day 类型定时任务的今日触发时间戳（毫秒）
+ *
+ * @param now 当前时间
+ * @param value 距 00:00 的毫秒偏移
+ */
+function calcDayTriggerTime(now: Date, value: number): number {
+  const todayStart = new Date(now);
+  todayStart.setHours(0, 0, 0, 0);
+  return todayStart.getTime() + value;
+}
+
+/**
+ * 检查计划任务并执行
+ *
+ * 遍历 config.schedules，找到第一个应触发的 day 类型定时任务。
+ * 触发条件：已到达、未过期超 45 分钟、今日及 interval 天内未执行。
+ * 触发后标记 schedule_log、更新 state.switch/process/stateId。
+ *
+ * @returns 是否触发了计划任务（用于判断 changed）
+ */
+async function checkAndExecuteSchedule(
+  config: DeviceConfig,
+  state: DeviceState,
+  now: Date,
+): Promise<boolean> {
+  // 仅在设备空闲时检查
+  if (state.switch !== 'off') return false;
+
+  for (const schedule of config.schedules) {
+    if (schedule.disabled) continue;
+
+    let triggerTime: number;
+    switch (schedule.type) {
+      case 'day':
+        triggerTime = calcDayTriggerTime(now, schedule.value);
+        break;
+      default:
+        // 其他类型暂不支持
+        continue;
+    }
+
+    // 未到触发时间
+    if (triggerTime > now.getTime()) continue;
+    // 过期超过容忍误差
+    if (Math.abs(now.getTime() - triggerTime) > SCHEDULE_OFFSET) continue;
+
+    // 去重：查询当天及 interval 天内是否已执行
+    if (await hasScheduleLog(config.chipId, triggerTime)) continue;
+
+    let previouslyExecuted = false;
+    for (let i = 1; i < schedule.interval; i++) {
+      const prevTime = triggerTime - i * 24 * 3600 * 1000;
+      if (await hasScheduleLog(config.chipId, prevTime)) {
+        previouslyExecuted = true;
+        break;
+      }
+    }
+    if (previouslyExecuted) continue;
+
+    // 标记执行
+    await insertScheduleLog(config.chipId, triggerTime, schedule.process);
+
+    // 下发流程（深拷贝防止修改原始配置）
+    if (
+      config.processes.length > 0 &&
+      config.processes.length > schedule.process
+    ) {
+      state.switch = 'on';
+      state.index = schedule.process;
+      state.process = JSON.parse(JSON.stringify(config.processes[schedule.process])) as typeof state.process;
+      state.stateId = newId();
+      state.lastWriteTime = new Date().toISOString();
+      return true;
+    }
+  }
+
+  return false;
+}
 
 /**
  * 计算单个定时任务距现在还有多少毫秒
@@ -37,29 +130,21 @@ function calcNextScheduleDelay(schedule: ScheduleConfig, now: Date): number {
     todayStart.setHours(0, 0, 0, 0);
     const todayStartMs = todayStart.getTime();
 
-    // value 是距 00:00 的毫秒偏移（如 8:00 = 28800000）
     const todayTrigger = todayStartMs + schedule.value;
 
-    // 今天还没到触发时间 → 返回距离
     if (todayTrigger > nowMs) {
       return todayTrigger - nowMs;
     }
 
-    // 今天已过触发时间 → 下一次是明天（或按 interval 天后）
     const intervalMs = (schedule.interval || 1) * 24 * 3600000;
     return todayTrigger + intervalMs - nowMs;
   }
 
-  // minute/week/month 暂简化：使用最大睡眠时长
   return SLEEP_DURATION;
 }
 
 /**
  * 计算深睡眠时长（毫秒）
- *
- * 1. 过滤出已启用的定时任务
- * 2. 找到最近的下次触发时间
- * 3. 取最小值与 SLEEP_DURATION 比较
  */
 function calcSleepDuration(schedules: ScheduleConfig[], now: Date): number {
   const enabled = schedules.filter((s) => !s.disabled);
@@ -87,25 +172,18 @@ function buildResponse(
 ) {
   const result: Record<string, unknown> = {};
 
-  // 始终包含 stateId
   result.stateId = state?.stateId || '';
 
-  // 变化标志
   result.changed = changed;
 
-  // switch 状态
   result.switch = state?.switch || 'off';
 
-  // 轮询间隔
   result.sleep = POLL_INTERVAL;
 
-  // 当前执行的流程（仅在变化时下发，避免重复传大对象）
   if (changed && state?.process) {
     result.process = state.process;
   }
 
-  // 深度睡眠：服务端主导判断
-  // 条件：① 用户开启空闲睡眠 ② 设备关机 ③ 有动作记录 ④ 已空闲超时
   if (
     config &&
     config.idleSleep &&
@@ -116,10 +194,8 @@ function buildResponse(
     result.sleepDuration = calcSleepDuration(config.schedules, new Date());
   }
 
-  // processes 版本控制下发
   if (config?.processesVersion) {
     result.processesVersion = config.processesVersion;
-    // 仅在版本不匹配或首次下发时包含完整 processes 数据
     if (clientProcessesVersion !== config.processesVersion) {
       result.processes = config.processes;
     }
@@ -132,8 +208,8 @@ function buildResponse(
  * GET /api/watering/get-state
  *
  * ESP32 固件轮询获取最新 switch 状态和 process 指令。
- * 通过 stateId 比较判断是否有变化，仅在有变化时下发 process 对象，减少传输量。
- * 同时刷新设备心跳，并下发 processes 版本用于增量同步配置。
+ * 长轮询模式：有变化立即返回，无变化 Promise 阻塞等待（超时或 execCallback 唤醒）。
+ * 同时检查计划任务（设备空闲时自动判断定时触发）。
  */
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
@@ -159,13 +235,49 @@ export async function GET(request: NextRequest) {
       getDeviceConfig(chipId),
     ]);
 
+    // 计划任务检查（可能更新 state）
+    if (state && config) {
+      await checkAndExecuteSchedule(config, state, new Date());
+    }
+
     // 比较是否有变化
-    const changed = !state || clientStateId !== state.stateId;
+    let changed = !state || clientStateId !== state.stateId;
 
-    // 构建精简响应
-    const response = buildResponse(state, changed, config, clientProcessesVersion);
+    // 省电计算在 buildResponse 中完成
 
-    return NextResponse.json(response);
+    // 有变化 → 立即返回
+    if (changed) {
+      const response = buildResponse(state, true, config, clientProcessesVersion);
+      return NextResponse.json(response);
+    }
+
+    // 无变化 → 长轮询等待
+    try {
+      return await new Promise<NextResponse>((resolve) => {
+        // 超时返回 unchanged
+        const timer = setTimeout(() => {
+          resolve(NextResponse.json({
+            stateId: state?.stateId || '',
+            changed: false,
+            switch: state?.switch || 'off',
+            sleep: POLL_INTERVAL,
+          }));
+        }, LONG_POLL_TIMEOUT);
+
+        // 中途收到状态变更通知：清除超时，返回最新状态
+        const callback = async () => {
+          clearTimeout(timer);
+          const latestState = await getDeviceState(chipId);
+          const latestConfig = await getDeviceConfig(chipId);
+          const response = buildResponse(latestState, true, latestConfig, clientProcessesVersion);
+          resolve(NextResponse.json(response));
+        };
+
+        setCallback(chipId, callback);
+      });
+    } finally {
+      deleteCallback(chipId);
+    }
   } catch (err) {
     console.error('[Watering] get-state 处理失败', {
       chipId,
