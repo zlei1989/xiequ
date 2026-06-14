@@ -7,7 +7,7 @@
 
 'use client';
 
-import { Input, Picker, ErrorBlock, Button, Popup, NavBar, Form, SwipeAction, Dialog } from 'antd-mobile';
+import { Input, ErrorBlock, Selector, Button, Popup, NavBar, Form, SwipeAction, Dialog } from 'antd-mobile';
 import { renderToBody } from 'antd-mobile/es/utils/render-to-body';
 import { AddOutline, DeleteOutline } from 'antd-mobile-icons';
 import React, { useState, useEffect } from 'react';
@@ -101,35 +101,17 @@ export function ProcessConfigPicker({
             />
           </Form.Item>
 
-          <Form.Item
-            label="触发按钮"
-            onClick={() => {
-              if (buttonOptions.length === 0) return;
-              void Picker.prompt({
-                columns: [buttonOptions],
-                defaultValue: draft.trigger ? [draft.trigger] : [],
-                onConfirm: (val) => {
-                  if (val.length > 0 && typeof val[0] === 'string') {
-                    update({ trigger: val[0] });
-                  }
-                },
-              });
-            }}
-          >
-            <Input
-              readOnly
-              placeholder="未选择"
-              value={draft.trigger || ''}
-            />
+          <Form.Item label="触发按钮">
+            {buttonOptions.length > 0 ? (
+              <Selector
+                options={buttonOptions}
+                value={draft.trigger ? [draft.trigger] : []}
+                onChange={(vals) => { update({ trigger: vals.length > 0 ? vals[0] : undefined }); }}
+              />
+            ) : (
+              <ErrorBlock description="请等待设备上报 GPIO 状态" status="empty" title="无可用按钮" />
+            )}
           </Form.Item>
-
-          {buttonOptions.length === 0 && (
-            <ErrorBlock
-              description="请等待设备上报 GPIO 状态"
-              status="empty"
-              title="无可用按钮"
-            />
-          )}
 
           <Form.Header>步骤列表</Form.Header>
           {draft.steps.map((s, idx) => (
