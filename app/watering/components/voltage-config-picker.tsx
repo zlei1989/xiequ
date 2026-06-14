@@ -8,7 +8,7 @@
 
 'use client';
 
-import { Popup, NavBar, Picker, Stepper, Form, Card, Input } from 'antd-mobile';
+import { Popup, NavBar, Selector, Stepper, Form, Card, ErrorBlock } from 'antd-mobile';
 import { renderToBody } from 'antd-mobile/es/utils/render-to-body';
 import React, { useState, useEffect } from 'react';
 
@@ -106,27 +106,21 @@ export function VoltageConfigPicker({
         }
         layout="vertical"
         >
-          {/* 传感器选择 — 点击 Form.Item 触发 Picker.prompt 弹窗 */}
           <Form.Item
             help="选择用于电压检测的 ADC 传感器引脚"
             label="电压检测传感器"
-            onClick={() => {
-              void Picker.prompt({
-                columns: [sensorColumns],
-                defaultValue: [config.sensor],
-                onConfirm: (val) => {
-                  if (val.length > 0 && typeof val[0] === 'string') {
-                    update({ sensor: val[0] });
-                  }
-                },
-              });
-            }}
           >
-            <Input
-              readOnly
-              placeholder="未选择传感器"
-              value={config.sensor}
-            />
+            {sensorColumns.length > 0 ? (
+              <Selector
+                options={sensorColumns}
+                value={[config.sensor]}
+                onChange={(vals) => {
+                  if (vals.length > 0) update({ sensor: vals[0] });
+                }}
+              />
+            ) : (
+              <ErrorBlock description="请等待设备上报 GPIO 状态" status="empty" title="无可用传感器" />
+            )}
           </Form.Item>
 
           {/* R1 电阻值 */}
