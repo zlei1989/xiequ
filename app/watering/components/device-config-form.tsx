@@ -38,6 +38,7 @@ import { VoltageConfigPicker } from './voltage-config-picker';
 
 import type { GpioInfo } from '../hooks/use-device-config';
 import type { DeviceConfig, ProcessConfig, StepConfig, InterruptConfig, ScheduleConfig, VoltageConfig } from '../types';
+import { formatProcessDesc, formatScheduleDesc } from '../utils/format-desc';
 
 /** 带 key 的扩展类型（运行时由 crypto.randomUUID() 生成，不存入数据库，仅供 antd Table rowKey 使用） */
 interface WithKey { key?: string; }
@@ -414,6 +415,7 @@ export function DeviceConfigForm({
           >
             <List.Item
               clickable
+              description={formatProcessDesc(proc)}
               onClick={() => {
                 setProcessIndex(index);
                 setProcessVisible(true);
@@ -456,8 +458,7 @@ export function DeviceConfigForm({
             >
               <List.Item
                 clickable
-                description={`间隔 ${sch.interval} 天`}
-                extra={sch.process < form.processes.length ? form.processes[sch.process]?.name ?? '' : ''}
+                description={formatScheduleDesc(sch, form.processes)}
                 onClick={() => {
                   setScheduleIndex(index);
                   setScheduleVisible(true);
