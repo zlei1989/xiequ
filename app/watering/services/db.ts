@@ -136,6 +136,7 @@ export async function getAllDevices(): Promise<DeviceItem[]> {
            d.boot_exec, d.exec_delay, d.schedules, d.voltage, d.processes_version, d.created_time, d.last_write_time,
            s.state_id, s.switch, s.buttons, s.sensors, s.loads,
            s.current_index, s.current_process, s.message,
+           s.idle_since, s.last_action_type,
            s.last_tick_time as state_last_tick_time, s.last_write_time as state_last_write_time
     FROM watering_devices d
     LEFT JOIN watering_device_state s ON d.chip_id = s.chip_id
@@ -173,6 +174,8 @@ export async function getAllDevices(): Promise<DeviceItem[]> {
         index: row.current_index ?? undefined,
         process: parseJSON(row.current_process, undefined as DeviceState['process']),
         message: row.message ?? undefined,
+        idleSince: row.idle_since ?? undefined,
+        lastActionType: row.last_action_type ?? undefined,
         lastWriteTime: row.state_last_write_time,
       };
       item.lastTickTime = row.state_last_tick_time;
@@ -332,7 +335,10 @@ export async function updateTick(chipId: string) {
  * 使用 getDbSync() 保持与 writeDeviceLog 一致的调用模式。
  * SQLite 为同步驱动，函数签名保持 async 以兼容上层契约。
  */
-export async function updateIdleSince(chipId: string, actionType: string) {
+export async function updateIdleSince(
+  chipId: string,
+  actionType: 'bootstrap' | 'button' | 'change' | 'finish',
+) {
   const db = getDbSync();
   const now = Date.now();
   const existing = db.prepare('SELECT 1 FROM watering_device_state WHERE chip_id = ?').get(chipId);
