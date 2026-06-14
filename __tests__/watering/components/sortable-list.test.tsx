@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { render, screen, fireEvent, act, cleanup } from '@testing-library/react';
+import { render, screen, cleanup } from '@testing-library/react';
 import { afterEach, describe, it, expect, vi } from 'vitest';
 
 import { SortableList } from '@/app/watering/components/sortable-list';
@@ -72,10 +72,10 @@ describe('SortableList', () => {
         onReorder={vi.fn()}
       />,
     );
-    // 单项时外层 div 不应有拖拽相关的 aria 属性（role 不为空）
-    const listItem = container.querySelector('.adm-list-item');
-    // 单项时 SortableItem 的 {...attributes} {...listeners} 不会被应用，
-    // 因此不会激活拖拽
+    // 单项时不应有 useSortable 添加的 [role] 属性（拖拽未激活）
+    const dragElements = container.querySelectorAll('.adm-list-body [role]');
+    expect(dragElements.length).toBe(0);
+    // 但内容仍然渲染
     expect(screen.getByText('项目A')).toBeDefined();
   });
 
