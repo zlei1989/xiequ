@@ -482,7 +482,13 @@ void networkStateChangeHandler(JsonDocument *state, NetworkExt *network,
   // 启动新流程
   _idled = false;
   process.setSchema((*state).as<JsonObject>());
-  process.execute();
+  // 支持从指定步骤开始执行
+  if ((*state)["stepIndex"].is<int>()) {
+    int stepIndex = (*state)["stepIndex"].as<int>();
+    process.execute(stepIndex);
+  } else {
+    process.execute();
+  }
 }
 
 /**
@@ -507,6 +513,7 @@ void processChangeHandler(Process::Change *change, Process *process,
         object["stateId"] = change->stateId;
         object["type"] = change->type;
         object["message"] = change->message;
+        object["stepIndex"] = change->stepIndex;
         // 推送变更事件（异步请求期间会返回 false，由 invoke 队列稍后重试）
         bool ok = network->pushState("change", &fields);
         // 无论成功或失败都释放内存（change 通过 new 创建）
