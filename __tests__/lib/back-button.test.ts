@@ -18,7 +18,7 @@ beforeEach(() => {
   eventListeners = {};
   pushState = vi.fn();
   vi.stubGlobal('window', {
-    history: { pushState },
+    history: { pushState, back: vi.fn() },
     location: { href: 'http://localhost:3000/test' },
     addEventListener: vi.fn((event: string, handler: EventListener) => {
       (eventListeners[event] ??= []).push(handler);

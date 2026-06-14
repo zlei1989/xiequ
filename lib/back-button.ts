@@ -109,12 +109,21 @@ export function useBackButton(visible: boolean, onClose: () => void): void {
     return () => {
       // 从栈中移除当前 entry
       const idx = stack.findIndex((e) => e.id === entry.id);
-      if (idx !== -1) stack.splice(idx, 1);
+      if (idx !== -1) {
+        // 判断本次关闭是否由 handlePopstate（系统返回键）触发
+        // handlePopstate 会在调用 onClose 前将 onCloseRef.current 置为 null
+        const closedByPopstate = stack[idx].onCloseRef.current === null;
+        stack.splice(idx, 1);
 
-      // 栈空则清理监听器
-      if (stack.length === 0 && listenerRegistered) {
-        window.removeEventListener('popstate', handlePopstate);
-        listenerRegistered = false;
+        // 栈空则清理监听器
+        if (stack.length === 0 && listenerRegistered) {
+          window.removeEventListener('popstate', handlePopstate);
+          listenerRegistered = false;
+          // 若非系统返回键触发的关闭，占位状态未被消费，需手动清理
+          if (!closedByPopstate) {
+            window.history.back();
+          }
+        }
       }
     };
   }, [visible]);
