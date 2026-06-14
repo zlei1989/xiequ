@@ -132,6 +132,8 @@ export type DeviceState = {
   idleSince?: number;
   /** 最后一次动作类型：bootstrap / button / change / finish / heartbeat */
   lastActionType?: 'bootstrap' | 'button' | 'change' | 'finish' | 'heartbeat';
+  /** 当前执行的步骤索引（ROM change 上报，undefined 表示未追踪） */
+  stepIndex?: number;
   lastWriteTime: string;
 };
 
