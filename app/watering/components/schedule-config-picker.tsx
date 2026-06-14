@@ -8,7 +8,7 @@
 
 'use client';
 
-import { Stepper, Switch, Picker, DatePicker, Popup, NavBar, Form, Dialog } from 'antd-mobile';
+import { Stepper, Switch, Picker, DatePicker, Popup, NavBar, Form, Dialog, Button } from 'antd-mobile';
 import { renderToBody } from 'antd-mobile/es/utils/render-to-body';
 import { DeleteOutline } from 'antd-mobile-icons';
 import dayjs from 'dayjs';
@@ -90,14 +90,16 @@ export function ScheduleConfigPicker({
     >
       <NavBar
         right={onDelete ? (
-          <DeleteOutline style={{ fontSize: 20, cursor: 'pointer' }} onClick={confirmDelete} />
+          <Button size="small" onClick={confirmDelete}>
+            <DeleteOutline />
+          </Button>
         ) : null}
         onBack={onClose}
       >
         编辑定时任务
       </NavBar>
 
-      <div style={{ padding: '0 16px', overflowY: 'auto', height: 'calc(70vh - 45px)' }}>
+      <div style={{ overflowY: 'auto', height: 'calc(70vh - 45px)' }}>
         <Form layout="vertical">
           <Form.Item
             label="类型"
@@ -113,7 +115,7 @@ export function ScheduleConfigPicker({
               });
             }}
           >
-            <div style={{ textAlign: 'right' }}>
+            <div>
               {TYPE_OPTIONS.find((o) => o.value === draft.type)?.label ?? ''}
             </div>
           </Form.Item>
@@ -140,7 +142,7 @@ export function ScheduleConfigPicker({
               });
             }}
           >
-            <div style={{ textAlign: 'right' }}>{dayjs(timeDate).format('HH:mm')}</div>
+            <span>{dayjs(timeDate).format('HH:mm')}</span>
           </Form.Item>
 
           <Form.Item
@@ -157,12 +159,12 @@ export function ScheduleConfigPicker({
               });
             }}
           >
-            <div style={{ textAlign: 'right' }}>
+            <span>
               {processOptions.find((o) => o.value === String(draft.process))?.label ?? ''}
-            </div>
+            </span>
           </Form.Item>
 
-          <Form.Item description={draft.disabled ? '已禁用' : '已启用'} label="禁用">
+          <Form.Item label="禁用">
             <Switch
               checked={!draft.disabled}
               onChange={(checked) => { update({ ...draft, disabled: !checked }); }}

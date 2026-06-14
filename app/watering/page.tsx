@@ -56,7 +56,7 @@ export default function WateringPage() {
           right={
             isDev && (
               <Button
-                size="mini"
+                size="small"
                 onClick={() => { router.push('/watering/debug'); }}
               >
                 调试

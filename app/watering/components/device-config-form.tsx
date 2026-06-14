@@ -307,7 +307,7 @@ export function DeviceConfigForm({
   }
 
   return (
-    <div style={{ padding: '0 16px' }}>
+    <>
       {/* ======== 基本设置（List→Form） ======== */}
       <Form layout="vertical">
         <Form.Header>基本设置</Form.Header>
@@ -364,13 +364,9 @@ export function DeviceConfigForm({
             });
           }}
         >
-          <Input
-            readOnly
-            placeholder="无"
-            value={
-              form.processes[form.bootExec]?.name ?? '无'
-            }
-          />
+          <span>
+            {form.processes[form.bootExec]?.name ?? '无'}
+          </span>
         </Form.Item>
 
         {/* 延迟执行 */}
@@ -383,41 +379,17 @@ export function DeviceConfigForm({
             onChange={(v) => { setForm({ ...form, execDelay: v }); }}
           />
         </Form.Item>
+
+        {/* ======== 电压检测配置摘要栏 ======== */}
+        <Form.Item label="电压检测配置" onClick={() => { setVoltageConfigVisible(true); }}>
+          <span>
+            {form.voltage ? `${form.voltage.sensor} · R1=${form.voltage.r1}Ω · R2=${form.voltage.r2}Ω` : '未配置'}
+          </span>
+        </Form.Item>
+
       </Form>
 
-      {/* ======== 电压检测配置摘要栏 ======== */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          margin: '12px 0',
-          padding: '8px 12px',
-          background: '#fafafa',
-          borderRadius: 6,
-          border: '1px solid #f0f0f0',
-        }}
-      >
-        <div>
-          <span style={{ fontSize: 13, fontWeight: 500 }}>电压检测配置</span>
-          {form.voltage ? (
-            <span style={{ fontSize: 12, color: '#999', marginLeft: 8 }}>
-              {form.voltage.sensor} · R1={form.voltage.r1}Ω · R2={form.voltage.r2}Ω
-            </span>
-          ) : (
-            <span style={{ fontSize: 12, color: '#ccc', marginLeft: 8 }}>
-              未配置
-            </span>
-          )}
-        </div>
-        <Button
-          fill="none"
-          size="small"
-          onClick={() => { setVoltageConfigVisible(true); }}
-        >
-          {form.voltage ? '修改' : '配置'}
-        </Button>
-      </div>
+
 
       {/* ======== 功能列表 ======== */}
       <List header="功能">
@@ -577,6 +549,6 @@ export function DeviceConfigForm({
         onClose={() => { setVoltageConfigVisible(false); }}
         onConfirm={updateVoltage}
       />
-    </div>
+    </>
   );
 }

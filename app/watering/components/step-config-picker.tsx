@@ -73,17 +73,16 @@ export function StepConfigPicker({
     >
       <NavBar
         right={onDelete ? (
-          <DeleteOutline
-            style={{ fontSize: 20, cursor: 'pointer' }}
-            onClick={confirmDelete}
-          />
+          <Button size="small" onClick={confirmDelete}>
+            <DeleteOutline />
+          </Button>
         ) : null}
         onBack={onClose}
       >
         编辑步骤
       </NavBar>
 
-      <div style={{ padding: '0 16px', overflowY: 'auto', height: 'calc(75vh - 45px)' }}>
+      <div style={{ overflowY: 'auto', height: 'calc(75vh - 45px)' }}>
         <Form layout="vertical">
           {/* 步骤名称 */}
           <Form.Item label="步骤名称">
@@ -147,10 +146,7 @@ export function StepConfigPicker({
           </Form.Item>
 
           {/* 禁用 */}
-          <Form.Item
-            description={step.disabled ? '已禁用' : '已启用'}
-            label="禁用"
-          >
+          <Form.Item label="禁用">
             <Switch
               checked={!step.disabled}
               onChange={(checked) => { update({ disabled: !checked }); }}
@@ -168,10 +164,12 @@ export function StepConfigPicker({
                   text: '删除',
                   color: 'danger',
                   onClick: () => {
-                    void Dialog.confirm({ title: '确认删除此中断？', onConfirm: () => {
-                      const newInterrupts = (step.interrupts || []).filter((_, i) => i !== idx);
-                      update({ interrupts: newInterrupts });
-                    } });
+                    void Dialog.confirm({
+                      title: '确认删除此中断？', onConfirm: () => {
+                        const newInterrupts = (step.interrupts || []).filter((_, i) => i !== idx);
+                        update({ interrupts: newInterrupts });
+                      },
+                    });
                   },
                 },
               ]}

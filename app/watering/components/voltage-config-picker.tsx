@@ -84,76 +84,78 @@ export function VoltageConfigPicker({
       onClose={handleClose}
     >
       <NavBar onBack={handleClose}>电压检测配置</NavBar>
-      <Form footer={
-        (
-          <Card
-            title="计算公式"
+      <div style={{ overflowY: 'auto', height: 'calc(70vh - 45px)' }}>
+        <Form footer={
+          (
+            <Card
+              title="计算公式"
+            >
+              {/* 计算公式说明 — 使用 Card 卡片组件 */}
+              <div className="text-xs text-gray-500">
+                <div>
+                  V<sub>实际</sub> = V<sub>传感器</sub> × (R1 + R2) / R2
+                </div>
+                <div className="mt-1">
+                  当前分压比:{' '}
+                  {config.r1 > 0 && config.r2 > 0
+                    ? ((config.r1 + config.r2) / config.r2).toFixed(2)
+                    : '—'}
+                </div>
+              </div>
+            </Card>)
+        }
+        layout="vertical"
+        >
+          {/* 传感器选择 — 点击 Form.Item 触发 Picker.prompt 弹窗 */}
+          <Form.Item
+            help="选择用于电压检测的 ADC 传感器引脚"
+            label="电压检测传感器"
+            onClick={() => {
+              void Picker.prompt({
+                columns: [sensorColumns],
+                defaultValue: [config.sensor],
+                onConfirm: (val) => {
+                  if (val.length > 0 && typeof val[0] === 'string') {
+                    update({ sensor: val[0] });
+                  }
+                },
+              });
+            }}
           >
-            {/* 计算公式说明 — 使用 Card 卡片组件 */}
-            <div className="text-xs text-gray-500">
-              <div>
-                V<sub>实际</sub> = V<sub>传感器</sub> × (R1 + R2) / R2
-              </div>
-              <div className="mt-1">
-                当前分压比:{' '}
-                {config.r1 > 0 && config.r2 > 0
-                  ? ((config.r1 + config.r2) / config.r2).toFixed(2)
-                  : '—'}
-              </div>
-            </div>
-          </Card>)
-      }
-      layout="vertical"
-      >
-        {/* 传感器选择 — 点击 Form.Item 触发 Picker.prompt 弹窗 */}
-        <Form.Item
-          help="选择用于电压检测的 ADC 传感器引脚"
-          label="电压检测传感器"
-          onClick={() => {
-            void Picker.prompt({
-              columns: [sensorColumns],
-              defaultValue: [config.sensor],
-              onConfirm: (val) => {
-                if (val.length > 0 && typeof val[0] === 'string') {
-                  update({ sensor: val[0] });
-                }
-              },
-            });
-          }}
-        >
-          <Input
-            readOnly
-            placeholder="未选择传感器"
-            value={config.sensor}
-          />
-        </Form.Item>
+            <Input
+              readOnly
+              placeholder="未选择传感器"
+              value={config.sensor}
+            />
+          </Form.Item>
 
-        {/* R1 电阻值 */}
-        <Form.Item
-          help="分压电阻 R1，上拉至被测电压。默认 30kΩ"
-          label="R1 电阻值 (Ω)"
-        >
-          <Stepper
-            min={0}
-            step={1000}
-            value={config.r1}
-            onChange={(v) => { update({ r1: v }); }}
-          />
-        </Form.Item>
+          {/* R1 电阻值 */}
+          <Form.Item
+            help="分压电阻 R1，上拉至被测电压。默认 30kΩ"
+            label="R1 电阻值 (Ω)"
+          >
+            <Stepper
+              min={0}
+              step={1000}
+              value={config.r1}
+              onChange={(v) => { update({ r1: v }); }}
+            />
+          </Form.Item>
 
-        {/* R2 电阻值 */}
-        <Form.Item
-          help="分压电阻 R2，下拉至 GND。默认 10kΩ"
-          label="R2 电阻值 (Ω)"
-        >
-          <Stepper
-            min={0}
-            step={1000}
-            value={config.r2}
-            onChange={(v) => { update({ r2: v }); }}
-          />
-        </Form.Item>
-      </Form>
+          {/* R2 电阻值 */}
+          <Form.Item
+            help="分压电阻 R2，下拉至 GND。默认 10kΩ"
+            label="R2 电阻值 (Ω)"
+          >
+            <Stepper
+              min={0}
+              step={1000}
+              value={config.r2}
+              onChange={(v) => { update({ r2: v }); }}
+            />
+          </Form.Item>
+        </Form>
+      </div>
     </Popup>
   );
 }

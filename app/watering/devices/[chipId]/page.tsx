@@ -7,7 +7,7 @@
 
 'use client';
 
-import { NavBar, DotLoading, Dialog, Toast } from 'antd-mobile';
+import { NavBar, Button, DotLoading, Dialog, Toast, Space } from 'antd-mobile';
 import { CheckOutline, DeleteOutline } from 'antd-mobile-icons';
 import { useRouter, useParams } from 'next/navigation';
 import { useRef } from 'react';
@@ -20,7 +20,7 @@ export default function DeviceDetailPage() {
   const router = useRouter();
   const { config, gpio, loading, save, remove } = useDeviceConfig(chipId);
 
-  const saveRef = useRef<() => Promise<void>>(async () => {});
+  const saveRef = useRef<() => Promise<void>>(async () => { });
 
   /** 删除设备：Dialog 确认 → remove → Toast → 返回 */
   async function handleRemove() {
@@ -65,10 +65,9 @@ export default function DeviceDetailPage() {
       <div className="sticky top-0 z-10 bg-[var(--background)]">
         <NavBar
           right={
-            <div style={{ display: 'flex', gap: 12 }}>
-              <CheckOutline onClick={() => { void handleSave(); }} />
-              <DeleteOutline onClick={() => { void handleRemove(); }} />
-            </div>
+            <Button size="small" onClick={() => { void handleSave(); }} >
+              <CheckOutline />
+            </Button>
           }
           onBack={() => { router.back(); }}
         >

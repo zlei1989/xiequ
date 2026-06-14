@@ -82,10 +82,9 @@ export function ProcessConfigPicker({
     >
       <NavBar
         right={onDelete ? (
-          <DeleteOutline
-            style={{ fontSize: 20, cursor: 'pointer' }}
-            onClick={confirmDelete}
-          />
+          <Button size="small" onClick={confirmDelete}>
+            <DeleteOutline />
+          </Button>
         ) : null}
         onBack={onClose}
       >

@@ -8,7 +8,7 @@
 
 'use client';
 
-import { Popup, NavBar, Input, Stepper, Switch, Selector, Form, Dialog } from 'antd-mobile';
+import { Button, Popup, NavBar, Input, Stepper, Switch, Selector, Form, Dialog } from 'antd-mobile';
 import { renderToBody } from 'antd-mobile/es/utils/render-to-body';
 import { DeleteOutline } from 'antd-mobile-icons';
 import React, { useState, useEffect } from 'react';
@@ -89,17 +89,16 @@ export function InterruptConfigPicker({
     >
       <NavBar
         right={onDelete ? (
-          <DeleteOutline
-            style={{ fontSize: 20, cursor: 'pointer' }}
-            onClick={confirmDelete}
-          />
+          <Button size="small"  onClick={confirmDelete}>
+            <DeleteOutline />
+          </Button>
         ) : null}
         onBack={onClose}
       >
         编辑中断
       </NavBar>
 
-      <div style={{ padding: '0 16px', overflowY: 'auto', height: 'calc(70vh - 45px)' }}>
+      <div style={{ overflowY: 'auto', height: 'calc(70vh - 45px)' }}>
         <Form layout="vertical">
           {/* 中断名称 */}
           <Form.Item label="中断名称">
@@ -224,7 +223,6 @@ export function InterruptConfigPicker({
 
           {/* 禁用 */}
           <Form.Item
-            help={config.disabled ? '已禁用' : '已启用'}
             label="禁用"
           >
             <Switch

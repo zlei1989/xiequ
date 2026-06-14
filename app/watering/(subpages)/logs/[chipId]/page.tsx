@@ -123,9 +123,9 @@ export default function DeviceLogsPage({
       <div className="sticky top-0 z-10 bg-[var(--background)]">
         <NavBar
           right={
-            <DeleteOutline
-              onClick={() => { void handleClear(); }}
-            />
+            <Button size="small" onClick={() => { void handleClear(); }}>
+              <DeleteOutline />
+            </Button>
           }
           onBack={() => { router.back(); }}
         >
