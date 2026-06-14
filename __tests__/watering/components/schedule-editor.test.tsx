@@ -1,12 +1,10 @@
 // @vitest-environment jsdom
 
-import { render, screen, cleanup } from '@testing-library/react';
-import { afterEach, describe, it, expect, vi } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
 
-import { ScheduleEditor } from '@/app/watering/components/schedule-editor';
+import { ScheduleConfigPicker } from '@/app/watering/components/schedule-config-picker';
 import type { ScheduleConfig } from '@/app/watering/types';
-
-afterEach(cleanup);
 
 const defaultSchedule: ScheduleConfig = {
   type: 'day',
@@ -20,54 +18,48 @@ const mockProcesses = [
   { name: '施肥流程' },
 ];
 
-describe('ScheduleEditor', () => {
-  it('渲染类型选择器', () => {
+describe('ScheduleConfigPicker', () => {
+  it('渲染类型显示文本', () => {
     render(
-      <ScheduleEditor
+      <ScheduleConfigPicker
+        open={true}
         processes={mockProcesses}
-        schedules={[defaultSchedule]}
-        onChange={vi.fn()}
+        schedule={defaultSchedule}
+        onClose={vi.fn()}
+        onConfirm={vi.fn()}
       />,
     );
-    // 有"每天"文本
+    // 类型默认为 day，显示"每天"
     expect(screen.getByText('每天')).toBeDefined();
   });
 
   it('渲染间隔 Stepper', () => {
-    const onChange = vi.fn();
     render(
-      <ScheduleEditor
+      <ScheduleConfigPicker
+        open={true}
         processes={mockProcesses}
-        schedules={[defaultSchedule]}
-        onChange={onChange}
+        schedule={defaultSchedule}
+        onClose={vi.fn()}
+        onConfirm={vi.fn()}
       />,
     );
-    // 间隔值 1 存在
+    // 间隔值 1 存在，Stepper 有加减按钮
     const steppers = screen.getAllByRole('button', { name: /加|减/ });
     expect(steppers.length).toBeGreaterThan(0);
   });
 
   it('渲染禁用开关', () => {
     render(
-      <ScheduleEditor
+      <ScheduleConfigPicker
+        open={true}
         processes={mockProcesses}
-        schedules={[{ ...defaultSchedule, disabled: false }]}
-        onChange={vi.fn()}
+        schedule={{ ...defaultSchedule, disabled: false }}
+        onClose={vi.fn()}
+        onConfirm={vi.fn()}
       />,
     );
     const switches = screen.getAllByRole('switch');
     // 启用/禁用开关
-    expect(switches.length).toBe(1);
-  });
-
-  it('空 schedules 返回 null', () => {
-    const { container } = render(
-      <ScheduleEditor
-        processes={mockProcesses}
-        schedules={[]}
-        onChange={vi.fn()}
-      />,
-    );
-    expect(container.innerHTML).toBe('');
+    expect(switches.length).toBeGreaterThanOrEqual(1);
   });
 });

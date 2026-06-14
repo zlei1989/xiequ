@@ -26,7 +26,6 @@ import {
 } from 'antd-mobile';
 import {
   AddOutline,
-  DeleteOutline,
 } from 'antd-mobile-icons';
 import { useState, useEffect } from 'react';
 
@@ -34,7 +33,7 @@ import { useBackButton } from '@/lib/back-button';
 
 import { InterruptConfigPicker } from './interrupt-config-picker';
 import { ProcessConfigPicker } from './process-config-picker';
-import { ScheduleEditor } from './schedule-editor';
+import { ScheduleConfigPicker } from './schedule-config-picker';
 import { StepConfigPicker } from './step-config-picker';
 
 import type { GpioInfo } from '../hooks/use-device-config';
@@ -90,7 +89,6 @@ export function DeviceEditor({
 
   // ---- 返回键栈接入 ----
 
-  useBackButton(scheduleVisible, () => { setScheduleVisible(false); });
   useBackButton(voltageVisible, () => { setVoltageConfigVisible(false); });
 
   // ---- 保存（声明在前，供 useEffect 引用）----
@@ -562,42 +560,15 @@ export function DeviceEditor({
         />
       )}
 
-      {/* 定时编辑 Popup (70vh) */}
-      <Popup
-        bodyStyle={{ height: '70vh' }}
-        position="bottom"
-        visible={scheduleVisible}
+      {/* 定时任务配置 Picker */}
+      <ScheduleConfigPicker
+        open={scheduleVisible}
+        processes={form.processes}
+        schedule={scheduleIndex > -1 ? form.schedules[scheduleIndex]! : { type: 'day', value: 0, interval: 1, process: 0 }}
         onClose={() => { setScheduleVisible(false); }}
-      >
-        <NavBar
-          right={
-            <DeleteOutline
-              style={{ fontSize: 20, cursor: 'pointer' }}
-              onClick={() => {
-                confirmDelete('确认删除此定时任务？', deleteSchedule);
-              }}
-            />
-          }
-          onBack={() => { setScheduleVisible(false); }}
-        >
-          编辑定时任务
-        </NavBar>
-        <div style={{ padding: '0 16px', overflowY: 'auto', height: 'calc(70vh - 45px)' }}>
-          {scheduleIndex > -1 && (
-            <ScheduleEditor
-              processes={form.processes}
-              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-              schedules={[form.schedules[scheduleIndex]!]}
-              onChange={(updated) => {
-                if (updated.length > 0) {
-                  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                  updateSchedule(scheduleIndex, updated[0]!);
-                }
-              }}
-            />
-          )}
-        </div>
-      </Popup>
+        onConfirm={(updated) => { updateSchedule(scheduleIndex, updated); }}
+        onDelete={deleteSchedule}
+      />
 
       {/* 电压检测配置 Popup (60vh) */}
       <Popup
