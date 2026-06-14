@@ -17,6 +17,7 @@ import {
   useSensor,
   useSensors,
   type DragEndEvent,
+  type DragStartEvent,
 } from '@dnd-kit/core';
 import {
   SortableContext,
@@ -102,8 +103,8 @@ export function SortableList<T>({
   /** 仅多项时可拖拽 */
   const canDrag = items.length > 1;
 
-  function handleDragStart(_event: { active: { id: string | number } }) {
-    // 拖拽开始，可用于未来视觉反馈
+  function handleDragStart(_event: DragStartEvent) {
+    // 拖拽开始，预留视觉反馈扩展点
   }
 
   function handleDragEnd(event: DragEndEvent) {
@@ -118,13 +119,13 @@ export function SortableList<T>({
   }
 
   function handleDragCancel() {
-    // 拖拽取消，可用于未来还原状态
+    // 拖拽取消，预留还原状态扩展点
   }
 
   const listContent = (
     <List header={header}>
       {items.length === 0 ? (
-        <ErrorBlock description="" status="empty" title={emptyText} />
+        <ErrorBlock status="empty" title={emptyText} />
       ) : (
         items.map((item, index) => {
           const id = keyFn(item, index);
