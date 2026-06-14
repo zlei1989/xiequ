@@ -241,7 +241,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 比较是否有变化
-    let changed = !state || clientStateId !== state.stateId;
+    const changed = !state || clientStateId !== state.stateId;
 
     // 省电计算在 buildResponse 中完成
 
@@ -256,12 +256,8 @@ export async function GET(request: NextRequest) {
       return await new Promise<NextResponse>((resolve) => {
         // 超时返回 unchanged
         const timer = setTimeout(() => {
-          resolve(NextResponse.json({
-            stateId: state?.stateId || '',
-            changed: false,
-            switch: state?.switch || 'off',
-            sleep: POLL_INTERVAL,
-          }));
+          const response = buildResponse(state, false, config, clientProcessesVersion);
+          resolve(NextResponse.json(response));
         }, LONG_POLL_TIMEOUT);
 
         // 中途收到状态变更通知：清除超时，返回最新状态
