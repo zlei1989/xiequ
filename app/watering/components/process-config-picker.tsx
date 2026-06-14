@@ -19,6 +19,7 @@ import { useBackButton } from '@/lib/back-button';
 import { SortableList } from './sortable-list';
 
 import type { ProcessConfig } from '../types';
+import { formatStepDesc } from '../utils/format-desc';
 
 interface ProcessConfigPickerProps {
   open: boolean;
@@ -144,7 +145,7 @@ export function ProcessConfigPicker({
             >
               <List.Item
                 clickable
-                description={s.component}
+                description={formatStepDesc(s)}
                 onClick={() => { onEditStep?.(idx); }}
               >
                 {s.name}
