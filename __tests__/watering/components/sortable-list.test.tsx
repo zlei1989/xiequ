@@ -19,8 +19,8 @@ describe('SortableList', () => {
         getKey={(item: TestItem) => item.id}
         header="测试"
         items={[]}
-        onReorder={vi.fn()}
         renderItem={(item: TestItem) => <div>{item.name}</div>}
+        onReorder={vi.fn()}
       />,
     );
     // 空列表显示 antd-mobile ErrorBlock
@@ -38,8 +38,8 @@ describe('SortableList', () => {
         getKey={(item: TestItem) => item.id}
         header="测试"
         items={items}
-        onReorder={vi.fn()}
         renderItem={(item: TestItem) => <div>{item.name}</div>}
+        onReorder={vi.fn()}
       />,
     );
     expect(screen.getByText('项目A')).toBeDefined();
@@ -54,8 +54,8 @@ describe('SortableList', () => {
         getKey={(item: TestItem) => item.id}
         header="功能"
         items={items}
-        onReorder={vi.fn()}
         renderItem={(item: TestItem) => <div>{item.name}</div>}
+        onReorder={vi.fn()}
       />,
     );
     expect(screen.getByText('功能')).toBeDefined();
@@ -68,8 +68,8 @@ describe('SortableList', () => {
         getKey={(item: TestItem) => item.id}
         header="测试"
         items={items}
-        onReorder={vi.fn()}
         renderItem={(item: TestItem) => <div>{item.name}</div>}
+        onReorder={vi.fn()}
       />,
     );
     // 单项时不应有 useSortable 添加的 [role] 属性（拖拽未激活）
@@ -86,8 +86,8 @@ describe('SortableList', () => {
         getKey={(item: TestItem) => item.id}
         header="功能"
         items={[]}
-        onReorder={vi.fn()}
         renderItem={(item: TestItem) => <div>{item.name}</div>}
+        onReorder={vi.fn()}
       />,
     );
     expect(screen.getByText('暂无功能')).toBeDefined();
