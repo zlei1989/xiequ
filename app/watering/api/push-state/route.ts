@@ -123,8 +123,17 @@ export async function GET(request: NextRequest) {
       const stateId = searchParams.get('stateId') || '';
       const type = searchParams.get('type') || '';
       const message = searchParams.get('message') || '';
+      // 持久化步骤索引（ROM 新增上报）
+      const stepIndex = searchParams.get('stepIndex');
+      if (stepIndex !== null) {
+        const state = await getDeviceState(chipId);
+        if (state) {
+          state.stepIndex = parseInt(stepIndex, 10);
+          await saveDeviceState(state);
+        }
+      }
       const changeVoltage = calcVoltage(config?.voltage, gpioState.sensors);
-      await writeDeviceLog(chipId, 'change', macAddress, { sensors: gpioState.sensors, loads: gpioState.loads, type }, changeVoltage, stateId, message);
+      await writeDeviceLog(chipId, 'change', macAddress, { sensors: gpioState.sensors, loads: gpioState.loads, type, stepIndex: stepIndex ?? undefined }, changeVoltage, stateId, message);
       await updateIdleSince(chipId, 'change');
       break;
     }
@@ -135,6 +144,7 @@ export async function GET(request: NextRequest) {
         state.switch = 'off';
         state.index = undefined;
         state.process = undefined;
+        state.stepIndex = undefined;
         state.message = undefined;
         state.stateId = newId();
         state.lastWriteTime = new Date().toISOString();
