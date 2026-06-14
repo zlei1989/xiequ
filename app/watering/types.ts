@@ -2,12 +2,12 @@
  * 浇花 IoT 模块类型定义
  *
  * 核心实体：DeviceConfig（设备配置）、DeviceState（设备状态）、DeviceItem（合并视图）。
- * IoT 协议实体：Step（流程步骤）、Interrupt（中断条件）、Process（流程）、Schedule（定时任务）。
+ * IoT 协议实体：StepConfig（流程步骤）、InterruptConfig（中断条件）、ProcessConfig（流程）、ScheduleConfig（定时任务）。
  * 数据持久化在 SQLite，通过 services/db.ts 读写。
  */
 
 /** 流程步骤 — 控制单个负载（水泵/电磁阀等）的执行单元 */
-export type Step = {
+export type StepConfig = {
   key?: string;
   name: string;
   /** 负载组件名，如 "motor_0" */
@@ -17,12 +17,12 @@ export type Step = {
   /** 超时时间（毫秒） */
   timeout?: number;
   /** 中断条件列表 */
-  interrupts?: Interrupt[];
+  interrupts?: InterruptConfig[];
   disabled?: boolean;
 };
 
 /** 中断条件 — 满足时触发步骤中断 */
-export type Interrupt = {
+export type InterruptConfig = {
   key?: string;
   name: string;
   /** 触发组件名 */
@@ -45,16 +45,16 @@ export type Interrupt = {
 };
 
 /** 流程 — 包含多个步骤的自动化序列 */
-export type Process = {
+export type ProcessConfig = {
   key?: string;
   name: string;
   /** 触发条件（保留字段） */
   trigger?: string;
-  steps: Step[];
+  steps: StepConfig[];
 };
 
 /** 定时任务 — 按周期触发指定流程 */
-export type Schedule = {
+export type ScheduleConfig = {
   key?: string;
   /** 周期类型 */
   type: 'minute' | 'day' | 'week' | 'month';
@@ -86,7 +86,7 @@ export type DeviceConfig = {
   chipId: string;
   name: string;
   macAddress: string;
-  processes: Process[];
+  processes: ProcessConfig[];
   /** 空闲时是否进入深度睡眠 */
   idleSleep: boolean;
   /** 空闲超时（毫秒） */
@@ -95,7 +95,7 @@ export type DeviceConfig = {
   bootExec: number;
   /** 指令执行延迟（毫秒） */
   execDelay: number;
-  schedules: Schedule[];
+  schedules: ScheduleConfig[];
   voltage?: VoltageConfig;
   /** 流程配置版本（变更时更新，用于固件同步判断） */
   processesVersion?: string;
@@ -119,7 +119,7 @@ export type DeviceState = {
   /** 当前执行的流程步骤索引 */
   index?: number;
   /** 当前执行的流程副本 */
-  process?: Process;
+  process?: ProcessConfig;
   /** 状态消息 */
   message?: string;
   /** 固件轮询间隔（毫秒） */

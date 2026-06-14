@@ -10,7 +10,7 @@
 import { Stepper, Switch, Picker, DatePicker, List } from 'antd-mobile';
 import dayjs from 'dayjs';
 
-import type { Schedule } from '../types';
+import type { ScheduleConfig } from '../types';
 
 const TYPE_OPTIONS = [
   { label: '每天', value: 'day' },
@@ -26,14 +26,14 @@ export function ScheduleEditor({
   processes,
   onChange,
 }: {
-  schedules: Schedule[];
+  schedules: ScheduleConfig[];
   processes: Process[];
-  onChange: (updated: Schedule[]) => void;
+  onChange: (updated: ScheduleConfig[]) => void;
 }) {
   const schedule = schedules[0];
   if (!schedule) return null;
 
-  function update(updated: Schedule) {
+  function update(updated: ScheduleConfig) {
     onChange([updated]);
   }
 
@@ -61,7 +61,7 @@ export function ScheduleEditor({
             defaultValue: [schedule.type],
             onConfirm: (val) => {
               if (val && val.length > 0 && typeof val[0] === 'string') {
-                update({ ...schedule, type: val[0] as Schedule['type'] });
+                update({ ...schedule, type: val[0] as ScheduleConfig['type'] });
               }
             },
           });

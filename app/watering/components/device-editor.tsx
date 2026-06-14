@@ -38,7 +38,7 @@ import { ProcessStepEditor } from './process-step-editor';
 import { ScheduleEditor } from './schedule-editor';
 
 import type { GpioInfo } from '../hooks/use-device-config';
-import type { DeviceConfig, Process, Step, Interrupt, Schedule, VoltageConfig } from '../types';
+import type { DeviceConfig, ProcessConfig, StepConfig, InterruptConfig, ScheduleConfig, VoltageConfig } from '../types';
 
 /** 带 key 的扩展类型（运行时由 crypto.randomUUID() 生成，不存入数据库，仅供 antd Table rowKey 使用） */
 interface WithKey { key?: string; }
@@ -46,7 +46,7 @@ interface WithKey { key?: string; }
 /**
  * 为对象附加运行时 key
  *
- * Process/Step/Interrupt/Schedule 类型定义不含 key 字段，
+ * ProcessConfig/StepConfig/InterruptConfig/ScheduleConfig 类型定义不含 key 字段，
  * 但子编辑器中的 antd Table 需要 rowKey=key。
  * 通过此辅助函数在不改变类型定义的前提下附加 key。
  */
@@ -122,10 +122,10 @@ export function DeviceEditor({
 
   // ---- 流程操作 ----
   function addProcess() {
-    const item = attachKey<Process>({
+    const item = attachKey<ProcessConfig>({
       name: '新流程',
       steps: [
-        attachKey<Step>({
+        attachKey<StepConfig>({
           name: '新步骤',
           component: gpio.loads[0] ?? 'load_0',
           value: { begin: 255, end: 0 },
@@ -141,7 +141,7 @@ export function DeviceEditor({
     setProcessVisible(true);
   }
 
-  function updateProcess(index: number, updated: Process) {
+  function updateProcess(index: number, updated: ProcessConfig) {
     const newProcesses = [...form.processes];
     newProcesses[index] = updated;
     setForm({ ...form, processes: newProcesses });
@@ -171,7 +171,7 @@ export function DeviceEditor({
     const source = form.processes[processIndex];
     if (!source) return;
     const proc = { ...source };
-    const item = attachKey<Step>({
+    const item = attachKey<StepConfig>({
       name: '新步骤',
       component: gpio.loads[0] ?? 'load_0',
       value: { begin: 0, end: 0 },
@@ -184,7 +184,7 @@ export function DeviceEditor({
     setStepVisible(true);
   }
 
-  function updateStep(index: number, updated: Step) {
+  function updateStep(index: number, updated: StepConfig) {
     const source = form.processes[processIndex];
     if (!source) return;
     const proc = { ...source };
@@ -206,7 +206,7 @@ export function DeviceEditor({
 
   // ---- 中断操作 ----
   function addInterrupt() {
-    const item = attachKey<Interrupt>({
+    const item = attachKey<InterruptConfig>({
       name: '新中断',
       component: gpio.sensors[0] ?? 'sensor_0',
       state: 0,
@@ -230,7 +230,7 @@ export function DeviceEditor({
     setInterruptVisible(true);
   }
 
-  function updateInterrupt(index: number, updated: Interrupt) {
+  function updateInterrupt(index: number, updated: InterruptConfig) {
     const procSource = form.processes[processIndex];
     if (!procSource) return;
     const proc = { ...procSource };
@@ -260,7 +260,7 @@ export function DeviceEditor({
 
   // ---- 定时操作 ----
   function addSchedule() {
-    const item = attachKey<Schedule>({
+    const item = attachKey<ScheduleConfig>({
       type: 'day',
       value: 8 * 3600 * 1000,
       interval: 1,
@@ -272,7 +272,7 @@ export function DeviceEditor({
     setScheduleVisible(true);
   }
 
-  function updateSchedule(index: number, updated: Schedule) {
+  function updateSchedule(index: number, updated: ScheduleConfig) {
     const newSchedules = [...form.schedules];
     newSchedules[index] = updated;
     setForm({ ...form, schedules: newSchedules });
@@ -298,7 +298,7 @@ export function DeviceEditor({
   }
 
   // ---- 定时时间格式化 ----
-  function formatScheduleTime(record: Schedule): string {
+  function formatScheduleTime(record: ScheduleConfig): string {
     if (record.type === 'day') {
       const h = Math.floor(record.value / 3600000);
       const m = Math.floor((record.value % 3600000) / 60000);

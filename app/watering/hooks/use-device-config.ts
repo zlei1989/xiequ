@@ -14,7 +14,7 @@ import { getDevices } from '../actions';
 import { removeDevice } from '../actions/delete-device';
 import { updateDeviceConfig } from '../actions/set-config';
 
-import type { DeviceConfig, Process, Schedule } from '../types';
+import type { DeviceConfig, ProcessConfig, ScheduleConfig } from '../types';
 
 /** 安全解析 JSON 数组 — sql.js/WASM 可能将 JSON 列序列化为字符串 */
 function parseJsonArray(v: unknown): unknown[] {
@@ -78,8 +78,8 @@ export function useDeviceConfig(chipId: string) {
         // 使用 Record<string, unknown> 绕过类型系统处理 SQLite WASM 的原始返回值
         const safeConfig: DeviceConfig = {
           ...(found as unknown as DeviceConfig),
-          processes: parseJsonArray((found as Record<string, unknown>).processes) as Process[],
-          schedules: parseJsonArray((found as Record<string, unknown>).schedules) as Schedule[],
+          processes: parseJsonArray((found as Record<string, unknown>).processes) as ProcessConfig[],
+          schedules: parseJsonArray((found as Record<string, unknown>).schedules) as ScheduleConfig[],
           voltage: parseJsonVoltage((found as Record<string, unknown>).voltage),
         };
         setConfig(safeConfig);

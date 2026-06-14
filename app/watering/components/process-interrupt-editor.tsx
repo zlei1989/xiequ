@@ -10,7 +10,7 @@
 import { Input, Stepper, Switch, Selector, ErrorBlock, List } from 'antd-mobile';
 
 import type { GpioInfo } from '../hooks/use-device-config';
-import type { Interrupt } from '../types';
+import type { InterruptConfig } from '../types';
 
 export function ProcessInterruptEditor({
   interrupt,
@@ -18,9 +18,9 @@ export function ProcessInterruptEditor({
   onChange,
   onRemove: _onRemove,
 }: {
-  interrupt: Interrupt;
+  interrupt: InterruptConfig;
   gpio: GpioInfo;
-  onChange: (updated: Interrupt) => void;
+  onChange: (updated: InterruptConfig) => void;
   onRemove: () => void;
 }) {
   const sensorOptions = gpio.sensors.map((k) => ({

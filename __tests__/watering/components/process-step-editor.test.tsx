@@ -5,7 +5,7 @@ import { describe, it, expect, vi } from 'vitest';
 
 import { ProcessStepEditor } from '@/app/watering/components/process-step-editor';
 import type { GpioInfo } from '@/app/watering/hooks/use-device-config';
-import type { Step } from '@/app/watering/types';
+import type { StepConfig } from '@/app/watering/types';
 
 const mockGpio: GpioInfo = {
   buttons: [],
@@ -13,7 +13,7 @@ const mockGpio: GpioInfo = {
   sensors: ['sensor_0'],
 };
 
-const defaultStep: Step = {
+const defaultStep: StepConfig = {
   name: '测试步骤',
   component: 'load_0',
   value: { begin: 255, end: 0 },
@@ -55,7 +55,7 @@ describe('ProcessStepEditor', () => {
   });
 
   it('无负载时显示空状态', () => {
-    const stepNoLoad: Step = {
+    const stepNoLoad: StepConfig = {
       ...defaultStep,
       component: undefined,
     };

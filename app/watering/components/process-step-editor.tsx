@@ -10,7 +10,7 @@ import { Input, Stepper, Switch, Picker, ErrorBlock, List, SwipeAction, Button, 
 import { AddOutline } from 'antd-mobile-icons';
 
 import type { GpioInfo } from '../hooks/use-device-config';
-import type { Step } from '../types';
+import type { StepConfig } from '../types';
 
 export function ProcessStepEditor({
   step,
@@ -20,9 +20,9 @@ export function ProcessStepEditor({
   onEditInterrupt,
   onAddInterrupt,
 }: {
-  step: Step;
+  step: StepConfig;
   gpio: GpioInfo;
-  onChange: (updated: Step) => void;
+  onChange: (updated: StepConfig) => void;
   onRemove: () => void;
   onEditInterrupt: (index: number) => void;
   onAddInterrupt: () => void;

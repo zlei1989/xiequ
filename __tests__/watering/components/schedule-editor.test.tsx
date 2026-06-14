@@ -4,11 +4,11 @@ import { render, screen, cleanup } from '@testing-library/react';
 import { afterEach, describe, it, expect, vi } from 'vitest';
 
 import { ScheduleEditor } from '@/app/watering/components/schedule-editor';
-import type { Schedule } from '@/app/watering/types';
+import type { ScheduleConfig } from '@/app/watering/types';
 
 afterEach(cleanup);
 
-const defaultSchedule: Schedule = {
+const defaultSchedule: ScheduleConfig = {
   type: 'day',
   value: 28800000, // 08:00
   interval: 1,

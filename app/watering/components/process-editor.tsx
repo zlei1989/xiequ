@@ -11,7 +11,7 @@ import { Input, Picker, ErrorBlock, Form, SwipeAction, Button, Dialog } from 'an
 import { AddOutline } from 'antd-mobile-icons';
 
 import type { GpioInfo } from '../hooks/use-device-config';
-import type { Process } from '../types';
+import type { ProcessConfig } from '../types';
 
 export function ProcessEditor({
   process,
@@ -21,9 +21,9 @@ export function ProcessEditor({
   onEditStep,
   onAddStep,
 }: {
-  process: Process;
+  process: ProcessConfig;
   gpio: GpioInfo;
-  onChange: (updated: Process) => void;
+  onChange: (updated: ProcessConfig) => void;
   onRemove: () => void;
   onEditStep: (index: number) => void;
   onAddStep: () => void;

@@ -5,7 +5,7 @@ import { describe, it, expect, vi } from 'vitest';
 
 import { ProcessInterruptEditor } from '@/app/watering/components/process-interrupt-editor';
 import type { GpioInfo } from '@/app/watering/hooks/use-device-config';
-import type { Interrupt } from '@/app/watering/types';
+import type { InterruptConfig } from '@/app/watering/types';
 
 const mockGpio: GpioInfo = {
   buttons: [],
@@ -13,7 +13,7 @@ const mockGpio: GpioInfo = {
   sensors: ['sensor_0', 'sensor_1'],
 };
 
-const defaultInterrupt: Interrupt = {
+const defaultInterrupt: InterruptConfig = {
   name: '测试中断',
   component: 'sensor_0',
   state: 0,

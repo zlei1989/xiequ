@@ -5,7 +5,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 
 import { ProcessEditor } from '@/app/watering/components/process-editor';
 import type { GpioInfo } from '@/app/watering/hooks/use-device-config';
-import type { Process } from '@/app/watering/types';
+import type { ProcessConfig } from '@/app/watering/types';
 
 const mockGpio: GpioInfo = {
   buttons: ['button_0'],
@@ -13,7 +13,7 @@ const mockGpio: GpioInfo = {
   sensors: [],
 };
 
-const defaultProcess: Process = {
+const defaultProcess: ProcessConfig = {
   name: '浇水流程',
   steps: [
     { name: '步骤1', component: 'load_0', value: { begin: 255, end: 0 }, timeout: 60000, interrupts: [] },
