@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
-import { getDeviceConfig, saveDeviceConfig, getDeviceState, saveDeviceState, writeDeviceLog, updateTick, updateIdleSince, calcVoltage } from '@/app/watering/services/db';
 import { execCallback } from '@/app/watering/services/callback-map';
+import { getDeviceConfig, saveDeviceConfig, getDeviceState, saveDeviceState, writeDeviceLog, updateTick, updateIdleSince, calcVoltage } from '@/app/watering/services/db';
 import { newId } from '@/lib/utils';
 
 import type { NextRequest } from 'next/server';
@@ -93,7 +93,9 @@ export async function GET(request: NextRequest) {
         state.switch = 'on';
         state.index = config.bootExec;
         // 深拷贝流程配置，防止后续修改影响原始配置
-        state.process = JSON.parse(JSON.stringify(config.processes[config.bootExec])) as typeof state.process;
+        state.process = JSON.parse(
+          JSON.stringify(config.processes[config.bootExec]),
+        ) as typeof state.process;
         if (config.execDelay > 0 && state.process?.steps.length && state.process.steps.length > 0) {
           const firstStep = state.process.steps[0];
           if (firstStep) {

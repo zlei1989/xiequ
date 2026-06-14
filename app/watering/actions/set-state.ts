@@ -11,8 +11,8 @@
 
 import { newId } from '@/lib/utils';
 
-import { getDeviceConfig, getDeviceState, saveDeviceState } from '../services/db';
 import { execCallback } from '../services/callback-map';
+import { getDeviceConfig, getDeviceState, saveDeviceState } from '../services/db';
 
 /**
  * 设置设备开关状态

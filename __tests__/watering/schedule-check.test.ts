@@ -128,7 +128,9 @@ describe('checkDaySchedule', () => {
     const now = makeNow(10, 5);
     const todayTrigger = calcDayTriggerTime(now, 10 * 3600 * 1000);
     const yesterdayTrigger = todayTrigger - 24 * 3600 * 1000;
-    const result = checkDaySchedule(now, 10 * 3600 * 1000, 1, false, mockHasLog([yesterdayTrigger]));
+    const result = checkDaySchedule(
+      now, 10 * 3600 * 1000, 1, false, mockHasLog([yesterdayTrigger]),
+    );
     expect(result.triggered).toBe(true);
   });
 
@@ -136,7 +138,9 @@ describe('checkDaySchedule', () => {
     const now = makeNow(10, 5);
     const todayTrigger = calcDayTriggerTime(now, 10 * 3600 * 1000);
     const yesterdayTrigger = todayTrigger - 24 * 3600 * 1000;
-    const result = checkDaySchedule(now, 10 * 3600 * 1000, 2, false, mockHasLog([yesterdayTrigger]));
+    const result = checkDaySchedule(
+      now, 10 * 3600 * 1000, 2, false, mockHasLog([yesterdayTrigger]),
+    );
     expect(result.triggered).toBe(false);
   });
 

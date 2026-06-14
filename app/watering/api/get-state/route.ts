@@ -15,10 +15,10 @@
 
 import { NextResponse } from 'next/server';
 
-import { getDeviceState, getDeviceConfig, updateTick, insertScheduleLog, hasScheduleLog, saveDeviceState } from '@/app/watering/services/db';
 import { setCallback, deleteCallback } from '@/app/watering/services/callback-map';
-import { newId } from '@/lib/utils';
+import { getDeviceState, getDeviceConfig, updateTick, insertScheduleLog, hasScheduleLog, saveDeviceState } from '@/app/watering/services/db';
 import type { DeviceState, DeviceConfig, ScheduleConfig } from '@/app/watering/types';
+import { newId } from '@/lib/utils';
 
 import type { NextRequest } from 'next/server';
 
@@ -102,7 +102,9 @@ async function checkAndExecuteSchedule(
     ) {
       state.switch = 'on';
       state.index = schedule.process;
-      state.process = JSON.parse(JSON.stringify(config.processes[schedule.process])) as typeof state.process;
+      state.process = JSON.parse(
+        JSON.stringify(config.processes[schedule.process]),
+      ) as typeof state.process;
       // 标记执行（先确认流程有效再标记，防止无效流程永久跳过）
       await insertScheduleLog(config.chipId, triggerTime, schedule.process);
       state.stateId = newId();
@@ -269,7 +271,7 @@ export async function GET(request: NextRequest) {
           resolve(NextResponse.json(response));
         };
 
-        setCallback(chipId, callback);
+        setCallback(chipId, () => { void callback(); });
       });
     } finally {
       deleteCallback(chipId);

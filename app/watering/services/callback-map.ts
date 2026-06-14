@@ -20,9 +20,10 @@ const callbackMap = new Map<string, () => void>();
  * 先执行旧回调释放等待，再注册新回调。确保设备重连时旧连接正常返回。
  */
 export function setCallback(chipId: string, callback: () => void): void {
-  if (callbackMap.has(chipId)) {
+  const existing = callbackMap.get(chipId);
+  if (existing) {
     // 执行旧回调让上一次等待的请求正常返回 unchanged
-    callbackMap.get(chipId)!();
+    existing();
   }
   callbackMap.set(chipId, callback);
 }
@@ -35,8 +36,9 @@ export function setCallback(chipId: string, callback: () => void): void {
  * 若 Map 中无回调（设备未在等待），静默跳过。
  */
 export function execCallback(chipId: string): void {
-  if (callbackMap.has(chipId)) {
-    callbackMap.get(chipId)!();
+  const cb = callbackMap.get(chipId);
+  if (cb) {
+    cb();
     callbackMap.delete(chipId);
   }
 }

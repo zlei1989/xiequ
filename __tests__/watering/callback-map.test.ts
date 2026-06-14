@@ -72,7 +72,7 @@ describe('execCallback', () => {
   });
 
   it('Map 中无回调时静默跳过不报错', () => {
-    expect(() => execCallback('nonexistent')).not.toThrow();
+    expect(() => { execCallback('nonexistent'); }).not.toThrow();
   });
 });
 
@@ -85,6 +85,6 @@ describe('deleteCallback', () => {
   });
 
   it('Map 中无回调时静默跳过不报错', () => {
-    expect(() => deleteCallback('nonexistent')).not.toThrow();
+    expect(() => { deleteCallback('nonexistent'); }).not.toThrow();
   });
 });

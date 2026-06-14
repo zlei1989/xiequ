@@ -34,11 +34,11 @@ function buildResponseForTest(
   if (
     options?.idleSleep &&
     state?.switch !== 'on' &&
-    options?.idleSince != null &&
-    options?.idleTimeout != null &&
+    options.idleSince != null &&
+    options.idleTimeout != null &&
     (Date.now() - options.idleSince) >= options.idleTimeout
   ) {
-    result.sleepDuration = expect.any(Number) as unknown as number;
+    result.sleepDuration = expect.any(Number) as unknown;
   }
 
   if (options?.processesVersion) {
