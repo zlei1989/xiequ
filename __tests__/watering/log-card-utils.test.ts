@@ -10,7 +10,6 @@ import { describe, it, expect } from 'vitest';
 import {
   groupByStateId,
   formatDuration,
-  formatSimpleDuration,
   formatMessage,
   formatCause,
   extractProcessNames,

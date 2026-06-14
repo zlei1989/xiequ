@@ -19,12 +19,15 @@ export async function GET(request: NextRequest) {
   await updateTick(chipId);
 
   // 解析 GPIO 状态
-  const gpioState: Record<string, Record<string, number>> = { sensors: {}, loads: {} };
+  const gpioState: { sensors: Record<string, number>; loads: Record<string, number> } = { sensors: {}, loads: {} };
   searchParams.forEach((value, key) => {
     const match = key.match(/^(sensor|load):(.+)$/);
     if (match) {
       const category = match[1] === 'sensor' ? 'sensors' : 'loads';
-      gpioState[category][match[2]] = parseInt(value) || 0;
+      const gpioKey = match[2];
+      if (gpioKey) {
+        gpioState[category][gpioKey] = parseInt(value) || 0;
+      }
     }
   });
 

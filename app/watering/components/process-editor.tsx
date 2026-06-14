@@ -112,8 +112,8 @@ export function ProcessEditor({
 
       {/* 添加步骤 */}
       <Form.Item>
-        <Button block color="primary" onClick={onAddStep}>
-          <span><AddOutline /> 添加步骤</span>
+        <Button block color="primary"  onClick={onAddStep}>
+          <span><AddOutline />添加步骤</span>
         </Button>
       </Form.Item>
     </Form>

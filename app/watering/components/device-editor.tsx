@@ -168,7 +168,9 @@ export function DeviceEditor({
 
   // ---- 步骤操作 ----
   function addStep() {
-    const proc = { ...form.processes[processIndex] };
+    const source = form.processes[processIndex];
+    if (!source) return;
+    const proc = { ...source };
     const item = attachKey<Step>({
       name: '新步骤',
       component: gpio.loads[0] ?? 'load_0',
@@ -183,7 +185,9 @@ export function DeviceEditor({
   }
 
   function updateStep(index: number, updated: Step) {
-    const proc = { ...form.processes[processIndex] };
+    const source = form.processes[processIndex];
+    if (!source) return;
+    const proc = { ...source };
     const newSteps = [...proc.steps];
     newSteps[index] = updated;
     proc.steps = newSteps;
@@ -191,7 +195,9 @@ export function DeviceEditor({
   }
 
   function deleteStep() {
-    const proc = { ...form.processes[processIndex] };
+    const source = form.processes[processIndex];
+    if (!source) return;
+    const proc = { ...source };
     proc.steps = proc.steps.filter((_, i) => i !== stepIndex);
     updateProcess(processIndex, proc);
     setStepVisible(false);
@@ -211,8 +217,12 @@ export function DeviceEditor({
       delay: 0,
       duration: 0,
     });
-    const proc = { ...form.processes[processIndex] };
-    const step = { ...proc.steps[stepIndex] };
+    const procSource = form.processes[processIndex];
+    if (!procSource) return;
+    const proc = { ...procSource };
+    const stepSource = proc.steps[stepIndex];
+    if (!stepSource) return;
+    const step = { ...stepSource };
     step.interrupts = [...(step.interrupts || []), item];
     proc.steps[stepIndex] = step;
     updateProcess(processIndex, proc);
@@ -221,8 +231,12 @@ export function DeviceEditor({
   }
 
   function updateInterrupt(index: number, updated: Interrupt) {
-    const proc = { ...form.processes[processIndex] };
-    const step = { ...proc.steps[stepIndex] };
+    const procSource = form.processes[processIndex];
+    if (!procSource) return;
+    const proc = { ...procSource };
+    const stepSource = proc.steps[stepIndex];
+    if (!stepSource) return;
+    const step = { ...stepSource };
     const newInterrupts = [...(step.interrupts || [])];
     newInterrupts[index] = updated;
     step.interrupts = newInterrupts;
@@ -231,8 +245,12 @@ export function DeviceEditor({
   }
 
   function deleteInterrupt() {
-    const proc = { ...form.processes[processIndex] };
-    const step = { ...proc.steps[stepIndex] };
+    const procSource = form.processes[processIndex];
+    if (!procSource) return;
+    const proc = { ...procSource };
+    const stepSource = proc.steps[stepIndex];
+    if (!stepSource) return;
+    const step = { ...stepSource };
     step.interrupts = (step.interrupts || []).filter((_, i) => i !== interruptIndex);
     proc.steps[stepIndex] = step;
     updateProcess(processIndex, proc);
@@ -345,7 +363,7 @@ export function DeviceEditor({
         {/* 开机执行 */}
         <List.Item
           clickable
-          extra={form.bootExec >= 0 && form.processes[form.bootExec] ? form.processes[form.bootExec].name : '无'}
+          extra={form.bootExec >= 0 && form.processes[form.bootExec]! ? form.processes[form.bootExec]!.name : '无'}
           title="开机执行"
           onClick={() => {
             const options = [
@@ -522,7 +540,7 @@ export function DeviceEditor({
           {processIndex > -1 && (
             <ProcessEditor
               gpio={gpio}
-              process={form.processes[processIndex]}
+              process={form.processes[processIndex]!}
               onAddStep={addStep}
               onChange={(updated) => { updateProcess(processIndex, updated); }}
               onEditStep={(stepIdx) => {
@@ -559,7 +577,7 @@ export function DeviceEditor({
           {stepIndex > -1 && processIndex > -1 && (
             <ProcessStepEditor
               gpio={gpio}
-              step={form.processes[processIndex].steps[stepIndex]}
+              step={form.processes[processIndex]!.steps[stepIndex]!}
               onAddInterrupt={addInterrupt}
               onChange={(updated) => { updateStep(stepIndex, updated); }}
               onEditInterrupt={(intIdx) => {
@@ -596,13 +614,13 @@ export function DeviceEditor({
           {interruptIndex > -1 &&
             stepIndex > -1 &&
             processIndex > -1 &&
-            form.processes[processIndex].steps[stepIndex].interrupts && (
+            form.processes[processIndex]!.steps[stepIndex]!.interrupts && (
             <ProcessInterruptEditor
               gpio={gpio}
               interrupt={
-                form.processes[processIndex].steps[stepIndex].interrupts[
+                form.processes[processIndex]!.steps[stepIndex]!.interrupts[
                   interruptIndex
-                ]
+                ]!
               }
               onChange={(updated) => { updateInterrupt(interruptIndex, updated); }}
               onRemove={deleteInterrupt}
@@ -635,10 +653,10 @@ export function DeviceEditor({
           {scheduleIndex > -1 && (
             <ScheduleEditor
               processes={form.processes}
-              schedules={[form.schedules[scheduleIndex]]}
+              schedules={[form.schedules[scheduleIndex]!]}
               onChange={(updated) => {
                 if (updated.length > 0) {
-                  updateSchedule(scheduleIndex, updated[0]);
+                  updateSchedule(scheduleIndex, updated[0]!);
                 }
               }}
             />
