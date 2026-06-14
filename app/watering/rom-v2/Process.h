@@ -139,6 +139,8 @@ public:
     String type = "";
     /** 变化描述信息 */
     String message = "";
+    /** 当前步骤索引 */
+    int stepIndex = -1;
   };
 
   /**
@@ -220,6 +222,11 @@ public:
   void setChangeHandler(ChangeHandler handler);
   /** 启动流程执行 */
   void execute();
+  /**
+   * 从指定步骤启动流程执行
+   * @param startStep 起始步骤索引（0-based）
+   */
+  void execute(int startStep);
   /** 终止当前流程（关闭当前负载，释放资源） */
   void terminate();
   /** 进程循环调用，驱动流程执行 */

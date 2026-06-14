@@ -57,6 +57,7 @@ void Process::next() {
         Change *change = new Change();
         change->stateId = stateId;
         change->type = "step_timeout";
+        change->stepIndex = current.index;
         change->message = String(buffer);
         changeHandler(change, this, context);
       }
@@ -90,6 +91,7 @@ void Process::next() {
           Change *change = new Change();
           change->stateId = stateId;
           change->type = "step_interrupt";
+          change->stepIndex = current.index;
           change->message = String(buffer);
           changeHandler(change, this, context);
         }
@@ -124,6 +126,7 @@ void Process::next() {
       Change *change = new Change();
       change->stateId = stateId;
       change->type = "step_end";
+      change->stepIndex = current.index;
       change->message = String(buffer);
       changeHandler(change, this, context);
     }
@@ -173,6 +176,7 @@ void Process::next() {
       Change *change = new Change();
       change->stateId = stateId;
       change->type = "step_begin";
+      change->stepIndex = current.index;
       change->message = String(buffer);
       changeHandler(change, this, context);
     }
@@ -497,6 +501,26 @@ void Process::execute() {
   processing = true;
   executeTime = millis();
   // 计算第一步的执行时间参数
+  calculateStep(&current, &steps[current.index]);
+}
+
+/**
+ * 从指定步骤启动流程执行
+ * 与 execute() 逻辑相同，但从 startStep 开始而非步骤 0。
+ * 边界检查：startStep 越界时回退到 0。
+ * @param startStep 起始步骤索引（0-based）
+ */
+void Process::execute(int startStep) {
+  if (steps == nullptr) {
+    return;
+  }
+  // 边界检查：越界时从 0 开始
+  if (startStep < 0 || startStep >= stepCount) {
+    startStep = 0;
+  }
+  current.index = startStep;
+  processing = true;
+  executeTime = millis();
   calculateStep(&current, &steps[current.index]);
 }
 
