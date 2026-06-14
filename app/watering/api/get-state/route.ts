@@ -15,7 +15,7 @@
 
 import { NextResponse } from 'next/server';
 
-import { getDeviceState, getDeviceConfig, updateTick, insertScheduleLog, hasScheduleLog } from '@/app/watering/services/db';
+import { getDeviceState, getDeviceConfig, updateTick, insertScheduleLog, hasScheduleLog, saveDeviceState } from '@/app/watering/services/db';
 import { setCallback, deleteCallback } from '@/app/watering/services/callback-map';
 import { newId } from '@/lib/utils';
 import type { DeviceState, DeviceConfig, ScheduleConfig } from '@/app/watering/types';
@@ -95,9 +95,6 @@ async function checkAndExecuteSchedule(
     }
     if (previouslyExecuted) continue;
 
-    // 标记执行
-    await insertScheduleLog(config.chipId, triggerTime, schedule.process);
-
     // 下发流程（深拷贝防止修改原始配置）
     if (
       config.processes.length > 0 &&
@@ -106,8 +103,11 @@ async function checkAndExecuteSchedule(
       state.switch = 'on';
       state.index = schedule.process;
       state.process = JSON.parse(JSON.stringify(config.processes[schedule.process])) as typeof state.process;
+      // 标记执行（先确认流程有效再标记，防止无效流程永久跳过）
+      await insertScheduleLog(config.chipId, triggerTime, schedule.process);
       state.stateId = newId();
       state.lastWriteTime = new Date().toISOString();
+      await saveDeviceState(state);
       return true;
     }
   }
