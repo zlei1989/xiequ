@@ -1,21 +1,20 @@
 /**
  * 设备卡片组件 — 展示设备状态、在线信息、操作按钮（开关/配置/日志）
+ *
+ * 使用 antd-mobile Card/Tag/Button/Toast 替代 antd，
+ * 集成 StepProgress 展示当前流程的步骤进度。
  */
 
 'use client';
 
-import {
-  FileTextOutlined,
-  ThunderboltOutlined,
-  PauseCircleOutlined,
-} from '@ant-design/icons';
-import { Card, Tag, Button, Row, Col, message } from 'antd';
-import { ActionSheet, Dialog } from 'antd-mobile';
+import { ActionSheet, Button, Card, Dialog, Tag, Toast } from 'antd-mobile';
 import { SetOutline } from 'antd-mobile-icons';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
-import { setDeviceSwitch, removeDevice } from '../actions';
+import { removeDevice, setDeviceSwitch } from '../actions';
+
+import { StepProgress } from './step-progress';
 
 import type { DeviceItem } from '../types';
 
@@ -45,7 +44,9 @@ export function DeviceCard({
         void Dialog.confirm({
           title: '确认删除设备？',
           content: '不可恢复。',
-          onConfirm: async () => { await handleRemove(); },
+          onConfirm: async () => {
+            await handleRemove();
+          },
         });
         break;
     }
@@ -69,13 +70,14 @@ export function DeviceCard({
    * 否则直接使用原始 ADC 读数（假设无分压电路）。
    */
   const rawVoltage = device.voltage?.sensor
-    ? (device.state?.sensors?.[device.voltage.sensor])
-    : (device.state?.sensors?.voltage_0);
+    ? device.state?.sensors?.[device.voltage.sensor]
+    : device.state?.sensors?.voltage_0;
 
   const voltage =
     typeof rawVoltage === 'number'
       ? device.voltage && device.voltage.r1 > 0 && device.voltage.r2 > 0
-        ? rawVoltage * ((device.voltage.r1 + device.voltage.r2) / device.voltage.r2)
+        ? rawVoltage *
+          ((device.voltage.r1 + device.voltage.r2) / device.voltage.r2)
         : rawVoltage
       : undefined;
 
@@ -111,11 +113,17 @@ export function DeviceCard({
       if (isExec(index)) {
         // 关闭
         await setDeviceSwitch(device.chipId, 'off', index);
-        message.success(`已终止 ${processes[index]?.name ?? '未知'}`);
+        Toast.show({
+          content: `已终止 ${processes[index]?.name ?? '未知'}`,
+          icon: 'success',
+        });
       } else {
         // 打开
         await setDeviceSwitch(device.chipId, 'on', index);
-        message.success(`已执行 ${processes[index]?.name ?? '未知'}`);
+        Toast.show({
+          content: `已执行 ${processes[index]?.name ?? '未知'}`,
+          icon: 'success',
+        });
       }
       onRefresh();
     } catch (err: unknown) {
@@ -123,7 +131,11 @@ export function DeviceCard({
         `[DeviceCard] 切换流程失败 chipId=${device.chipId} process=${String(processes[index]?.name)}`,
         err,
       );
-      message.error(err instanceof Error ? err.message : String(err) || '操作失败');
+      Toast.show({
+        content:
+          err instanceof Error ? err.message : String(err) || '操作失败',
+        icon: 'fail',
+      });
     }
   }
 
@@ -131,14 +143,18 @@ export function DeviceCard({
   async function onClickClear() {
     try {
       await setDeviceSwitch(device.chipId, 'off');
-      message.success('已清除状态');
+      Toast.show({ content: '已清除状态', icon: 'success' });
       onRefresh();
     } catch (err: unknown) {
       console.error(
         `[DeviceCard] 清除设备状态失败 chipId=${device.chipId}`,
         err,
       );
-      message.error(err instanceof Error ? err.message : String(err) || '清除失败');
+      Toast.show({
+        content:
+          err instanceof Error ? err.message : String(err) || '清除失败',
+        icon: 'fail',
+      });
     }
   }
 
@@ -146,14 +162,53 @@ export function DeviceCard({
   async function handleRemove() {
     try {
       await removeDevice(device.chipId);
-      message.success('设备已删除');
+      Toast.show({ content: '设备已删除', icon: 'success' });
       onRefresh();
     } catch (err: unknown) {
       console.error(
         `[DeviceCard] 删除设备失败 chipId=${device.chipId}`,
         err,
       );
-      message.error(err instanceof Error ? err.message : String(err) || '删除失败');
+      Toast.show({
+        content:
+          err instanceof Error ? err.message : String(err) || '删除失败',
+        icon: 'fail',
+      });
+    }
+  }
+
+  /**
+   * 切换当前执行流程的步骤索引
+   *
+   * 仅在设备在线且 state.index 有效时执行，
+   * 通过 setDeviceSwitch 下发 on + 流程索引 + 新步骤索引。
+   */
+  async function handleStepChange(newStepIndex: number) {
+    if (!device.isOnline) return;
+    const currentIndex = device.state?.index;
+    if (typeof currentIndex !== 'number') return;
+    try {
+      await setDeviceSwitch(
+        device.chipId,
+        'on',
+        currentIndex,
+        newStepIndex,
+      );
+      Toast.show({
+        content: `已切换至步骤 ${newStepIndex + 1}`,
+        icon: 'success',
+      });
+      onRefresh();
+    } catch (err: unknown) {
+      console.error(
+        `[DeviceCard] 步骤切换失败 chipId=${device.chipId} stepIndex=${newStepIndex}`,
+        err,
+      );
+      Toast.show({
+        content:
+          err instanceof Error ? err.message : String(err) || '切换失败',
+        icon: 'fail',
+      });
     }
   }
 
@@ -163,39 +218,38 @@ export function DeviceCard({
         extra={
           <div className="flex items-center gap-1">
             <Button
-              icon={<FileTextOutlined />}
+              fill="none"
               size="small"
-              type="text"
               onClick={() => {
                 router.push(
                   `/watering/logs/${device.chipId}?macAddress=${encodeURIComponent(device.macAddress)}`,
                 );
-              }
-              }
+              }}
             >
               日志
             </Button>
             <Button
-              icon={<SetOutline />}
+              fill="none"
               size="small"
-              type="text"
-              onClick={() => { setActionVisible(true); }}
+              onClick={() => {
+                setActionVisible(true);
+              }}
             >
+              <SetOutline />
               选项
             </Button>
           </div>
         }
-        size="small"
         title={device.name || `设备-${device.chipId}`}
       >
-        {/* 设备信息 — 1 行 2 列 */}
-        <Row className="mb-2" gutter={[8, 4]}>
-          <Col span={12}>
+        {/* 设备信息 — 1 行 2 列，使用 Tailwind grid 替代 antd Row/Col */}
+        <div className="mb-2 grid grid-cols-2 gap-x-2 gap-y-1">
+          <div>
             <span className="text-xs text-gray-400">芯片: </span>
             <span className="text-[13px]">{device.chipId}</span>
-          </Col>
+          </div>
           {voltage !== undefined ? (
-            <Col span={12}>
+            <div>
               <span className="text-xs text-gray-400">电压: </span>
               <span className="text-[13px] font-medium">
                 {voltage.toFixed(2)}V
@@ -205,18 +259,18 @@ export function DeviceCard({
                   (计算)
                 </span>
               )}
-            </Col>
+            </div>
           ) : (
-            <Col span={12} />
+            <div />
           )}
-          <Col span={12}>
+          <div>
             <span className="text-xs text-gray-400">网卡: </span>
             <span className="text-xs">{device.macAddress}</span>
-          </Col>
-          <Col span={12}>
+          </div>
+          <div>
             <span className="text-xs text-gray-400">状态: </span>
             {device.isOnline ? (
-              <Tag className="m-0" color="green">
+              <Tag className="m-0" color="success">
                 在线
               </Tag>
             ) : (
@@ -224,15 +278,15 @@ export function DeviceCard({
                 离线
               </Tag>
             )}
-          </Col>
-        </Row>
+          </div>
+        </div>
 
         {/*
          * 流程快捷按钮网格
          *
          * 布局算法：
-         * - 偶数个流程：每行 2 列（span=12）
-         * - 奇数个流程：第 1 个占整行（span=24），其余每行 2 列
+         * - 偶数个流程：每行 2 列（flex-wrap，各占 50% 宽度）
+         * - 奇数个流程：第 1 个占整行（100%），其余每行 2 列
          *
          * 按钮禁用条件：
          * 1. 设备离线 → 所有按钮不可用
@@ -242,24 +296,24 @@ export function DeviceCard({
           <div className="mt-2">
             {(() => {
               // 计算每个按钮的栅格宽度
-              const items: { idx: number; span: number }[] = [];
+              const items: { idx: number; fullWidth: boolean }[] = [];
               if (processes.length % 2 === 1) {
-                items.push({ idx: 0, span: 24 });
+                items.push({ idx: 0, fullWidth: true });
                 for (let i = 1; i < processes.length; i++) {
-                  items.push({ idx: i, span: 12 });
+                  items.push({ idx: i, fullWidth: false });
                 }
               } else {
                 for (let i = 0; i < processes.length; i++) {
-                  items.push({ idx: i, span: 12 });
+                  items.push({ idx: i, fullWidth: false });
                 }
               }
-              // 将 items 按行分组：span=24 独占一行，否则两个一组
-              const rows: { idx: number; span: number }[][] = [];
+              // 将 items 按行分组：fullWidth 独占一行，否则两个一组
+              const rows: { idx: number; fullWidth: boolean }[][] = [];
               let i = 0;
               while (i < items.length) {
                 const item = items[i];
                 if (!item) break;
-                if (item.span === 24) {
+                if (item.fullWidth) {
                   rows.push([item]);
                   i++;
                 } else {
@@ -268,39 +322,56 @@ export function DeviceCard({
                 }
               }
               return rows.map((row, rowIdx) => (
-                <Row className="mb-1" gutter={8} key={rowIdx}>
-                  {row.map(({ idx, span }) => {
+                <div className="mb-1 flex gap-2" key={rowIdx}>
+                  {row.map(({ idx, fullWidth }) => {
                     const exec = isExec(idx);
                     // idleSleep 模式下仅允许终止正在执行的流程
-                    const disabled = !device.isOnline || (!exec && device.idleSleep);
+                    const disabled =
+                      !device.isOnline ||
+                      (!exec && device.idleSleep);
                     return (
-                      <Col key={idx} span={span}>
-                        <Button
-                          block
-                          danger={exec}
-                          disabled={disabled}
-                          icon={
-                            exec ? (
-                              <PauseCircleOutlined />
-                            ) : (
-                              <ThunderboltOutlined />
-                            )
-                          }
-                          size="small"
-                          type="primary"
-                          onClick={() => { void onClickSwitch(idx); }}
-                        >
-                          {exec ? '停止' : processes[idx]?.name ?? ''}
-                        </Button>
-                      </Col>
+                      <Button
+                        block
+                        className={fullWidth ? 'flex-[2]' : 'flex-1'}
+                        color={exec ? 'danger' : 'primary'}
+                        disabled={disabled}
+                        key={idx}
+                        size="small"
+                        onClick={() => {
+                          void onClickSwitch(idx);
+                        }}
+                      >
+                        {exec ? '停止' : (processes[idx]?.name ?? '')}
+                      </Button>
                     );
                   })}
-                </Row>
+                </div>
               ));
             })()}
           </div>
         )}
 
+        {/* 步骤进度 — 设备运行且当前流程有步骤配置时展示 */}
+        {device.state?.switch === 'on' && device.state.process && (
+          <StepProgress
+            running
+            online={!!device.isOnline}
+            stepIndex={device.state.stepIndex}
+            steps={device.state.process.steps}
+            onNext={() => {
+              const idx = device.state?.stepIndex;
+              if (typeof idx === 'number') {
+                void handleStepChange(idx + 1);
+              }
+            }}
+            onPrev={() => {
+              const idx = device.state?.stepIndex;
+              if (typeof idx === 'number' && idx > 0) {
+                void handleStepChange(idx - 1);
+              }
+            }}
+          />
+        )}
       </Card>
 
       <ActionSheet
@@ -310,7 +381,9 @@ export function DeviceCard({
         cancelText="取消"
         visible={actionVisible}
         onAction={handleAction}
-        onClose={() => { setActionVisible(false); }}
+        onClose={() => {
+          setActionVisible(false);
+        }}
       />
     </>
   );
