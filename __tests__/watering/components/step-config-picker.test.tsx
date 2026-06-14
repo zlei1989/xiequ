@@ -3,7 +3,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 
-import { ProcessStepEditor } from '@/app/watering/components/process-step-editor';
+import { StepConfigPicker } from '@/app/watering/components/step-config-picker';
 import type { GpioInfo } from '@/app/watering/hooks/use-device-config';
 import type { StepConfig } from '@/app/watering/types';
 
@@ -23,16 +23,15 @@ const defaultStep: StepConfig = {
   ],
 };
 
-describe('ProcessStepEditor', () => {
+describe('StepConfigPicker', () => {
   it('渲染步骤名称输入', () => {
     render(
-      <ProcessStepEditor
+      <StepConfigPicker
         gpio={mockGpio}
+        open={true}
         step={defaultStep}
-        onAddInterrupt={vi.fn()}
-        onChange={vi.fn()}
-        onEditInterrupt={vi.fn()}
-        onRemove={vi.fn()}
+        onClose={vi.fn()}
+        onConfirm={vi.fn()}
       />,
     );
     expect(screen.getByDisplayValue('测试步骤')).toBeDefined();
@@ -40,13 +39,14 @@ describe('ProcessStepEditor', () => {
 
   it('渲染中断列表项', () => {
     render(
-      <ProcessStepEditor
+      <StepConfigPicker
         gpio={mockGpio}
+        open={true}
         step={defaultStep}
         onAddInterrupt={vi.fn()}
-        onChange={vi.fn()}
+        onClose={vi.fn()}
+        onConfirm={vi.fn()}
         onEditInterrupt={vi.fn()}
-        onRemove={vi.fn()}
       />,
     );
     // SwipeAction 在 jsdom 下可能重复渲染，使用 getAllByText 兼容
@@ -60,27 +60,28 @@ describe('ProcessStepEditor', () => {
       component: undefined,
     };
     render(
-      <ProcessStepEditor
+      <StepConfigPicker
         gpio={{ ...mockGpio, loads: [] }}
+        open={true}
         step={stepNoLoad}
-        onAddInterrupt={vi.fn()}
-        onChange={vi.fn()}
-        onEditInterrupt={vi.fn()}
-        onRemove={vi.fn()}
+        onClose={vi.fn()}
+        onConfirm={vi.fn()}
       />,
     );
-    expect(screen.getByText(/无可用负载/)).toBeDefined();
+    // 无负载时输入框 placeholder 显示"无可用负载"
+    expect(screen.getByPlaceholderText('无可用负载')).toBeDefined();
   });
 
   it('点击添加中断按钮存在', () => {
     render(
-      <ProcessStepEditor
+      <StepConfigPicker
         gpio={mockGpio}
+        open={true}
         step={defaultStep}
         onAddInterrupt={vi.fn()}
-        onChange={vi.fn()}
+        onClose={vi.fn()}
+        onConfirm={vi.fn()}
         onEditInterrupt={vi.fn()}
-        onRemove={vi.fn()}
       />,
     );
     // Button + List.Item 在 jsdom 下可能重复渲染，使用 getAllByText 兼容

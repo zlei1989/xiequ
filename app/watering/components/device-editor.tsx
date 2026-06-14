@@ -34,8 +34,8 @@ import { useBackButton } from '@/lib/back-button';
 
 import { InterruptConfigPicker } from './interrupt-config-picker';
 import { ProcessEditor } from './process-editor';
-import { ProcessStepEditor } from './process-step-editor';
 import { ScheduleEditor } from './schedule-editor';
+import { StepConfigPicker } from './step-config-picker';
 
 import type { GpioInfo } from '../hooks/use-device-config';
 import type { DeviceConfig, ProcessConfig, StepConfig, InterruptConfig, ScheduleConfig, VoltageConfig } from '../types';
@@ -90,7 +90,6 @@ export function DeviceEditor({
 
   // ---- 返回键栈接入 ----
   useBackButton(processVisible, () => { setProcessVisible(false); });
-  useBackButton(stepVisible, () => { setStepVisible(false); });
 
   useBackButton(scheduleVisible, () => { setScheduleVisible(false); });
   useBackButton(voltageVisible, () => { setVoltageConfigVisible(false); });
@@ -554,43 +553,17 @@ export function DeviceEditor({
         </div>
       </Popup>
 
-      {/* 步骤编辑 Popup (75vh) */}
-      <Popup
-        bodyStyle={{ height: '75vh' }}
-        position="bottom"
-        visible={stepVisible}
+      {/* 步骤配置 Picker (75vh) */}
+      <StepConfigPicker
+        gpio={gpio}
+        open={stepVisible}
+        step={stepIndex > -1 && processIndex > -1 ? form.processes[processIndex]!.steps[stepIndex]! : { name: '', component: '', value: { begin: 0, end: 0 }, timeout: 0, interrupts: [] }}
+        onAddInterrupt={addInterrupt}
         onClose={() => { setStepVisible(false); }}
-      >
-        <NavBar
-          right={
-            <DeleteOutline
-              style={{ fontSize: 20, cursor: 'pointer' }}
-              onClick={() => {
-                confirmDelete('确认删除此步骤？', deleteStep);
-              }}
-            />
-          }
-          onBack={() => { setStepVisible(false); }}
-        >
-          编辑步骤
-        </NavBar>
-        <div style={{ padding: '0 16px', overflowY: 'auto', height: 'calc(75vh - 45px)' }}>
-          {stepIndex > -1 && processIndex > -1 && (
-            <ProcessStepEditor
-              gpio={gpio}
-              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-              step={form.processes[processIndex]!.steps[stepIndex]!}
-              onAddInterrupt={addInterrupt}
-              onChange={(updated) => { updateStep(stepIndex, updated); }}
-              onEditInterrupt={(intIdx) => {
-                setInterruptIndex(intIdx);
-                setInterruptVisible(true);
-              }}
-              onRemove={deleteStep}
-            />
-          )}
-        </div>
-      </Popup>
+        onConfirm={(updated) => { updateStep(stepIndex, updated); }}
+        onDelete={deleteStep}
+        onEditInterrupt={(idx) => { setInterruptIndex(idx); setInterruptVisible(true); }}
+      />
 
       {/* 中断编辑 Picker (70vh) */}
       {interruptIndex > -1 &&
