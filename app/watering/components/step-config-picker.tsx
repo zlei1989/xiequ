@@ -66,10 +66,12 @@ export function StepConfigPicker({
   return (
     <Popup
       afterClose={afterClose}
+      closeOnMaskClick={true}
       bodyStyle={{ height: '75vh' }}
       position="bottom"
       visible={open}
       onClose={onClose}
+      onMaskClick={onClose}
     >
       <NavBar
         right={onDelete ? (

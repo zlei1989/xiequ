@@ -82,10 +82,12 @@ export function InterruptConfigPicker({
   return (
     <Popup
       afterClose={afterClose}
+      closeOnMaskClick={true}
       bodyStyle={{ height: '70vh' }}
       position="bottom"
       visible={open}
       onClose={onClose}
+      onMaskClick={onClose}
     >
       <NavBar
         right={onDelete ? (

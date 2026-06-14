@@ -75,10 +75,12 @@ export function ProcessConfigPicker({
   return (
     <Popup
       afterClose={afterClose}
+      closeOnMaskClick={true}
       bodyStyle={{ height: '80vh' }}
       position="bottom"
       visible={open}
       onClose={onClose}
+      onMaskClick={onClose}
     >
       <NavBar
         right={onDelete ? (

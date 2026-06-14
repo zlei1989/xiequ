@@ -78,10 +78,12 @@ export function VoltageConfigPicker({
   return (
     <Popup
       afterClose={afterClose}
+      closeOnMaskClick={true}
       bodyStyle={{ height: '60vh' }}
       position="bottom"
       visible={open}
       onClose={handleClose}
+      onMaskClick={handleClose}
     >
       <NavBar onBack={handleClose}>电压检测配置</NavBar>
       <div style={{ overflowY: 'auto', height: 'calc(70vh - 45px)' }}>
