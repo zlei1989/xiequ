@@ -24,8 +24,9 @@ export async function setDeviceSwitch(
   chipId: string,
   switchState: 'on' | 'off',
   processIndex?: number,
+  stepIndex?: number,
 ) {
-  console.log('[Watering] 设置设备开关:', { chipId, switchState, processIndex });
+  console.log('[Watering] 设置设备开关:', { chipId, switchState, processIndex, stepIndex });
 
   try {
     const config = await getDeviceConfig(chipId);
@@ -49,11 +50,13 @@ export async function setDeviceSwitch(
       state.switch = 'on';
       state.index = processIdx;
       state.process = config.processes[processIdx];
+      state.stepIndex = stepIndex ?? 0;
       state.message = undefined;
     } else {
       state.switch = 'off';
       state.index = undefined;
       state.process = undefined;
+      state.stepIndex = undefined;
       state.message = undefined;
     }
 
