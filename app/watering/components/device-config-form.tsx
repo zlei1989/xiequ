@@ -394,7 +394,7 @@ export function DeviceConfigForm({
       {/* ======== 功能列表 ======== */}
       <List header="功能">
         {form.processes.length === 0 ? (
-          <ErrorBlock description="点击下方按钮添加功能流程" status="empty" title="暂无功能" />
+          <ErrorBlock description="" status="empty" title="暂无功能" />
         ) : (
           form.processes.map((proc, index) => (
             <SwipeAction
@@ -412,7 +412,6 @@ export function DeviceConfigForm({
             >
               <List.Item
                 clickable
-                prefix={`${index + 1}.`}
                 onClick={() => {
                   setProcessIndex(index);
                   setProcessVisible(true);
@@ -423,19 +422,22 @@ export function DeviceConfigForm({
             </SwipeAction>
           ))
         )}
+        <div className='p-2' >
+          <Button
+            block
+            size="small"
+            onClick={addProcess}
+          >
+            <AddOutline /> 添加
+          </Button>
+        </div>
       </List>
-      <Button
-        block
-        style={{ margin: '8px 0 16px' }}
-        onClick={addProcess}
-      >
-        <AddOutline style={{ marginRight: 4 }} /> 添加
-      </Button>
+
 
       {/* ======== 计划任务列表 ======== */}
       <List header="计划任务">
         {form.schedules.length === 0 ? (
-          <ErrorBlock description="点击下方按钮添加定时任务" status="empty" title="暂无计划任务" />
+          <ErrorBlock description="" status="empty" title="暂无计划任务" />
         ) : (
           form.schedules.map((sch, index) => (
             <SwipeAction
@@ -455,7 +457,6 @@ export function DeviceConfigForm({
                 clickable
                 description={`间隔 ${sch.interval} 天`}
                 extra={sch.process < form.processes.length ? form.processes[sch.process]?.name ?? '' : ''}
-                prefix={`${index + 1}.`}
                 onClick={() => {
                   setScheduleIndex(index);
                   setScheduleVisible(true);
@@ -466,14 +467,17 @@ export function DeviceConfigForm({
             </SwipeAction>
           ))
         )}
+        <div className='p-2' >
+          <Button
+            size="small"
+            block
+            onClick={addSchedule}
+          >
+            <AddOutline /> 添加
+          </Button>
+        </div>
       </List>
-      <Button
-        block
-        style={{ margin: '8px 0 16px' }}
-        onClick={addSchedule}
-      >
-        <AddOutline style={{ marginRight: 4 }} /> 添加
-      </Button>
+
 
       {/* ============================================
           嵌套 Popup 层（原 Drawer 层）
@@ -514,21 +518,21 @@ export function DeviceConfigForm({
         processIndex > -1 &&
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         form.processes[processIndex]!.steps[stepIndex]!.interrupts && (
-        <InterruptConfigPicker
-          gpio={gpio}
-          interrupt={
-            /* eslint-disable @typescript-eslint/no-non-null-assertion */
-            form.processes[processIndex]!.steps[stepIndex]!.interrupts[
+          <InterruptConfigPicker
+            gpio={gpio}
+            interrupt={
+              /* eslint-disable @typescript-eslint/no-non-null-assertion */
+              form.processes[processIndex]!.steps[stepIndex]!.interrupts[
               interruptIndex
-            ]!
-            /* eslint-enable @typescript-eslint/no-non-null-assertion */
-          }
-          open={interruptVisible}
-          onClose={() => { setInterruptVisible(false); }}
-          onConfirm={(updated) => { updateInterrupt(interruptIndex, updated); }}
-          onDelete={deleteInterrupt}
-        />
-      )}
+              ]!
+              /* eslint-enable @typescript-eslint/no-non-null-assertion */
+            }
+            open={interruptVisible}
+            onClose={() => { setInterruptVisible(false); }}
+            onConfirm={(updated) => { updateInterrupt(interruptIndex, updated); }}
+            onDelete={deleteInterrupt}
+          />
+        )}
 
       {/* 定时任务配置 Picker */}
       <ScheduleConfigPicker

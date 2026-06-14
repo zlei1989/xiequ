@@ -7,7 +7,7 @@
 
 'use client';
 
-import { Input, ErrorBlock, Selector, Button, Popup, NavBar, Form, SwipeAction, Dialog } from 'antd-mobile';
+import { Input, ErrorBlock, Selector, Button, List, Popup, NavBar, Form, SwipeAction, Dialog } from 'antd-mobile';
 import { renderToBody } from 'antd-mobile/es/utils/render-to-body';
 import { AddOutline, DeleteOutline } from 'antd-mobile-icons';
 import React, { useState, useEffect } from 'react';
@@ -93,7 +93,7 @@ export function ProcessConfigPicker({
         编辑流程
       </NavBar>
 
-      <div style={{ padding: '0 16px', overflowY: 'auto', height: 'calc(80vh - 45px)' }}>
+      <div style={{ overflowY: 'auto', height: 'calc(80vh - 45px)' }}>
         <Form layout="vertical">
           <Form.Item label="功能名称">
             <Input
@@ -114,8 +114,9 @@ export function ProcessConfigPicker({
               <ErrorBlock description="请等待设备上报 GPIO 状态" status="empty" title="无可用按钮" />
             )}
           </Form.Item>
+        </Form>
 
-          <Form.Header>步骤列表</Form.Header>
+        <List header="步骤">
           {draft.steps.map((s, idx) => (
             <SwipeAction
               key={idx}
@@ -136,22 +137,22 @@ export function ProcessConfigPicker({
                 },
               ]}
             >
-              <Form.Item
-                help={s.component}
-                label={s.name}
+              <List.Item
+                clickable
+                description={s.component}
                 onClick={() => { onEditStep?.(idx); }}
               >
-                <div />
-              </Form.Item>
+                {s.name}
+              </List.Item>
             </SwipeAction>
           ))}
-
-          <Form.Item>
-            <Button block color="primary" onClick={onAddStep}>
-              <span><AddOutline />添加步骤</span>
+          <div className='p-2'>
+            <Button block size='small' onClick={onAddStep}>
+              <AddOutline /> 添加步骤
             </Button>
-          </Form.Item>
-        </Form>
+          </div>
+        </List>
+
       </div>
     </Popup>
   );

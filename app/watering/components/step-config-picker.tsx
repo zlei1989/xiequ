@@ -7,7 +7,7 @@
 
 'use client';
 
-import { Input, Stepper, Switch, Selector, ErrorBlock, Button, Popup, NavBar, Form, SwipeAction, Dialog } from 'antd-mobile';
+import { List, Input, Stepper, Switch, Selector, ErrorBlock, Button, Popup, NavBar, Form, SwipeAction, Dialog } from 'antd-mobile';
 import { renderToBody } from 'antd-mobile/es/utils/render-to-body';
 import { AddOutline, DeleteOutline } from 'antd-mobile-icons';
 import React, { useState, useEffect } from 'react';
@@ -148,9 +148,9 @@ export function StepConfigPicker({
               onChange={(checked) => { update({ disabled: !checked }); }}
             />
           </Form.Item>
-
+        </Form>
+        <List header="步骤">
           {/* 中断列表 */}
-          <Form.Header>中断列表</Form.Header>
           {(step.interrupts || []).map((intr, idx) => (
             <SwipeAction
               key={idx}
@@ -170,23 +170,22 @@ export function StepConfigPicker({
                 },
               ]}
             >
-              <Form.Item
+              <List.Item
                 description={intr.component}
-                label={intr.name}
                 onClick={() => { onEditInterrupt?.(idx); }}
               >
-                <div />
-              </Form.Item>
+                {intr.name}
+              </List.Item>
             </SwipeAction>
           ))}
 
           {/* 添加中断 */}
-          <Form.Item>
-            <Button block color="primary" onClick={onAddInterrupt}>
+          <div className='p-2'>
+            <Button block size="small" onClick={onAddInterrupt}>
               <AddOutline /> 添加中断
             </Button>
-          </Form.Item>
-        </Form>
+          </div>
+        </List>
       </div>
     </Popup>
   );
