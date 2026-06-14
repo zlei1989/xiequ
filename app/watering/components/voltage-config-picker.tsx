@@ -1,24 +1,39 @@
 /**
- * 电压检测配置 Popup — 设置分压电阻 R1/R2 和传感器引脚
+ * 电压检测配置 Picker — 设置分压电阻 R1/R2 和传感器引脚
  *
  * 使用 antd-mobile Form 替代 List 构建表单。
  * 计算公式说明区使用 Card 卡片组件。
+ * 支持声明式组件和命令式 VoltageConfigPicker.prompt() 两种调用方式。
  */
 
 'use client';
 
 import { Popup, NavBar, Picker, Stepper, Form, Card, Input } from 'antd-mobile';
+import { renderToBody } from 'antd-mobile/es/utils/render-to-body';
+import React, { useState, useEffect } from 'react';
 
+import type { GpioInfo } from '@/app/watering/hooks/use-device-config';
 import { useBackButton } from '@/lib/back-button';
 
 import type { VoltageConfig } from '../types';
 
-interface VoltageConfigPopupProps {
+interface VoltageConfigPickerProps {
   open: boolean;
   voltage: VoltageConfig | undefined;
-  sensors: string[];
-  onChange: (config: VoltageConfig | undefined) => void;
+  gpio: GpioInfo;
+  onChange?: (config: VoltageConfig | undefined) => void;
   onClose: () => void;
+  /** 命令式调用时触发 — resolve 时传入最终配置 */
+  onConfirm?: (result: VoltageConfig) => void;
+  /** Popup 关闭动画完成后的清理回调 */
+  afterClose?: () => void;
+}
+
+/** VoltageConfigPicker.prompt() 静态方法的参数 */
+interface VoltageConfigPromptProps {
+  voltage: VoltageConfig;
+  gpio: GpioInfo;
+  onConfirm?: (result: VoltageConfig) => void;
 }
 
 /**
@@ -29,42 +44,40 @@ interface VoltageConfigPopupProps {
 const DEFAULT_R1 = 30000;
 const DEFAULT_R2 = 10000;
 
-export function VoltageConfigPopup({
+export function VoltageConfigPicker({
   open,
   voltage,
-  sensors,
+  gpio,
   onChange,
   onClose,
-}: VoltageConfigPopupProps) {
+  onConfirm,
+  afterClose,
+}: VoltageConfigPickerProps) {
   const config = voltage || {
-    sensor: sensors[0] || 'sensor_0',
+    sensor: gpio.sensors[0] || 'sensor_0',
     r1: DEFAULT_R1,
     r2: DEFAULT_R2,
   };
 
   useBackButton(open, onClose);
 
+  /** 局部更新配置 — 通过 onChange 回调通知父组件，同时通知 onConfirm（如存在） */
   function update(partial: Partial<VoltageConfig>) {
-    onChange({ ...config, ...partial });
+    const merged = { ...config, ...partial };
+    onChange?.(merged);
+    onConfirm?.(merged);
   }
 
-  /**
-   * 关闭 Popup
-   *
-   * 若原本无电压配置且设备无可用传感器，则放弃本次配置（设为 undefined），
-   * 避免保存一个无意义的默认配置到设备。
-   */
+  /** 关闭 Picker — 父组件负责处理关闭逻辑 */
   function handleClose() {
-    if (!voltage && !sensors.length) {
-      onChange(undefined);
-    }
     onClose();
   }
 
-  const sensorColumns = sensors.map((s) => ({ label: s, value: s }));
+  const sensorColumns = gpio.sensors.map((s) => ({ label: s, value: s }));
 
   return (
     <Popup
+      afterClose={afterClose}
       bodyStyle={{ height: '60vh' }}
       position="bottom"
       visible={open}
@@ -160,3 +173,36 @@ export function VoltageConfigPopup({
     </Popup>
   );
 }
+
+/**
+ * 命令式调用 — 弹出电压配置 Popup
+ *
+ * 使用 antd-mobile 的 renderToBody 工具将组件挂载到 body，
+ * 遵循 Picker.prompt() 相同的实现模式。
+ * 返回 Promise，确认时 resolve VoltageConfig，取消时 resolve null。
+ */
+VoltageConfigPicker.prompt = (props: VoltageConfigPromptProps): Promise<VoltageConfig | null> => {
+  return new Promise((resolve) => {
+    const Wrapper = () => {
+      const [visible, setVisible] = useState(false);
+      useEffect(() => { setVisible(true); }, []);
+      return (
+        React.createElement(VoltageConfigPicker, {
+          open: visible,
+          voltage: props.voltage,
+          gpio: props.gpio,
+          onConfirm: (result: VoltageConfig) => {
+            props.onConfirm?.(result);
+            resolve(result);
+          },
+          onClose: () => {
+            setVisible(false);
+            resolve(null);
+          },
+          afterClose: () => { unmount(); },
+        })
+      );
+    };
+    const unmount = renderToBody(React.createElement(Wrapper));
+  });
+};

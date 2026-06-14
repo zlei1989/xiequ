@@ -3,14 +3,14 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 
-import { VoltageConfigPopup } from '@/app/watering/components/voltage-config-popup';
+import { VoltageConfigPicker } from '@/app/watering/components/voltage-config-picker';
 
-describe('VoltageConfigPopup', () => {
+describe('VoltageConfigPicker', () => {
   it('关闭时渲染空内容（Popup hidden）', () => {
     const { container } = render(
-      <VoltageConfigPopup
+      <VoltageConfigPicker
+        gpio={{ loads: [], sensors: ['sensor_0'], buttons: [] }}
         open={false}
-        sensors={['sensor_0']}
         voltage={undefined}
         onChange={vi.fn()}
         onClose={vi.fn()}
@@ -22,9 +22,9 @@ describe('VoltageConfigPopup', () => {
 
   it('打开时渲染标题和传感器选择器', () => {
     render(
-      <VoltageConfigPopup
+      <VoltageConfigPicker
+        gpio={{ loads: [], sensors: ['sensor_0', 'sensor_1'], buttons: [] }}
         open={true}
-        sensors={['sensor_0', 'sensor_1']}
         voltage={undefined}
         onChange={vi.fn()}
         onClose={vi.fn()}
@@ -34,12 +34,12 @@ describe('VoltageConfigPopup', () => {
     expect(screen.getAllByText('电压检测配置').length).toBeGreaterThan(0);
   });
 
-  it('无电压配置且无传感器时关闭会 reset', () => {
+  it('无电压配置且无传感器时仍可渲染', () => {
     const onChange = vi.fn();
     render(
-      <VoltageConfigPopup
+      <VoltageConfigPicker
+        gpio={{ loads: [], sensors: [], buttons: [] }}
         open={true}
-        sensors={[]}
         voltage={undefined}
         onChange={onChange}
         onClose={vi.fn()}
