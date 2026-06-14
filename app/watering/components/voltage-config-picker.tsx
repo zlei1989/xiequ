@@ -78,8 +78,8 @@ export function VoltageConfigPicker({
   return (
     <Popup
       afterClose={afterClose}
-      closeOnMaskClick={true}
       bodyStyle={{ height: '60vh' }}
+      closeOnMaskClick={true}
       position="bottom"
       visible={open}
       onClose={handleClose}

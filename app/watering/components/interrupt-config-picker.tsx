@@ -82,8 +82,8 @@ export function InterruptConfigPicker({
   return (
     <Popup
       afterClose={afterClose}
-      closeOnMaskClick={true}
       bodyStyle={{ height: '70vh' }}
+      closeOnMaskClick={true}
       position="bottom"
       visible={open}
       onClose={onClose}
