@@ -12,6 +12,7 @@
 import { newId } from '@/lib/utils';
 
 import { getDeviceConfig, getDeviceState, saveDeviceState } from '../services/db';
+import { execCallback } from '../services/callback-map';
 
 /**
  * 设置设备开关状态
@@ -59,6 +60,8 @@ export async function setDeviceSwitch(
     state.stateId = newId();
     state.lastWriteTime = new Date().toISOString();
     await saveDeviceState(state);
+    // 唤醒正在长轮询等待的设备：立即下发最新状态，无需等到超时
+    execCallback(chipId);
     console.log('[Watering] 设备开关状态已更新:', { chipId, switch: state.switch, stateId: state.stateId });
 
     return { success: true };
