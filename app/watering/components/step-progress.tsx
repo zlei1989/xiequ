@@ -63,7 +63,7 @@ export function StepProgress({
   return (
     <div className="mt-3 border-t border-gray-100 pt-3">
       {/* 步骤进度条 — 横向 */}
-      <Steps direction="horizontal" className="[&_.adm-step-icon]:scale-75">
+      <Steps className="[&_.adm-step-icon]:scale-75" direction="horizontal">
         {steps.map((step, i) => (
           <Steps.Step
             key={i}
