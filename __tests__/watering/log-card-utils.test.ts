@@ -1,3 +1,5 @@
+// @vitest-environment jsdom
+
 /**
  * log-card 工具函数单元测试
  *
