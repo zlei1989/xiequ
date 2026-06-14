@@ -1,10 +1,11 @@
 /**
- * 设备编辑器 — 主编辑器，管理设备基本设置、流程、步骤、中断、定时任务的 CRUD
+ * 设备配置表单 — 管理设备基本设置、流程、步骤、中断、定时任务的 CRUD
  *
- * 使用 antd-mobile Popup + NavBar + List 构建移动端界面。
+ * 基本设置区使用 antd-mobile Form layout="vertical" 构建。
+ * 电压检测配置抽取为 VoltageConfigPicker 子组件。
  * 通过 saveRef 将 handleSave 暴露给父组件 Header 的保存按钮。
- * 5 层嵌套 Popup（设备→流程→步骤→中断 + 定时 + 电压），
- * 均接入 useBackButton 返回键栈支持。
+ * 5 层嵌套 Picker（设备→流程→步骤→中断 + 定时 + 电压），
+ * 各 Picker 内部接入 useBackButton 返回键栈支持。
  */
 
 'use client';
@@ -15,12 +16,10 @@ import {
   Switch,
   Button,
   List,
-  Popup,
-  NavBar,
+  Form,
   Dialog,
   Toast,
   Picker,
-  Selector,
   ErrorBlock,
   SwipeAction,
 } from 'antd-mobile';
@@ -29,12 +28,11 @@ import {
 } from 'antd-mobile-icons';
 import { useState, useEffect } from 'react';
 
-import { useBackButton } from '@/lib/back-button';
-
 import { InterruptConfigPicker } from './interrupt-config-picker';
 import { ProcessConfigPicker } from './process-config-picker';
 import { ScheduleConfigPicker } from './schedule-config-picker';
 import { StepConfigPicker } from './step-config-picker';
+import { VoltageConfigPicker } from './voltage-config-picker';
 
 import type { GpioInfo } from '../hooks/use-device-config';
 import type { DeviceConfig, ProcessConfig, StepConfig, InterruptConfig, ScheduleConfig, VoltageConfig } from '../types';
@@ -53,11 +51,7 @@ function attachKey<T>(obj: T): T & WithKey {
   return Object.assign(obj as Record<string, unknown>, { key: crypto.randomUUID() }) as T & WithKey;
 }
 
-/** 电压检测配置默认值 */
-const DEFAULT_R1 = 30000; // 30kΩ
-const DEFAULT_R2 = 10000; // 10kΩ
-
-export function DeviceEditor({
+export function DeviceConfigForm({
   config,
   gpio,
   onSave,
@@ -86,10 +80,6 @@ export function DeviceEditor({
   const [scheduleIndex, setScheduleIndex] = useState(-1);
 
   const [voltageVisible, setVoltageConfigVisible] = useState(false);
-
-  // ---- 返回键栈接入 ----
-
-  useBackButton(voltageVisible, () => { setVoltageConfigVisible(false); });
 
   // ---- 保存（声明在前，供 useEffect 引用）----
   async function handleSave() {
@@ -303,12 +293,9 @@ export function DeviceEditor({
     return `${record.type} ${record.value}`;
   }
 
-  // ---- 电压检测配置 Popup 状态 ----
-  const voltageConfig = form.voltage || { sensor: gpio.sensors[0] || 'sensor_0', r1: DEFAULT_R1, r2: DEFAULT_R2 };
-
-  function updateVoltage(partial: Partial<VoltageConfig>) {
-    const merged = { ...voltageConfig, ...partial };
-    setForm({ ...form, voltage: merged });
+  /** 更新电压检测配置 — VoltageConfigPicker onConfirm 回调 */
+  function updateVoltage(config: VoltageConfig) {
+    setForm({ ...form, voltage: config });
   }
 
   // ---- 确认删除的通用辅助 ----
@@ -321,31 +308,33 @@ export function DeviceEditor({
 
   return (
     <div style={{ padding: '0 16px' }}>
-      {/* ======== 基本设置 ======== */}
-      <List header="基本设置">
+      {/* ======== 基本设置（List→Form） ======== */}
+      <Form layout="vertical">
+        <Form.Header>基本设置</Form.Header>
+
         {/* 设备名称 */}
-        <List.Item title="设备名称">
+        <Form.Item label="设备名称">
           <Input
             placeholder="输入设备名称"
             value={form.name}
             onChange={(v) => { setForm({ ...form, name: v }); }}
           />
-        </List.Item>
+        </Form.Item>
 
         {/* 空闲睡眠 */}
-        <List.Item
-          description={form.idleSleep ? '设备将不接受实时控制，仅执行计划任务，达到省电目的' : ''}
-          title="空闲睡眠"
+        <Form.Item
+          help={form.idleSleep ? '设备将不接受实时控制，仅执行计划任务，达到省电目的' : ''}
+          label="空闲睡眠"
         >
           <Switch
             checked={form.idleSleep}
             onChange={(checked) => { setForm({ ...form, idleSleep: checked }); }}
           />
-        </List.Item>
+        </Form.Item>
 
         {/* 空闲超时 */}
         {form.idleSleep && (
-          <List.Item title="空闲超时（毫秒）">
+          <Form.Item label="空闲超时（毫秒）">
             <Stepper
               max={86400000}
               min={0}
@@ -353,33 +342,39 @@ export function DeviceEditor({
               value={form.idleTimeout}
               onChange={(v) => { setForm({ ...form, idleTimeout: v }); }}
             />
-          </List.Item>
+          </Form.Item>
         )}
 
         {/* 开机执行 */}
-        <List.Item
-          clickable
-          extra={form.bootExec >= 0 ? (form.processes[form.bootExec]?.name ?? '无') : '无'}
-          title="开机执行"
+        <Form.Item
+          label="开机执行"
           onClick={() => {
             const options = [
               { label: '无', value: '-1' },
               ...form.processes.map((p, i) => ({ label: p.name, value: String(i) })),
             ];
-            Picker.prompt({
+            void Picker.prompt({
               columns: [options],
               defaultValue: [String(form.bootExec)],
               onConfirm: (val) => {
-                if (val && val.length > 0 && typeof val[0] === 'string') {
+                if (typeof val[0] === 'string') {
                   setForm({ ...form, bootExec: Number(val[0]) });
                 }
               },
             });
           }}
-        />
+        >
+          <Input
+            readOnly
+            placeholder="无"
+            value={
+              form.processes[form.bootExec]?.name ?? '无'
+            }
+          />
+        </Form.Item>
 
         {/* 延迟执行 */}
-        <List.Item title="延迟执行（毫秒）">
+        <Form.Item label="延迟执行（毫秒）">
           <Stepper
             disabled={form.bootExec < 0}
             min={0}
@@ -387,8 +382,8 @@ export function DeviceEditor({
             value={form.execDelay}
             onChange={(v) => { setForm({ ...form, execDelay: v }); }}
           />
-        </List.Item>
-      </List>
+        </Form.Item>
+      </Form>
 
       {/* ======== 电压检测配置摘要栏 ======== */}
       <div
@@ -570,95 +565,14 @@ export function DeviceEditor({
         onDelete={deleteSchedule}
       />
 
-      {/* 电压检测配置 Popup (60vh) */}
-      <Popup
-        bodyStyle={{ height: '60vh' }}
-        position="bottom"
-        visible={voltageVisible}
+      {/* 电压检测配置 Picker */}
+      <VoltageConfigPicker
+        gpio={gpio}
+        open={voltageVisible}
+        voltage={form.voltage}
         onClose={() => { setVoltageConfigVisible(false); }}
-      >
-        <NavBar onBack={() => { setVoltageConfigVisible(false); }}>
-          电压检测配置
-        </NavBar>
-        <div style={{ padding: '0 16px', overflowY: 'auto', height: 'calc(60vh - 45px)' }}>
-          <List>
-            {/* 传感器选择 */}
-            <List.Item title="电压检测传感器">
-              {gpio.sensors.length > 0 ? (
-                <Selector
-                  options={gpio.sensors.map((s) => ({ label: s, value: s }))}
-                  value={[voltageConfig.sensor]}
-                  onChange={(vals) => {
-                    if (vals.length > 0) {
-                      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                      updateVoltage({ sensor: vals[0]! });
-                    }
-                  }}
-                />
-              ) : (
-                <ErrorBlock
-                  description="请等待设备上报 GPIO 状态"
-                  status="empty"
-                  title="无可用传感器"
-                />
-              )}
-            </List.Item>
-            <List.Item
-              description="选择用于电压检测的 ADC 传感器引脚"
-              title="电压检测传感器"
-            >
-              {/* 说明由 description 承载 */}
-              <span />
-            </List.Item>
-
-            {/* R1 电阻值 */}
-            <List.Item description="分压电阻 R1，上拉至被测电压。默认 30kΩ" title="R1 电阻值（Ω）">
-              <Stepper
-                min={0}
-                step={1000}
-                value={voltageConfig.r1}
-                onChange={(v) => { updateVoltage({ r1: v }); }}
-              />
-            </List.Item>
-
-            {/* R2 电阻值 */}
-            <List.Item description="分压电阻 R2，下拉至 GND。默认 10kΩ" title="R2 电阻值（Ω）">
-              <Stepper
-                min={0}
-                step={1000}
-                value={voltageConfig.r2}
-                onChange={(v) => { updateVoltage({ r2: v }); }}
-              />
-            </List.Item>
-
-            {/* 电压计算公式说明 */}
-            <List.Item>
-              <div
-                style={{
-                  background: '#f6f8fa',
-                  border: '1px solid #e8e8e8',
-                  borderRadius: 6,
-                  padding: '12px 16px',
-                  fontSize: 12,
-                  color: '#666',
-                  width: '100%',
-                }}
-              >
-                <div style={{ fontWeight: 600, marginBottom: 4 }}>计算公式</div>
-                <div>
-                  V<sub>实际</sub> = V<sub>传感器</sub> × (R1 + R2) / R2
-                </div>
-                <div style={{ marginTop: 4 }}>
-                  当前分压比:{' '}
-                  {voltageConfig.r1 > 0 && voltageConfig.r2 > 0
-                    ? ((voltageConfig.r1 + voltageConfig.r2) / voltageConfig.r2).toFixed(2)
-                    : '—'}
-                </div>
-              </div>
-            </List.Item>
-          </List>
-        </div>
-      </Popup>
+        onConfirm={updateVoltage}
+      />
     </div>
   );
 }

@@ -4,7 +4,7 @@ import { render, screen, act, cleanup } from '@testing-library/react';
 import React from 'react';
 import { afterEach, describe, it, expect, vi } from 'vitest';
 
-import { DeviceEditor } from '@/app/watering/components/device-editor';
+import { DeviceConfigForm } from '@/app/watering/components/device-config-form';
 import type { GpioInfo } from '@/app/watering/hooks/use-device-config';
 import type { DeviceConfig } from '@/app/watering/types';
 
@@ -45,11 +45,11 @@ const defaultConfig: DeviceConfig = {
   lastWriteTime: '',
 };
 
-describe('DeviceEditor', () => {
+describe('DeviceConfigForm', () => {
   it('渲染设备名称输入', () => {
     const saveRef = makeSaveRef();
     render(
-      <DeviceEditor
+      <DeviceConfigForm
         config={defaultConfig}
         gpio={mockGpio}
         saveRef={saveRef}
@@ -63,7 +63,7 @@ describe('DeviceEditor', () => {
   it('渲染功能列表项', () => {
     const saveRef = makeSaveRef();
     render(
-      <DeviceEditor
+      <DeviceConfigForm
         config={defaultConfig}
         gpio={mockGpio}
         saveRef={saveRef}
@@ -77,7 +77,7 @@ describe('DeviceEditor', () => {
   it('渲染空闲睡眠开关', () => {
     const saveRef = makeSaveRef();
     render(
-      <DeviceEditor
+      <DeviceConfigForm
         config={defaultConfig}
         gpio={mockGpio}
         saveRef={saveRef}
@@ -93,7 +93,7 @@ describe('DeviceEditor', () => {
     const saveRef = makeSaveRef();
     const onSave = vi.fn().mockResolvedValue(undefined);
     render(
-      <DeviceEditor
+      <DeviceConfigForm
         config={defaultConfig}
         gpio={mockGpio}
         saveRef={saveRef}

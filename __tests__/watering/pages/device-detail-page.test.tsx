@@ -1,5 +1,5 @@
 /**
- * 设备详情页测试 — 验证 NavBar 渲染和 DeviceEditor 集成
+ * 设备详情页测试 — 验证 NavBar 渲染和 DeviceConfigForm 集成
  *
  * 使用 @vitest-environment jsdom 提供 DOM API。
  * vite 配置中未设置 globals: true，需导入 describe/it/expect/vi。
@@ -17,9 +17,9 @@ vi.mock('next/navigation', () => ({
   useParams: () => ({ chipId: 'chip_001' }),
 }));
 
-// Mock DeviceEditor 简化渲染
-vi.mock('@/app/watering/components/device-editor', () => ({
-  DeviceEditor: ({ config }: { config: { name: string } }) => (
+// Mock DeviceConfigForm 简化渲染
+vi.mock('@/app/watering/components/device-config-form', () => ({
+  DeviceConfigForm: ({ config }: { config: { name: string } }) => (
     <div data-testid="device-editor">{config.name}</div>
   ),
 }));
@@ -45,11 +45,11 @@ describe('DeviceDetailPage', () => {
   it('渲染 NavBar 和设备名', async () => {
     const { findAllByText } = render(<DeviceDetailPage />);
     const titles = await findAllByText('测试设备');
-    // 设备名同时出现在 NavBar 标题和 DeviceEditor 中
+    // 设备名同时出现在 NavBar 标题和 DeviceConfigForm 中
     expect(titles.length).toBeGreaterThanOrEqual(1);
   });
 
-  it('渲染 DeviceEditor', async () => {
+  it('渲染 DeviceConfigForm', async () => {
     const { findByTestId } = render(<DeviceDetailPage />);
     const editor = await findByTestId('device-editor');
     expect(editor).toBeDefined();

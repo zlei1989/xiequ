@@ -2,7 +2,7 @@
  * 设备详情/配置页
  *
  * 使用 antd-mobile NavBar 替代自定义顶栏，统一移动端交互。
- * 通过 saveRef 模式将保存函数从 DeviceEditor 传递到 Header 按钮。
+ * 通过 saveRef 模式将保存函数从 DeviceConfigForm 传递到 Header 按钮。
  */
 
 'use client';
@@ -12,7 +12,7 @@ import { CheckOutline, DeleteOutline } from 'antd-mobile-icons';
 import { useRouter, useParams } from 'next/navigation';
 import { useRef } from 'react';
 
-import { DeviceEditor } from '../../components/device-editor';
+import { DeviceConfigForm } from '../../components/device-config-form';
 import { useDeviceConfig } from '../../hooks/use-device-config';
 
 export default function DeviceDetailPage() {
@@ -47,7 +47,7 @@ export default function DeviceDetailPage() {
     }
   }
 
-  /** 保存设备：通过 saveRef 调用 DeviceEditor 的 handleSave */
+  /** 保存设备：通过 saveRef 调用 DeviceConfigForm 的 handleSave */
   async function handleSave() {
     await saveRef.current();
   }
@@ -76,7 +76,7 @@ export default function DeviceDetailPage() {
         </NavBar>
       </div>
 
-      <DeviceEditor
+      <DeviceConfigForm
         config={config}
         gpio={gpio}
         saveRef={saveRef}
