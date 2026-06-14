@@ -129,7 +129,7 @@ export type DeviceState = {
   /** 设备最后一次动作的时间戳（毫秒），pushState 时更新 */
   idleSince?: number;
   /** 最后一次动作类型：bootstrap / button / change / finish */
-  lastActionType?: string;
+  lastActionType?: 'bootstrap' | 'button' | 'change' | 'finish';
   lastWriteTime: string;
 };
 
