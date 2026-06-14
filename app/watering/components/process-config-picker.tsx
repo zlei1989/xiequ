@@ -16,10 +16,11 @@ import React, { useState, useEffect } from 'react';
 import type { GpioInfo } from '@/app/watering/hooks/use-device-config';
 import { useBackButton } from '@/lib/back-button';
 
+import { formatStepDesc } from '../utils/format-desc';
+
 import { SortableList } from './sortable-list';
 
 import type { ProcessConfig } from '../types';
-import { formatStepDesc } from '../utils/format-desc';
 
 interface ProcessConfigPickerProps {
   open: boolean;

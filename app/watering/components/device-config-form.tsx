@@ -29,6 +29,8 @@ import {
 } from 'antd-mobile-icons';
 import { useState, useEffect } from 'react';
 
+import { formatProcessDesc, formatScheduleDesc } from '../utils/format-desc';
+
 import { InterruptConfigPicker } from './interrupt-config-picker';
 import { ProcessConfigPicker } from './process-config-picker';
 import { ScheduleConfigPicker } from './schedule-config-picker';
@@ -38,7 +40,6 @@ import { VoltageConfigPicker } from './voltage-config-picker';
 
 import type { GpioInfo } from '../hooks/use-device-config';
 import type { DeviceConfig, ProcessConfig, StepConfig, InterruptConfig, ScheduleConfig, VoltageConfig } from '../types';
-import { formatProcessDesc, formatScheduleDesc } from '../utils/format-desc';
 
 /** 带 key 的扩展类型（运行时由 crypto.randomUUID() 生成，不存入数据库，仅供 antd Table rowKey 使用） */
 interface WithKey { key?: string; }

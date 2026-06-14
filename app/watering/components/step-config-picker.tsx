@@ -15,8 +15,9 @@ import React, { useState, useEffect } from 'react';
 import type { GpioInfo } from '@/app/watering/hooks/use-device-config';
 import { useBackButton } from '@/lib/back-button';
 
-import type { StepConfig } from '../types';
 import { formatInterruptDesc } from '../utils/format-desc';
+
+import type { StepConfig } from '../types';
 
 interface StepConfigPickerProps {
   open: boolean;
