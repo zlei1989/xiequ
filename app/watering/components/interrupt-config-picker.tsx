@@ -229,7 +229,7 @@ export function InterruptConfigPicker({
           >
             <Switch
               checked={config.disabled}
-              onChange={(checked) => { update({ disabled: !checked }); }}
+              onChange={(checked) => { update({ disabled: checked }); }}
             />
           </Form.Item>
         </Form>

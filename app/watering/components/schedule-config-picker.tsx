@@ -160,7 +160,7 @@ export function ScheduleConfigPicker({
           <Form.Item label="禁用计划">
             <Switch
               checked={draft.disabled}
-              onChange={(checked) => { update({ ...draft, disabled: !checked }); }}
+              onChange={(checked) => { update({ ...draft, disabled: checked }); }}
             />
           </Form.Item>
         </Form>

@@ -147,7 +147,7 @@ export function StepConfigPicker({
           <Form.Item label="禁用步骤">
             <Switch
               checked={step.disabled}
-              onChange={(checked) => { update({ disabled: !checked }); }}
+              onChange={(checked) => { update({ disabled: checked }); }}
             />
           </Form.Item>
         </Form>
