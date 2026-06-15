@@ -59,8 +59,8 @@ export type LogItem = {
   stateId?: string;
   /** 设备生成的中文描述（change 事件） */
   message?: string;
-  /** 写日志时的设备电压，未配置时为 0 */
-  voltage?: number;
+  /** 传感器读数数组，每项包含感应名称和计算值 */
+  readings?: { label: string; value: number }[];
   process?: { name?: string };
   cause?: string;
 };

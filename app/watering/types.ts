@@ -72,7 +72,27 @@ export type ScheduleConfig = {
   disabled?: boolean;
 };
 
-/** 电压检测配置 — 分压电阻参数，用于计算实际电压 */
+/** 传感器配置 — 单个传感器检测参数 */
+export type SensorConfig = {
+  /** 感应名称，如 "电池电压"、"土壤湿度" */
+  name: string;
+  /** 传感器引脚名，如 "sensor_0" */
+  sensor: string;
+  /** 信号类型 */
+  type: 'digital' | 'analog';
+  /** 转换类型（仅模拟信号可选），不选则直接显示 ADC 原始值 */
+  conversion?: 'resistor_divider' | 'ntc_10k';
+  /** NTC B 值 3435 或 3950（仅 ntc_10k 显示，默认 3435） */
+  bValue?: 3435 | 3950;
+  /** 上拉电阻 R1（Ω），仅 resistor_divider 显示，默认 30000 */
+  r1?: number;
+  /** 下拉电阻 R2（Ω），仅 resistor_divider 显示，默认 10000 */
+  r2?: number;
+};
+
+/** 电压检测配置 — 分压电阻参数，用于计算实际电压
+ * @deprecated 使用 SensorConfig[] 替代，将在后续版本移除
+ */
 export type VoltageConfig = {
   /** 传感器引脚名，如 "sensor_0" */
   sensor: string;
@@ -98,7 +118,7 @@ export type DeviceConfig = {
   /** 指令执行延迟（毫秒） */
   execDelay: number;
   schedules: ScheduleConfig[];
-  voltage?: VoltageConfig;
+  sensors: SensorConfig[];
   /** 流程配置版本（变更时更新，用于固件同步判断） */
   processesVersion?: string;
   createdTime: string;
