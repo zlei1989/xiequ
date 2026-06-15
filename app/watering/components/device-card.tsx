@@ -13,6 +13,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 import { removeDevice, setDeviceSwitch } from '../actions';
+import { calcSensorReadings } from '../utils/calc-sensor';
 
 import { StepProgress } from './step-progress';
 
@@ -58,31 +59,11 @@ export function DeviceCard({
     { key: 'delete', text: '删除设备', danger: true },
   ];
 
-  /**
-   * 电压计算
-   *
-   * 先从 sensors 中取原始 ADC 读数：
-   * - 若配置了 voltage.sensor 则取对应引脚的传感器值
-   * - 否则回退到 voltage_0 引脚
-   *
-   * 先换算为引脚电压（ADC / 4095 × 3.3V），再应用分压比。
-   * 公式：V_actual = ADC / 4095 × 3.3 × (R1 + R2) / R2
-   * 仅在配置了分压电阻且 R1、R2 均 >0 时应用分压比修正；
-   * 否则直接使用引脚电压（假设无分压电路）。
-   */
-  const rawVoltage = device.voltage?.sensor
-    ? device.state?.sensors?.[device.voltage.sensor]
-    : device.state?.sensors?.voltage_0;
-
-  const voltage =
-    typeof rawVoltage === 'number'
-      ? device.voltage && device.voltage.r1 > 0 && device.voltage.r2 > 0
-        ? /** ADC 换算为引脚电压，再乘分压比（ESP32 默认 12 位分辨率 0~4095） */
-        (rawVoltage / 4095) * 3.3 *
-          ((device.voltage.r1 + device.voltage.r2) / device.voltage.r2)
-        : /** 无分压配置时，仅做 ADC 到电压的换算 */
-        (rawVoltage / 4095) * 3.3
-      : undefined;
+  /** 传感器计算值 — 根据配置和原始读数生成展示数据 */
+  const sensorReadings =
+    device.sensors.length > 0
+      ? calcSensorReadings(device.sensors, device.state?.sensors)
+      : [];
 
   const processes = device.processes;
 
@@ -267,20 +248,38 @@ export function DeviceCard({
             <span className="text-xs text-gray-400">网卡: </span>
             <span className="text-xs">{device.macAddress}</span>
           </div>
-          {voltage !== undefined ? (
-            <div>
-              <span className="text-xs text-gray-400">电压: </span>
-              <span className="text-[13px] font-medium">
-                {voltage.toFixed(2)}V
-              </span>
-              {device.voltage && (
-                <span className="ml-0.5 text-[10px] text-gray-300">
-                  (计算)
-                </span>
-              )}
+          {/* 传感器展示 — 设备信息区下方 */}
+          {sensorReadings.length > 0 && (
+            <div className="mb-2 border-t border-gray-100 pt-2">
+              {sensorReadings.map((reading, idx) => {
+                const config = device.sensors[idx];
+                if (!config) return null;
+
+                // 根据类型格式化显示值
+                const displayValue = (() => {
+                  if (config.type === 'digital') {
+                    return reading.value > 0 ? '高电平' : '低电平';
+                  }
+                  if (config.conversion === 'resistor_divider') {
+                    return `${reading.value.toFixed(2)}V`;
+                  }
+                  if (config.conversion === 'ntc_10k') {
+                    return `${reading.value.toFixed(1)}°C`;
+                  }
+                  // 模拟信号无转换 — 显示 ADC 原始值
+                  return String(reading.value);
+                })();
+
+                return (
+                  <div className="flex justify-between items-center py-0.5" key={`${config.sensor}-${idx}`}>
+                    <span className="text-xs text-gray-400">{config.name}</span>
+                    <span className="text-[13px] font-medium">
+                      {typeof reading.value === 'number' ? displayValue : '—'}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
-          ) : (
-            <div />
           )}
         </div>
 
