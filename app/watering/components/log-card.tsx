@@ -8,6 +8,7 @@
 'use client';
 
 import { Card, Space, Steps, Tag } from 'antd-mobile';
+import React from 'react';
 
 /** ── 常量 ── */
 
@@ -179,8 +180,8 @@ export function parseLogMessage(message: string): Segment[] {
     if (match.index > lastIndex) {
       segments.push({ type: 'text', value: message.slice(lastIndex, match.index) });
     }
-    const key = match[1]!;
-    const rawValue = match[2]!;
+    const key = match[1] ?? '';
+    const rawValue = match[2] ?? '';
     if (TIME_KEYS.has(key)) {
       const sec = parseInt(rawValue, 10);
       segments.push({ type: 'var', value: formatSeconds(sec) });
@@ -216,26 +217,39 @@ function hasExecute(items: LogItem[]): boolean {
 }
 
 /**
- * 格式化日志消息
- * 优先使用 item.message，否则根据事件类型生成中文描述
+ * 格式化日志消息为可渲染的 ReactNode
+ *
+ * 有 message 时解析 {key:value} 占位符，变量值用主题色高亮；
+ * 无 message 时根据事件类型生成中文描述。
  */
-export function formatMessage(item: LogItem): string {
-  if (item.message) return item.message;
+export function formatMessage(item: LogItem): React.ReactNode {
+  if (item.message) {
+    const segments = parseLogMessage(item.message);
+    return segments.map((seg, i) =>
+      seg.type === 'var' ? (
+        <span key={i} style={{ color: 'var(--adm-color-primary)' }}>
+          {seg.value}
+        </span>
+      ) : (
+        <span key={i}>{seg.value}</span>
+      ),
+    );
+  }
   switch (item.event) {
     case 'bootstrap':
-      return item.cause ? `${formatCause(item.cause)}开机` : '设备开机';
+      return <span>{item.cause ? `${formatCause(item.cause)}开机` : '设备开机'}</span>;
     case 'execute':
-      return `执行流程${item.process?.name ? `: ${item.process.name}` : ''}`;
+      return <span>{`执行流程${item.process?.name ? `: ${item.process.name}` : ''}`}</span>;
     case 'terminate':
-      return '终止流程';
+      return <span>终止流程</span>;
     case 'finish':
-      return '完成流程';
+      return <span>完成流程</span>;
     case 'change':
-      return '流程状态变更';
+      return <span>流程状态变更</span>;
     case 'heartbeat':
-      return '心跳';
+      return <span>心跳</span>;
     default:
-      return item.event;
+      return <span>{item.event}</span>;
   }
 }
 

@@ -7,6 +7,7 @@
  * formatCause / extractProcessNames / countSteps / calcSleepDuration。
  */
 
+import { renderToString } from 'react-dom/server';
 import { describe, it, expect } from 'vitest';
 
 import {
@@ -21,6 +22,8 @@ import {
   parseLogMessage,
 } from '@/app/watering/components/log-card';
 import type { LogItem } from '@/app/watering/components/log-card';
+
+import type React from 'react';
 
 /** 构造测试用 LogItem，只需传覆写字段 */
 function makeLog(overrides: Partial<LogItem> = {}): LogItem {
@@ -218,7 +221,7 @@ describe('parseLogMessage', () => {
 
   it('完整超时消息示例', () => {
     const result = parseLogMessage(
-      '{processName:侵水浇花}流程的{stepName:抽水池壹}{stepId:2}环节持续{timeout:1000}超时。'
+      '{processName:侵水浇花}流程的{stepName:抽水池壹}{stepId:2}环节持续{timeout:1000}超时。',
     );
     expect(result).toEqual([
       { type: 'var', value: '侵水浇花' },
@@ -247,54 +250,87 @@ describe('parseLogMessage', () => {
 // ================================================================
 
 describe('formatMessage', () => {
-  it('有 message 字段时优先返回 message', () => {
+  /** 将 ReactNode 转为 HTML 字符串用于断言 */
+  function renderMsg(item: LogItem): string {
+    return renderToString(formatMessage(item) as React.ReactElement);
+  }
+
+  it('有 message 含占位符时变量高亮', () => {
+    const item = makeLog({
+      message: '{processName:浇花}流程的{stepName:浇水}{stepId:0}环节持续{timeout:1000}超时。',
+      event: 'change',
+    });
+    const html = renderMsg(item);
+    // 变量值应在带 color 样式的 span 中
+    expect(html).toContain('style="color:var(--adm-color-primary)"');
+    expect(html).toContain('>浇花<');
+    expect(html).toContain('>浇水<');
+    expect(html).toContain('>0<');
+    expect(html).toContain('>16分40秒<');
+    // 普通文本也在 span 中（无 color）
+    expect(html).toContain('>超时。<');
+  });
+
+  it('有 message 但无占位符时保持纯文本', () => {
     const item = makeLog({ message: '自定义消息内容' });
-    expect(formatMessage(item)).toBe('自定义消息内容');
+    const html = renderMsg(item);
+    expect(html).toContain('>自定义消息内容<');
+    // 无高亮 span（无 color 属性）
+    expect(html).not.toContain('color:var(--adm-color-primary)');
   });
 
   it('bootstrap 事件无 cause', () => {
     const item = makeLog({ event: 'bootstrap' });
-    expect(formatMessage(item)).toBe('设备开机');
+    const html = renderMsg(item);
+    expect(html).toContain('>设备开机<');
   });
 
   it('bootstrap 事件带 cause="4" 映射为定时唤醒', () => {
     const item = makeLog({ event: 'bootstrap', cause: '4' });
-    expect(formatMessage(item)).toBe('定时唤醒开机');
+    const html = renderMsg(item);
+    expect(html).toContain('>定时唤醒开机<');
   });
 
   it('execute 事件带 process.name', () => {
     const item = makeLog({ event: 'execute', process: { name: '浇花流程A' } });
-    expect(formatMessage(item)).toBe('执行流程: 浇花流程A');
+    const html = renderMsg(item);
+    expect(html).toContain('>执行流程: 浇花流程A<');
   });
 
   it('execute 事件无 process', () => {
     const item = makeLog({ event: 'execute' });
-    expect(formatMessage(item)).toBe('执行流程');
+    const html = renderMsg(item);
+    expect(html).toContain('>执行流程<');
   });
 
   it('terminate 事件', () => {
     const item = makeLog({ event: 'terminate' });
-    expect(formatMessage(item)).toBe('终止流程');
+    const html = renderMsg(item);
+    expect(html).toContain('>终止流程<');
   });
 
   it('finish 事件', () => {
     const item = makeLog({ event: 'finish' });
-    expect(formatMessage(item)).toBe('完成流程');
+    const html = renderMsg(item);
+    expect(html).toContain('>完成流程<');
   });
 
   it('change 事件（无 message）', () => {
     const item = makeLog({ event: 'change' });
-    expect(formatMessage(item)).toBe('流程状态变更');
+    const html = renderMsg(item);
+    expect(html).toContain('>流程状态变更<');
   });
 
   it('heartbeat 事件', () => {
     const item = makeLog({ event: 'heartbeat' });
-    expect(formatMessage(item)).toBe('心跳');
+    const html = renderMsg(item);
+    expect(html).toContain('>心跳<');
   });
 
   it('未知事件返回原文', () => {
     const item = makeLog({ event: 'custom_event' });
-    expect(formatMessage(item)).toBe('custom_event');
+    const html = renderMsg(item);
+    expect(html).toContain('>custom_event<');
   });
 });
 
