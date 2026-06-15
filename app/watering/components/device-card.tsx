@@ -65,8 +65,8 @@ export function DeviceCard({
    * - 若配置了 voltage.sensor 则取对应引脚的传感器值
    * - 否则回退到 voltage_0 引脚
    *
-   * 先换算为引脚电压（ADC / 1024 × 3.3V），再应用分压比。
-   * 公式：V_actual = ADC / 1024 × 3.3 × (R1 + R2) / R2
+   * 先换算为引脚电压（ADC / 4095 × 3.3V），再应用分压比。
+   * 公式：V_actual = ADC / 4095 × 3.3 × (R1 + R2) / R2
    * 仅在配置了分压电阻且 R1、R2 均 >0 时应用分压比修正；
    * 否则直接使用引脚电压（假设无分压电路）。
    */
@@ -77,11 +77,11 @@ export function DeviceCard({
   const voltage =
     typeof rawVoltage === 'number'
       ? device.voltage && device.voltage.r1 > 0 && device.voltage.r2 > 0
-        ? /** ADC 换算为引脚电压，再乘分压比 */
-        (rawVoltage / 1024) * 3.3 *
+        ? /** ADC 换算为引脚电压，再乘分压比（ESP32 默认 12 位分辨率 0~4095） */
+        (rawVoltage / 4095) * 3.3 *
           ((device.voltage.r1 + device.voltage.r2) / device.voltage.r2)
         : /** 无分压配置时，仅做 ADC 到电压的换算 */
-        (rawVoltage / 1024) * 3.3
+        (rawVoltage / 4095) * 3.3
       : undefined;
 
   const processes = device.processes;
