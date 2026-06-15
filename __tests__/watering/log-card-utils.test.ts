@@ -18,6 +18,7 @@ import {
   countSteps,
   calcSleepDuration,
   formatSeconds,
+  parseLogMessage,
 } from '@/app/watering/components/log-card';
 import type { LogItem } from '@/app/watering/components/log-card';
 
@@ -171,6 +172,73 @@ describe('formatSeconds', () => {
 
   it('负数取绝对值', () => {
     expect(formatSeconds(-120)).toBe('2分');
+  });
+});
+
+// ================================================================
+// parseLogMessage
+// ================================================================
+
+describe('parseLogMessage', () => {
+  it('纯文本无占位符返回单个 text 段', () => {
+    const result = parseLogMessage('设备开机');
+    expect(result).toEqual([{ type: 'text', value: '设备开机' }]);
+  });
+
+  it('空字符串返回空数组', () => {
+    const result = parseLogMessage('');
+    expect(result).toEqual([]);
+  });
+
+  it('单个非时间占位符', () => {
+    const result = parseLogMessage('{processName:浇花}');
+    expect(result).toEqual([{ type: 'var', value: '浇花' }]);
+  });
+
+  it('单个时间占位符（timeout）转换为可读格式', () => {
+    const result = parseLogMessage('{timeout:1000}');
+    expect(result).toEqual([{ type: 'var', value: '16分40秒' }]);
+  });
+
+  it('多个时间 key 均转换：duration, stepDuration, expire', () => {
+    expect(parseLogMessage('{duration:120}')).toEqual([{ type: 'var', value: '2分' }]);
+    expect(parseLogMessage('{stepDuration:3600}')).toEqual([{ type: 'var', value: '1小时' }]);
+    expect(parseLogMessage('{expire:65}')).toEqual([{ type: 'var', value: '1分5秒' }]);
+  });
+
+  it('文本与占位符混合', () => {
+    const result = parseLogMessage('负载{componentKey:load_0}{value:200}已打开。');
+    expect(result).toEqual([
+      { type: 'text', value: '负载' },
+      { type: 'var', value: 'load_0' },
+      { type: 'var', value: '200' },
+      { type: 'text', value: '已打开。' },
+    ]);
+  });
+
+  it('完整超时消息示例', () => {
+    const result = parseLogMessage(
+      '{processName:侵水浇花}流程的{stepName:抽水池壹}{stepId:2}环节持续{timeout:1000}超时。'
+    );
+    expect(result).toEqual([
+      { type: 'var', value: '侵水浇花' },
+      { type: 'text', value: '流程的' },
+      { type: 'var', value: '抽水池壹' },
+      { type: 'var', value: '2' },
+      { type: 'text', value: '环节持续' },
+      { type: 'var', value: '16分40秒' },
+      { type: 'text', value: '超时。' },
+    ]);
+  });
+
+  it('占位符中的 key 区分大小写严格匹配', () => {
+    const result = parseLogMessage('{Timeout:1000}');
+    expect(result).toEqual([{ type: 'var', value: '1000' }]);
+  });
+
+  it('占位符内无冒号按普通文本处理', () => {
+    const result = parseLogMessage('{timeout1000}');
+    expect(result).toEqual([{ type: 'text', value: '{timeout1000}' }]);
   });
 });
 

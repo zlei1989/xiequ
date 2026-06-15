@@ -64,6 +64,11 @@ export type LogItem = {
   cause?: string;
 };
 
+/** 日志消息解析段落 */
+export type Segment =
+  | { type: 'text'; value: string }
+  | { type: 'var'; value: string };
+
 /** 按 stateId 分组后的日志组 */
 export type LogGroup = { stateId: string; items: LogItem[] };
 
@@ -152,6 +157,44 @@ export function formatSeconds(seconds: number): string {
   if (s > 0) parts.push(`${String(s)}秒`);
 
   return parts.join('');
+}
+
+/** 时间类占位符 key 集合 */
+const TIME_KEYS = new Set(['timeout', 'duration', 'stepDuration', 'expire']);
+
+/**
+ * 解析日志消息中的 {key:value} 占位符为段落数组
+ *
+ * 时间类 key（timeout/duration/stepDuration/expire）的 value 以秒为单位，
+ * 调用 formatSeconds 转为可读格式。
+ * 匹配模式：{key:value}，key 为 \w+，value 不含 } 字符。
+ */
+export function parseLogMessage(message: string): Segment[] {
+  const segments: Segment[] = [];
+  let lastIndex = 0;
+  const re = /\{(\w+):([^}]+)\}/g;
+  let match: RegExpExecArray | null;
+
+  while ((match = re.exec(message)) !== null) {
+    if (match.index > lastIndex) {
+      segments.push({ type: 'text', value: message.slice(lastIndex, match.index) });
+    }
+    const key = match[1]!;
+    const rawValue = match[2]!;
+    if (TIME_KEYS.has(key)) {
+      const sec = parseInt(rawValue, 10);
+      segments.push({ type: 'var', value: formatSeconds(sec) });
+    } else {
+      segments.push({ type: 'var', value: rawValue });
+    }
+    lastIndex = match.index + match[0].length;
+  }
+
+  if (lastIndex < message.length) {
+    segments.push({ type: 'text', value: message.slice(lastIndex) });
+  }
+
+  return segments;
 }
 
 /** 唤醒原因值到中文标签的映射 */
