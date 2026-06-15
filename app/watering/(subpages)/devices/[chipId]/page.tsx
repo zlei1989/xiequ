@@ -84,6 +84,7 @@ export default function DeviceDetailPage() {
           try {
             await save(data);
             Toast.show({ icon: 'success', content: '配置已保存' });
+            router.back();
           } catch (err: unknown) {
             Toast.show({
               icon: 'fail',
