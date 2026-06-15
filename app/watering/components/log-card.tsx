@@ -365,8 +365,8 @@ function renderBootstrapDescription(
   if (sleepSec >= 60) {
     parts.push(`休眠 ${formatSimpleDuration(sleepSec)}`);
   }
-  if (item.voltage && item.voltage > 0) {
-    parts.push(`${String(item.voltage)}V`);
+  if (item.readings && item.readings.length > 0) {
+    parts.push(item.readings.map((r) => `${r.label}: ${r.value}`).join(' · '));
   }
   return parts.join(' · ');
 }
@@ -380,7 +380,9 @@ export function LogCard({ group }: { group: LogGroup }) {
   // 摘要行数据
   const processNames = extractProcessNames(group.items);
   const stepCount = countSteps(group.items);
-  const summaryVoltage = group.items.find((i) => i.voltage && i.voltage > 0)?.voltage;
+  const summaryReadings = group.items.reduce<LogItem['readings']>((found, item) => {
+    return item.readings?.length ? item.readings : found;
+  }, undefined);
 
   const summaryParts: string[] = [];
   if (processNames.length > 0) {
@@ -392,8 +394,8 @@ export function LogCard({ group }: { group: LogGroup }) {
   if (duration) {
     summaryParts.push(duration);
   }
-  if (summaryVoltage && summaryVoltage > 0) {
-    summaryParts.push(`${String(summaryVoltage)}V`);
+  if (summaryReadings && summaryReadings.length > 0) {
+    summaryParts.push(summaryReadings.map((r) => `${r.label}: ${r.value}`).join(' · '));
   }
   const summaryText = summaryParts.join(' · ');
 
