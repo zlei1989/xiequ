@@ -17,7 +17,8 @@ import { NextResponse } from 'next/server';
 
 import { setCallback, deleteCallback } from '@/app/watering/services/callback-map';
 import { getDeviceState, getDeviceConfig, updateTick, insertScheduleLog, hasScheduleLog, saveDeviceState } from '@/app/watering/services/db';
-import type { DeviceState, DeviceConfig, ScheduleConfig } from '@/app/watering/types';
+import type { DeviceState, DeviceConfig, ScheduleConfig, ProcessConfig } from '@/app/watering/types';
+import { filterProcess, filterProcesses } from '@/app/watering/utils/filter-process';
 import { newId } from '@/lib/utils';
 
 import type { NextRequest } from 'next/server';
@@ -102,9 +103,10 @@ async function checkAndExecuteSchedule(
     ) {
       state.switch = 'on';
       state.index = schedule.process;
-      state.process = JSON.parse(
-        JSON.stringify(config.processes[schedule.process]),
-      ) as typeof state.process;
+      // 过滤禁用步骤和中断后再下发
+      state.process = filterProcess(
+        JSON.parse(JSON.stringify(config.processes[schedule.process])) as ProcessConfig,
+      );
       // 标记执行（先确认流程有效再标记，防止无效流程永久跳过）
       await insertScheduleLog(config.chipId, triggerTime, schedule.process);
       state.stateId = newId();
@@ -202,7 +204,8 @@ function buildResponse(
   if (config?.processesVersion) {
     result.processesVersion = config.processesVersion;
     if (clientProcessesVersion !== config.processesVersion) {
-      result.processes = config.processes;
+      // 过滤禁用步骤和中断后再下发完整流程列表
+      result.processes = filterProcesses(config.processes);
     }
   }
 

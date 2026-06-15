@@ -471,9 +471,10 @@ export async function getDeviceLogs(chipId: string, limit = 100) {
 /**
  * 计算设备当前电压
  *
- * 从 GPIO 传感器数据中取对应引脚的读数，应用分压公式。
- * 公式：V_actual = V_sensor × (R1 + R2) / R2
- * 仅在 r1 > 0 && r2 > 0 时应用分压比，否则直接使用原始读数。
+ * 从 GPIO 传感器数据中取对应引脚的 ADC 读数，先换算为引脚电压
+ * （ADC / 1024 × 3.3V），再应用分压公式反推实际电压。
+ * 公式：V_actual = ADC / 1024 × 3.3 × (R1 + R2) / R2
+ * 仅在 r1 > 0 && r2 > 0 时应用分压比，否则直接使用 ADC 读数。
  * 传感器数据缺失或电压未配置时返回 0。
  */
 export function calcVoltage(
@@ -485,7 +486,10 @@ export function calcVoltage(
   if (typeof raw !== 'number') return 0;
   const r1 = voltageConfig.r1;
   const r2 = voltageConfig.r2;
-  const value = r1 > 0 && r2 > 0 ? raw * ((r1 + r2) / r2) : raw;
+  /** ADC 原始值换算为引脚电压（3.3V 参考电压，10 位分辨率） */
+  const vSensor = (raw / 1024) * 3.3;
+  /** 通过分压比反推实际电压：V_actual = V_sensor × (R1 + R2) / R2 */
+  const value = r1 > 0 && r2 > 0 ? vSensor * ((r1 + r2) / r2) : vSensor;
   return Math.round(value * 100) / 100; // 保留 2 位小数
 }
 

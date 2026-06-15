@@ -109,7 +109,8 @@ export function formatDuration(items: LogItem[]): string {
   if (items.length < 2) return '';
   const begin = new Date(items[0]?.createdTime ?? 0).getTime();
   const end = new Date(items[items.length - 1]?.createdTime ?? 0).getTime();
-  const seconds = Math.round((end - begin) / 1000);
+  /** 用 Math.floor 截断秒数，避免跨分钟边界时四舍五入导致分钟数 +1 */
+  const seconds = Math.floor((end - begin) / 1000);
   return formatSimpleDuration(seconds);
 }
 
@@ -213,7 +214,8 @@ export function calcSleepDuration(currentLog: LogItem, allLogs: LogItem[]): numb
     }
   }
   if (prevTime === 0) return 0;
-  return Math.round((currentTime - prevTime) / 1000);
+  /** 用 Math.floor 截断秒数，避免跨分钟边界时四舍五入导致分钟数 +1 */
+  return Math.floor((currentTime - prevTime) / 1000);
 }
 
 /**

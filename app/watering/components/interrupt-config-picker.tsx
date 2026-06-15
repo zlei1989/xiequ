@@ -151,9 +151,9 @@ export function InterruptConfigPicker({
               label="触发状态"
             >
               <Switch
+                checked={config.state === 1 || config.state === true}
                 checkedText="高电平"
                 uncheckedText="低电平"
-                checked={config.state === 1 || config.state === true}
                 onChange={(checked) => {
                   update({ state: checked ? 1 : 0 });
                 }}

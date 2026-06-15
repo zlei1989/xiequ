@@ -13,6 +13,7 @@ import { newId } from '@/lib/utils';
 
 import { execCallback } from '../services/callback-map';
 import { getDeviceConfig, getDeviceState, saveDeviceState } from '../services/db';
+import { filterProcess } from '../utils/filter-process';
 
 /**
  * 设置设备开关状态
@@ -49,7 +50,13 @@ export async function setDeviceSwitch(
       }
       state.switch = 'on';
       state.index = processIdx;
-      state.process = config.processes[processIdx];
+      // 过滤禁用步骤和中断后再下发，避免 ROM 执行已禁用的配置项
+      const process = config.processes[processIdx];
+      if (!process) {
+        console.error('[Watering] 流程不存在:', { chipId, processIdx });
+        throw new Error('流程不存在');
+      }
+      state.process = filterProcess(process);
       state.stepIndex = stepIndex ?? 0;
       state.message = undefined;
     } else {
