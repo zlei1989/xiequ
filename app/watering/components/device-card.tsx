@@ -251,6 +251,22 @@ export function DeviceCard({
             <span className="text-xs text-gray-400">芯片: </span>
             <span className="text-[13px]">{device.chipId}</span>
           </div>
+          <div>
+            <span className="text-xs text-gray-400">状态: </span>
+            {device.isOnline ? (
+              <Tag className="m-0" color="success">
+                在线
+              </Tag>
+            ) : (
+              <Tag className="m-0" color="default">
+                离线
+              </Tag>
+            )}
+          </div>
+          <div>
+            <span className="text-xs text-gray-400">网卡: </span>
+            <span className="text-xs">{device.macAddress}</span>
+          </div>
           {voltage !== undefined ? (
             <div>
               <span className="text-xs text-gray-400">电压: </span>
@@ -266,22 +282,6 @@ export function DeviceCard({
           ) : (
             <div />
           )}
-          <div>
-            <span className="text-xs text-gray-400">网卡: </span>
-            <span className="text-xs">{device.macAddress}</span>
-          </div>
-          <div>
-            <span className="text-xs text-gray-400">状态: </span>
-            {device.isOnline ? (
-              <Tag className="m-0" color="success">
-                在线
-              </Tag>
-            ) : (
-              <Tag className="m-0" color="default">
-                离线
-              </Tag>
-            )}
-          </div>
         </div>
 
         {/*
