@@ -3,7 +3,7 @@
  *
  * 提供单个设备的配置加载、保存、删除功能。
  * 自动从设备状态中提取 GPIO 引脚信息（sensor/button/load）。
- * sql.js/WASM 可能将 JSON 列作为字符串返回，需要 parseJsonArray / parseJsonVoltage 安全解析。
+ * sql.js/WASM 可能将 JSON 列作为字符串返回，需要 parseJsonArray / parseJsonSensors 安全解析。
  */
 
 'use client';
@@ -31,28 +31,18 @@ function parseJsonArray(v: unknown): unknown[] {
   return [];
 }
 
-/** 安全解析 voltage_config — 支持对象或 JSON 字符串两种格式 */
-function parseJsonVoltage(v: unknown): DeviceConfig['voltage'] {
-  if (!v) return undefined;
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Array.isArray 运行时类型区分
-  if (typeof v === 'object' && v !== null && !Array.isArray(v)) {
-    const obj = v as Record<string, unknown>;
-    if (typeof obj.sensor === 'string' && typeof obj.r1 === 'number' && typeof obj.r2 === 'number') {
-      return { sensor: obj.sensor, r1: obj.r1, r2: obj.r2 };
-    }
-  }
+/** 安全解析 sensors 配置数组 — 支持数组或 JSON 字符串两种格式 */
+function parseJsonSensors(v: unknown): DeviceConfig['sensors'] {
+  if (Array.isArray(v)) return v as DeviceConfig['sensors'];
   if (typeof v === 'string') {
     try {
-       
-      const parsed = JSON.parse(v) as Record<string, unknown>;
-      if (typeof parsed.sensor === 'string' && typeof parsed.r1 === 'number' && typeof parsed.r2 === 'number') {
-        return { sensor: parsed.sensor, r1: parsed.r1, r2: parsed.r2 };
-      }
+      const parsed: unknown = JSON.parse(v) as unknown;
+      return Array.isArray(parsed) ? (parsed as DeviceConfig['sensors']) : [];
     } catch {
-      return undefined;
+      return [];
     }
   }
-  return undefined;
+  return [];
 }
 
 /** 设备 GPIO 可用引脚信息（键名列表） */
@@ -81,7 +71,7 @@ export function useDeviceConfig(chipId: string) {
           ...(found as unknown as DeviceConfig),
           processes: parseJsonArray(raw.processes) as ProcessConfig[],
           schedules: parseJsonArray(raw.schedules) as ScheduleConfig[],
-          voltage: parseJsonVoltage(raw.voltage),
+          sensors: parseJsonSensors(raw.sensors),
         };
         setConfig(safeConfig);
         // 从设备 state 中提取 GPIO 键名
