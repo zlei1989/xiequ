@@ -127,7 +127,9 @@ export async function GET(request: NextRequest) {
       const stepIndex = searchParams.get('stepIndex');
       if (stepIndex !== null) {
         const state = await getDeviceState(chipId);
-        if (state) {
+        // 仅当 stateId 匹配时接受 ROM 上报的 stepIndex：
+        // 防止用户手动切换步骤后，ROM 延迟到达的旧 change 事件覆盖新值
+        if (state && state.stateId === stateId) {
           state.stepIndex = parseInt(stepIndex, 10);
           await saveDeviceState(state);
         }

@@ -369,7 +369,17 @@ String NetworkExt::getStateQuery(JsonDocument *fields, bool component) {
     JsonObject submitFields = fields->as<JsonObject>();
     if (submitFields.isNull() == false) {
       for (JsonPair kv : submitFields) {
-        if (kv.value().is<const char *>() == false) {
+        // 将 JSON 值序列化为字符串，支持 string / int / bool / float 四种类型
+        String value;
+        if (kv.value().is<const char *>()) {
+          value = kv.value().as<String>();
+        } else if (kv.value().is<int>()) {
+          value = String(kv.value().as<int>());
+        } else if (kv.value().is<bool>()) {
+          value = String(kv.value().as<bool>() ? 1 : 0);
+        } else if (kv.value().is<float>()) {
+          value = String(kv.value().as<float>());
+        } else {
           continue;
         }
         // 将 key 转换为 String 避免悬空指针
@@ -381,7 +391,6 @@ String NetworkExt::getStateQuery(JsonDocument *fields, bool component) {
         if (key.length() == 0) {
           continue;
         }
-        const String value = kv.value().as<String>();
         String pair = urlEncode(key) + "=" + urlEncode(value);
         query += "&" + pair;
       }
@@ -419,14 +428,20 @@ String NetworkExt::getStateQuery(JsonDocument *fields, bool component) {
         if (submitFields.isNull() == false && submitFields[keyStr].is<JsonVariant>()) {
           continue;
         }
-        if (kv.value().is<const char *>() == false) {
+        // 将 JSON 值序列化为字符串，支持 string / int / bool / float 四种类型
+        String value;
+        if (kv.value().is<const char *>()) {
+          value = kv.value().as<String>();
+        } else if (kv.value().is<int>()) {
+          value = String(kv.value().as<int>());
+        } else if (kv.value().is<bool>()) {
+          value = String(kv.value().as<bool>() ? 1 : 0);
+        } else if (kv.value().is<float>()) {
+          value = String(kv.value().as<float>());
+        } else {
           continue;
         }
-        const char *valuePtr = kv.value().as<const char *>();
-        if (valuePtr == nullptr) {
-          continue;
-        }
-        String pair = urlEncode(keyStr) + "=" + urlEncode(valuePtr);
+        String pair = urlEncode(keyStr) + "=" + urlEncode(value);
         query += "&" + pair;
       }
     }
