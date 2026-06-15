@@ -34,9 +34,9 @@ import { formatProcessDesc, formatScheduleDesc } from '../utils/format-desc';
 import { InterruptConfigPicker } from './interrupt-config-picker';
 import { ProcessConfigPicker } from './process-config-picker';
 import { ScheduleConfigPicker } from './schedule-config-picker';
+import { SensorConfigPicker } from './sensor-config-picker';
 import { SortableList } from './sortable-list';
 import { StepConfigPicker } from './step-config-picker';
-import { SensorConfigPicker } from './sensor-config-picker';
 
 import type { GpioInfo } from '../hooks/use-device-config';
 import type { DeviceConfig, ProcessConfig, StepConfig, InterruptConfig, ScheduleConfig, SensorConfig } from '../types';

@@ -1,5 +1,6 @@
 import { getDb, getDbSync } from '@/lib/db';
 import { newId } from '@/lib/utils';
+
 import { calcSensorReadings } from '../utils/calc-sensor';
 
 import type { DeviceConfig, DeviceState, DeviceItem } from '../types';

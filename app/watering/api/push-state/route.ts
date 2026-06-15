@@ -111,7 +111,7 @@ export async function GET(request: NextRequest) {
       // 唤醒正在长轮询等待的设备
       execCallback(chipId);
 
-      const bootstrapReadings = calcSensorReadings(config?.sensors ?? [], gpioState.sensors);
+      const bootstrapReadings = calcSensorReadings(config.sensors, gpioState.sensors);
       await writeDeviceLog(chipId, 'bootstrap', macAddress, { cause: searchParams.get('cause') || '', sensors: gpioState.sensors, loads: gpioState.loads }, bootstrapReadings, state.stateId);
       if (state.switch === 'on' && state.process) {
         await writeDeviceLog(chipId, 'execute', macAddress, { index: state.index }, bootstrapReadings, state.stateId);

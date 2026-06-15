@@ -92,7 +92,8 @@ export function SensorConfigPicker({
   /** 打开编辑层 — 新增（-1）或编辑已有项 */
   function openEdit(index: number) {
     setEditIndex(index);
-    setEditConfig(index >= 0 ? { ...sensors[index]! } : defaultSensor(gpio));
+    const item = index >= 0 ? sensors[index] : undefined;
+    setEditConfig(item ? { ...item } : defaultSensor(gpio));
     setEditVisible(true);
   }
 
@@ -138,7 +139,7 @@ export function SensorConfigPicker({
         <div style={{ overflowY: 'auto', height: 'calc(70vh - 45px)' }}>
           <SortableList
             emptyText="暂无传感器"
-            getKey={(s, i) => (s as SensorConfig).sensor + String(i)}
+            getKey={(s, i) => (s).sensor + String(i)}
             header="已配置传感器"
             items={sensors}
             renderItem={(sensor, index) => (
@@ -206,7 +207,8 @@ export function SensorConfigPicker({
                   options={sensorOptions}
                   value={[editConfig.sensor]}
                   onChange={(vals) => {
-                    if (vals.length > 0) updateEdit({ sensor: vals[0]! });
+                    const val = vals[0];
+                    if (val) updateEdit({ sensor: val });
                   }}
                 />
               ) : (
@@ -251,7 +253,7 @@ export function SensorConfigPicker({
                     value={[editConfig.conversion ?? '']}
                     onChange={(vals) => {
                       if (vals.length > 0) {
-                        const conversion = (vals[0] || undefined) as SensorConfig['conversion'];
+                        const conversion = (vals[0] || undefined);
                         updateEdit({ conversion });
                       }
                     }}
@@ -269,8 +271,12 @@ export function SensorConfigPicker({
                         V<sub>传感器</sub> = ADC / 4095 × 3.3V
                       </div>
                       <div className="mt-1">
-                        分压比: {(editConfig.r1 ?? 30000) > 0 && (editConfig.r2 ?? 10000) > 0
-                          ? (((editConfig.r1 ?? 30000) + (editConfig.r2 ?? 10000)) / (editConfig.r2 ?? 10000)).toFixed(2)
+                        分压比:{' '}
+                        {(editConfig.r1 ?? 30000) > 0 && (editConfig.r2 ?? 10000) > 0
+                          ? (
+                            ((editConfig.r1 ?? 30000) + (editConfig.r2 ?? 10000))
+                            / (editConfig.r2 ?? 10000)
+                          ).toFixed(2)
                           : '—'}
                       </div>
                     </div>
@@ -330,7 +336,7 @@ export function SensorConfigPicker({
                       ]}
                       value={[editConfig.bValue ?? 3435]}
                       onChange={(vals) => {
-                        if (vals.length > 0) updateEdit({ bValue: vals[0] as 3435 | 3950 });
+                        if (vals.length > 0) updateEdit({ bValue: vals[0] });
                       }}
                     />
                   </Form.Item>

@@ -31,7 +31,7 @@ function makeLog(overrides: Partial<LogItem> = {}): LogItem {
     event: 'execute',
     createdTime: '2026-06-13T10:00:00.000Z',
     stateId: 'state_001',
-    voltage: 3.7,
+    readings: [{ label: '电压', value: 3.7 }],
     ...overrides,
   };
 }
