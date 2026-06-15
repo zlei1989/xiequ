@@ -17,6 +17,7 @@ import {
   extractProcessNames,
   countSteps,
   calcSleepDuration,
+  formatSeconds,
 } from '@/app/watering/components/log-card';
 import type { LogItem } from '@/app/watering/components/log-card';
 
@@ -128,6 +129,48 @@ describe('formatDuration', () => {
       makeLog({ createdTime: '2026-06-15T10:00:00.000Z' }),
     ];
     expect(formatDuration(items)).toBe('2天');
+  });
+});
+
+// ================================================================
+// formatSeconds
+// ================================================================
+
+describe('formatSeconds', () => {
+  it('0 返回 "0秒"', () => {
+    expect(formatSeconds(0)).toBe('0秒');
+  });
+
+  it('小于 60 秒保持原样', () => {
+    expect(formatSeconds(45)).toBe('45秒');
+  });
+
+  it('整分钟省略秒', () => {
+    expect(formatSeconds(120)).toBe('2分');
+  });
+
+  it('分钟 + 秒', () => {
+    expect(formatSeconds(1000)).toBe('16分40秒');
+  });
+
+  it('整小时省略分秒', () => {
+    expect(formatSeconds(3600)).toBe('1小时');
+  });
+
+  it('小时 + 分 + 秒', () => {
+    expect(formatSeconds(3661)).toBe('1小时1分1秒');
+  });
+
+  it('多整小时', () => {
+    expect(formatSeconds(7200)).toBe('2小时');
+  });
+
+  it('小时 + 秒（无分钟）', () => {
+    expect(formatSeconds(7205)).toBe('2小时5秒');
+  });
+
+  it('负数取绝对值', () => {
+    expect(formatSeconds(-120)).toBe('2分');
   });
 });
 

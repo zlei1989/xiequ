@@ -129,6 +129,31 @@ export function formatSimpleDuration(seconds: number): string {
   return `${String(days)}天`;
 }
 
+/**
+ * 将秒数转为中文可读格式
+ *
+ * 规则：
+ * - < 60 秒 → "X秒"
+ * - 60 ~ 3599 秒 → "X分Y秒"（Y=0 时省略秒）
+ * - ≥ 3600 秒 → "X小时Y分Z秒"（为 0 的单位省略）
+ * - 负数取绝对值
+ */
+export function formatSeconds(seconds: number): string {
+  const total = Math.abs(Math.floor(seconds));
+  if (total < 60) return `${String(total)}秒`;
+
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+
+  const parts: string[] = [];
+  if (h > 0) parts.push(`${String(h)}小时`);
+  if (m > 0) parts.push(`${String(m)}分`);
+  if (s > 0) parts.push(`${String(s)}秒`);
+
+  return parts.join('');
+}
+
 /** 唤醒原因值到中文标签的映射 */
 const causeLabels: Record<string, string> = {
   '0': '正常上电',
