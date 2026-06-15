@@ -39,7 +39,7 @@ const defaultConfig: DeviceConfig = {
     },
   ],
   schedules: [],
-  voltage: undefined,
+  sensors: [],
   createdTime: '',
   lastWriteTime: '',
 };

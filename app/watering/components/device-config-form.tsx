@@ -2,9 +2,9 @@
  * 设备配置表单 — 管理设备基本设置、流程、步骤、中断、定时任务的 CRUD
  *
  * 基本设置区使用 antd-mobile Form layout="vertical" 构建。
- * 电压检测配置抽取为 VoltageConfigPicker 子组件。
+ * 传感器配置抽取为 SensorConfigPicker 子组件。
  * 通过 saveRef 将 handleSave 暴露给父组件 Header 的保存按钮。
- * 5 层嵌套 Picker（设备→流程→步骤→中断 + 定时 + 电压），
+ * 5 层嵌套 Picker（设备→流程→步骤→中断 + 定时 + 传感器），
  * 各 Picker 内部接入 useBackButton 返回键栈支持。
  */
 
@@ -36,10 +36,10 @@ import { ProcessConfigPicker } from './process-config-picker';
 import { ScheduleConfigPicker } from './schedule-config-picker';
 import { SortableList } from './sortable-list';
 import { StepConfigPicker } from './step-config-picker';
-import { VoltageConfigPicker } from './voltage-config-picker';
+import { SensorConfigPicker } from './sensor-config-picker';
 
 import type { GpioInfo } from '../hooks/use-device-config';
-import type { DeviceConfig, ProcessConfig, StepConfig, InterruptConfig, ScheduleConfig, VoltageConfig } from '../types';
+import type { DeviceConfig, ProcessConfig, StepConfig, InterruptConfig, ScheduleConfig, SensorConfig } from '../types';
 
 /** 带 key 的扩展类型（运行时由 crypto.randomUUID() 生成，不存入数据库，仅供 antd Table rowKey 使用） */
 interface WithKey { key?: string; }
@@ -83,7 +83,7 @@ export function DeviceConfigForm({
   const [scheduleVisible, setScheduleVisible] = useState(false);
   const [scheduleIndex, setScheduleIndex] = useState(-1);
 
-  const [voltageVisible, setVoltageConfigVisible] = useState(false);
+  const [sensorVisible, setSensorVisible] = useState(false);
 
   // ---- 保存（声明在前，供 useEffect 引用）----
   async function handleSave() {
@@ -96,7 +96,7 @@ export function DeviceConfigForm({
         execDelay: form.execDelay,
         processes: form.processes,
         schedules: form.schedules,
-        voltage: form.voltage,
+        sensors: form.sensors,
       });
       Toast.show({ icon: 'success', content: '保存成功' });
     } catch (err: unknown) {
@@ -297,9 +297,9 @@ export function DeviceConfigForm({
     return `${record.type} ${record.value}`;
   }
 
-  /** 更新电压检测配置 — VoltageConfigPicker onConfirm 回调 */
-  function updateVoltage(config: VoltageConfig) {
-    setForm({ ...form, voltage: config });
+  /** 更新传感器配置 — SensorConfigPicker onChange 回调 */
+  function updateSensors(configs: SensorConfig[]) {
+    setForm({ ...form, sensors: configs });
   }
 
   // ---- 确认删除的通用辅助 ----
@@ -384,10 +384,10 @@ export function DeviceConfigForm({
           />
         </Form.Item>
 
-        {/* ======== 电压检测配置摘要栏 ======== */}
-        <Form.Item label="电压检测配置" onClick={() => { setVoltageConfigVisible(true); }}>
+        {/* ======== 传感器配置摘要栏 ======== */}
+        <Form.Item label="传感器配置" onClick={() => { setSensorVisible(true); }}>
           <span>
-            {form.voltage ? `${form.voltage.sensor} · R1=${form.voltage.r1}Ω · R2=${form.voltage.r2}Ω` : '未配置'}
+            {form.sensors.length > 0 ? `已配置 ${form.sensors.length} 项` : '未配置'}
           </span>
         </Form.Item>
 
@@ -548,13 +548,13 @@ export function DeviceConfigForm({
         onDelete={deleteSchedule}
       />
 
-      {/* 电压检测配置 Picker */}
-      <VoltageConfigPicker
+      {/* 传感器配置 Picker */}
+      <SensorConfigPicker
         gpio={gpio}
-        open={voltageVisible}
-        voltage={form.voltage}
-        onClose={() => { setVoltageConfigVisible(false); }}
-        onConfirm={updateVoltage}
+        open={sensorVisible}
+        sensors={form.sensors}
+        onChange={updateSensors}
+        onClose={() => { setSensorVisible(false); }}
       />
     </>
   );
