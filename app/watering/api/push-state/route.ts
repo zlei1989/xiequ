@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { execCallback } from '@/app/watering/services/callback-map';
-import { getDeviceConfig, saveDeviceConfig, getDeviceState, saveDeviceState, writeDeviceLog, updateTick, updateIdleSince, calcVoltage } from '@/app/watering/services/db';
+import { getDeviceConfig, saveDeviceConfig, getDeviceState, saveDeviceState, writeDeviceLog, updateTick, updateIdleSince, calcSensorReadings } from '@/app/watering/services/db';
 import { newId } from '@/lib/utils';
 
 import type { NextRequest } from 'next/server';
@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
 
   // 获取设备配置用于电压计算（bootstrap 分支内可能重新获取/创建）
   const config = await getDeviceConfig(chipId);
-  const voltage = calcVoltage(config?.voltage, gpioState.sensors);
+  const defaultReadings = calcSensorReadings(config?.sensors ?? [], gpioState.sensors);
 
   // 处理事件
   switch (event) {
@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
           bootExec: -1,
           execDelay: 0,
           schedules: [],
-          voltage: undefined,
+          sensors: [],
           createdTime: new Date().toISOString(),
           lastWriteTime: new Date().toISOString(),
         };
@@ -111,10 +111,10 @@ export async function GET(request: NextRequest) {
       // 唤醒正在长轮询等待的设备
       execCallback(chipId);
 
-      const bootstrapVoltage = calcVoltage(config.voltage, gpioState.sensors);
-      await writeDeviceLog(chipId, 'bootstrap', macAddress, { cause: searchParams.get('cause') || '', sensors: gpioState.sensors, loads: gpioState.loads }, bootstrapVoltage, state.stateId);
+      const bootstrapReadings = calcSensorReadings(config?.sensors ?? [], gpioState.sensors);
+      await writeDeviceLog(chipId, 'bootstrap', macAddress, { cause: searchParams.get('cause') || '', sensors: gpioState.sensors, loads: gpioState.loads }, bootstrapReadings, state.stateId);
       if (state.switch === 'on' && state.process) {
-        await writeDeviceLog(chipId, 'execute', macAddress, { index: state.index }, bootstrapVoltage, state.stateId);
+        await writeDeviceLog(chipId, 'execute', macAddress, { index: state.index }, bootstrapReadings, state.stateId);
       }
       await updateIdleSince(chipId, 'bootstrap');
       break;
@@ -134,8 +134,8 @@ export async function GET(request: NextRequest) {
           await saveDeviceState(state);
         }
       }
-      const changeVoltage = calcVoltage(config?.voltage, gpioState.sensors);
-      await writeDeviceLog(chipId, 'change', macAddress, { sensors: gpioState.sensors, loads: gpioState.loads, type, stepIndex: stepIndex ?? undefined }, changeVoltage, stateId, message);
+      const changeReadings = calcSensorReadings(config?.sensors ?? [], gpioState.sensors);
+      await writeDeviceLog(chipId, 'change', macAddress, { sensors: gpioState.sensors, loads: gpioState.loads, type, stepIndex: stepIndex ?? undefined }, changeReadings, stateId, message);
       await updateIdleSince(chipId, 'change');
       break;
     }
@@ -154,13 +154,13 @@ export async function GET(request: NextRequest) {
         // 唤醒正在长轮询等待的设备
         execCallback(chipId);
       }
-      const finishVoltage = calcVoltage(config?.voltage, gpioState.sensors);
-      await writeDeviceLog(chipId, 'finish', macAddress, undefined, finishVoltage, state?.stateId);
+      const finishReadings = calcSensorReadings(config?.sensors ?? [], gpioState.sensors);
+      await writeDeviceLog(chipId, 'finish', macAddress, undefined, finishReadings, state?.stateId);
       await updateIdleSince(chipId, 'finish');
       break;
     }
     default: {
-      await writeDeviceLog(chipId, event || 'heartbeat', macAddress, { sensors: gpioState.sensors, loads: gpioState.loads }, voltage);
+      await writeDeviceLog(chipId, event || 'heartbeat', macAddress, { sensors: gpioState.sensors, loads: gpioState.loads }, defaultReadings);
       // event 来自固件上报，值域受控；兜底为 heartbeat
       await updateIdleSince(chipId, (event || 'heartbeat') as 'bootstrap' | 'button' | 'change' | 'finish' | 'heartbeat');
       break;
