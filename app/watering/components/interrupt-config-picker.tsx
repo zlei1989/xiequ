@@ -124,9 +124,7 @@ export function InterruptConfigPicker({
                 }}
               />
             ) : (
-              <div style={{ color: '#999', fontSize: 14, padding: '8px 0' }}>
-                请等待设备上报 GPIO 状态
-              </div>
+              <span>请等待设备上报 GPIO 状态</span>
             )}
           </Form.Item>
 
@@ -153,6 +151,8 @@ export function InterruptConfigPicker({
               label="触发状态"
             >
               <Switch
+                checkedText="高电平"
+                uncheckedText="低电平"
                 checked={config.state === 1 || config.state === true}
                 onChange={(checked) => {
                   update({ state: checked ? 1 : 0 });
@@ -223,12 +223,12 @@ export function InterruptConfigPicker({
             />
           </Form.Item>
 
-          {/* 禁用 */}
+          {/* 禁用中断 */}
           <Form.Item
-            label="禁用"
+            label="禁用中断"
           >
             <Switch
-              checked={!config.disabled}
+              checked={config.disabled}
               onChange={(checked) => { update({ disabled: !checked }); }}
             />
           </Form.Item>

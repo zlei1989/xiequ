@@ -157,9 +157,9 @@ export function ScheduleConfigPicker({
             </span>
           </Form.Item>
 
-          <Form.Item label="禁用">
+          <Form.Item label="禁用计划">
             <Switch
-              checked={!draft.disabled}
+              checked={draft.disabled}
               onChange={(checked) => { update({ ...draft, disabled: !checked }); }}
             />
           </Form.Item>
