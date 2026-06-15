@@ -1,5 +1,6 @@
 import { getDb, getDbSync } from '@/lib/db';
 import { newId } from '@/lib/utils';
+import { calcSensorReadings } from '../utils/calc-sensor';
 
 import type { DeviceConfig, DeviceState, DeviceItem } from '../types';
 
@@ -14,7 +15,7 @@ interface DeviceRow {
   boot_exec: number;
   exec_delay: number;
   schedules: string;
-  voltage: string | null;
+  sensors: string;
   processes_version: string | null;
   created_time: string;
   last_write_time: string;
@@ -44,7 +45,7 @@ interface JoinRow extends DeviceRow {
   state_id: string | null;
   switch: string | null;
   buttons: string | null;
-  sensors: string | null;
+  state_sensors: string | null;
   loads: string | null;
   current_index: number | null;
   current_process: string | null;
@@ -67,7 +68,7 @@ interface LogRow {
   state_id: string | null;
   message: string | null;
   state: string | null;
-  voltage: number;
+  readings: string | null;
   created_time: string;
 }
 
@@ -106,19 +107,12 @@ export async function initDb() {
       boot_exec INTEGER NOT NULL DEFAULT -1,
       exec_delay INTEGER NOT NULL DEFAULT 0,
       schedules JSON NOT NULL DEFAULT '[]',
-      voltage JSON,
+      sensors JSON NOT NULL DEFAULT '[]',
       processes_version TEXT,
       created_time TEXT NOT NULL,
       last_write_time TEXT NOT NULL
     )
   `);
-
-  // 为旧数据库添加 voltage 列（兼容无此列的旧表）
-  try {
-    db.exec('ALTER TABLE watering_devices ADD COLUMN voltage JSON');
-  } catch {
-    // 列已存在，忽略
-  }
 
   // 为旧数据库添加 processes_version 列
   try {
@@ -153,7 +147,7 @@ export async function initDb() {
       state_id TEXT,
       message TEXT,
       state JSON,
-      voltage REAL NOT NULL DEFAULT 0,
+      readings JSON,
       created_time TEXT NOT NULL
     )
   `);
@@ -172,9 +166,6 @@ export async function initDb() {
   } catch { /* 列已存在 */ }
   try {
     db.exec('ALTER TABLE watering_logs ADD COLUMN message TEXT');
-  } catch { /* 列已存在 */ }
-  try {
-    db.exec('ALTER TABLE watering_logs ADD COLUMN voltage REAL NOT NULL DEFAULT 0');
   } catch { /* 列已存在 */ }
   try {
     db.exec('CREATE INDEX IF NOT EXISTS idx_watering_logs_state_id ON watering_logs(state_id)');
@@ -211,6 +202,20 @@ export async function initDb() {
       PRIMARY KEY (chip_id, trigger_time, process_index)
     )
   `);
+
+  // ---- voltage → sensors 迁移 ----
+  try {
+    db.exec("ALTER TABLE watering_devices ADD COLUMN sensors JSON NOT NULL DEFAULT '[]'");
+  } catch { /* 列已存在 */ }
+  try {
+    db.exec('ALTER TABLE watering_devices DROP COLUMN voltage');
+  } catch { /* 列不存在或 SQLite 版本不支持 */ }
+  try {
+    db.exec('ALTER TABLE watering_logs ADD COLUMN readings JSON');
+  } catch { /* 列已存在 */ }
+  try {
+    db.exec('ALTER TABLE watering_logs DROP COLUMN voltage');
+  } catch { /* 列不存在 */ }
 }
 
 /**
@@ -221,8 +226,8 @@ export async function getAllDevices(): Promise<DeviceItem[]> {
   const db = getDb();
   const rows = db.all(`
     SELECT d.chip_id, d.name, d.mac_address, d.processes, d.idle_sleep, d.idle_timeout,
-           d.boot_exec, d.exec_delay, d.schedules, d.voltage, d.processes_version, d.created_time, d.last_write_time,
-           s.state_id, s.switch, s.buttons, s.sensors, s.loads,
+           d.boot_exec, d.exec_delay, d.schedules, d.sensors, d.processes_version, d.created_time, d.last_write_time,
+           s.state_id, s.switch, s.buttons, s.sensors as state_sensors, s.loads,
            s.current_index, s.current_process, s.message,
            s.idle_since, s.last_action_type, s.step_index,
            s.last_tick_time as state_last_tick_time, s.last_write_time as state_last_write_time
@@ -243,7 +248,7 @@ export async function getAllDevices(): Promise<DeviceItem[]> {
       bootExec: row.boot_exec,
       execDelay: row.exec_delay,
       schedules: parseJSON(row.schedules, [] as DeviceConfig['schedules']),
-      voltage: parseJSON(row.voltage, undefined as DeviceConfig['voltage']),
+      sensors: parseJSON(row.sensors, [] as DeviceConfig['sensors']),
       processesVersion: row.processes_version ?? undefined,
       createdTime: row.created_time,
       lastWriteTime: row.last_write_time,
@@ -257,7 +262,7 @@ export async function getAllDevices(): Promise<DeviceItem[]> {
         stateId: row.state_id,
         switch: row.switch as DeviceState['switch'],
         buttons: parseJSON(row.buttons, undefined as Record<string, number> | undefined),
-        sensors: parseJSON(row.sensors, undefined as Record<string, number> | undefined),
+        sensors: parseJSON(row.state_sensors, undefined as Record<string, number> | undefined),
         loads: parseJSON(row.loads, undefined as Record<string, number> | undefined),
         index: row.current_index ?? undefined,
         process: parseJSON(row.current_process, undefined as DeviceState['process']),
@@ -294,7 +299,7 @@ export async function getDeviceConfig(chipId: string): Promise<DeviceConfig | nu
     bootExec: row.boot_exec,
     execDelay: row.exec_delay,
     schedules: parseJSON(row.schedules, [] as DeviceConfig['schedules']),
-    voltage: parseJSON(row.voltage, undefined as DeviceConfig['voltage']),
+    sensors: parseJSON(row.sensors, [] as DeviceConfig['sensors']),
     processesVersion: row.processes_version ?? undefined,
     createdTime: row.created_time,
     lastWriteTime: row.last_write_time,
@@ -320,12 +325,12 @@ export async function saveDeviceConfig(config: DeviceConfig) {
   }
 
   db.run(`
-    INSERT INTO watering_devices (chip_id, name, mac_address, processes, idle_sleep, idle_timeout, boot_exec, exec_delay, schedules, voltage, processes_version, created_time, last_write_time)
-    VALUES (@chip_id, @name, @mac_address, @processes, @idle_sleep, @idle_timeout, @boot_exec, @exec_delay, @schedules, @voltage, @processes_version, @created_time, @last_write_time)
+    INSERT INTO watering_devices (chip_id, name, mac_address, processes, idle_sleep, idle_timeout, boot_exec, exec_delay, schedules, sensors, processes_version, created_time, last_write_time)
+    VALUES (@chip_id, @name, @mac_address, @processes, @idle_sleep, @idle_timeout, @boot_exec, @exec_delay, @schedules, @sensors, @processes_version, @created_time, @last_write_time)
     ON CONFLICT(chip_id) DO UPDATE SET
       name=@name, mac_address=@mac_address, processes=@processes, idle_sleep=@idle_sleep,
       idle_timeout=@idle_timeout, boot_exec=@boot_exec, exec_delay=@exec_delay,
-      schedules=@schedules, voltage=@voltage, processes_version=@processes_version,
+      schedules=@schedules, sensors=@sensors, processes_version=@processes_version,
       last_write_time=@last_write_time
   `, {
     '@chip_id': config.chipId,
@@ -337,7 +342,7 @@ export async function saveDeviceConfig(config: DeviceConfig) {
     '@boot_exec': config.bootExec,
     '@exec_delay': config.execDelay,
     '@schedules': JSON.stringify(config.schedules),
-    '@voltage': config.voltage ? JSON.stringify(config.voltage) : null,
+    '@sensors': JSON.stringify(config.sensors),
     '@processes_version': config.processesVersion ?? null,
     '@created_time': config.createdTime,
     '@last_write_time': config.lastWriteTime,
@@ -452,7 +457,7 @@ export async function updateIdleSince(
 export async function getDeviceLogs(chipId: string, limit = 100) {
   const db = getDb();
   const rows = db.all(
-    'SELECT id, chip_id, mac_address, event, state_id, message, state, voltage, created_time FROM watering_logs WHERE chip_id = ? ORDER BY created_time DESC LIMIT ?',
+    'SELECT id, chip_id, mac_address, event, state_id, message, state, readings, created_time FROM watering_logs WHERE chip_id = ? ORDER BY created_time DESC LIMIT ?',
     [chipId, limit],
   ) as unknown as LogRow[];
   return rows.map((row) => ({
@@ -463,12 +468,13 @@ export async function getDeviceLogs(chipId: string, limit = 100) {
     stateId: row.state_id ?? undefined,
     message: row.message ?? undefined,
     state: parseJSON(row.state, undefined as Record<string, unknown> | undefined),
-    voltage: typeof row.voltage === 'number' ? row.voltage : undefined,
+    readings: parseJSON(row.readings, undefined as { label: string; value: number }[] | undefined),
     createdTime: row.created_time,
   }));
 }
 
 /**
+ * @deprecated 使用 calcSensorReadings 替代，支持多传感器统一计算
  * 计算设备当前电压
  *
  * 从 GPIO 传感器数据中取对应引脚的 ADC 读数，先换算为引脚电压
@@ -493,11 +499,13 @@ export function calcVoltage(
   return Math.round(value * 100) / 100; // 保留 2 位小数
 }
 
+export { calcSensorReadings };
+
 /**
  * 写入设备日志
  *
  * SQLite WASM 驱动 API 为同步调用，但函数签名保持 async 以兼容上层契约。
- * voltage 从设备配置的电压分压公式计算，未配置时为 0。
+ * readings 为传感器读数数组，由 calcSensorReadings 计算得出。
  */
 // eslint-disable-next-line @typescript-eslint/require-await -- SQLite WASM 驱动为同步，保持 async 契约
 export async function writeDeviceLog(
@@ -505,13 +513,13 @@ export async function writeDeviceLog(
   event: string,
   macAddress: string,
   state?: Record<string, unknown>,
-  voltage?: number,
+  readings?: { label: string; value: number }[],
   stateId?: string,
   message?: string,
 ) {
   const db = getDbSync();
   db.run(`
-    INSERT INTO watering_logs (chip_id, mac_address, event, state_id, message, state, voltage, created_time)
+    INSERT INTO watering_logs (chip_id, mac_address, event, state_id, message, state, readings, created_time)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `, [
     chipId,
@@ -520,7 +528,7 @@ export async function writeDeviceLog(
     stateId ?? null,
     message ?? null,
     state ? JSON.stringify(state) : null,
-    voltage ?? 0,
+    readings ? JSON.stringify(readings) : null,
     new Date().toISOString(),
   ]);
 }
