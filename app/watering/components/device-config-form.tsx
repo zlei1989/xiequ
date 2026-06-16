@@ -606,8 +606,8 @@ export function DeviceConfigForm({
 
       {/* 传感器编辑 Picker */}
       <SensorConfigPicker
+        editKey={sensorEditIndex}
         gpio={gpio}
-        key={sensorEditIndex >= 0 ? form.sensors[sensorEditIndex]?.sensor ?? 'new' : 'new'}
         open={sensorVisible}
         sensor={sensorEditIndex >= 0 && sensorEditIndex < form.sensors.length
           ? (form.sensors[sensorEditIndex] ?? defaultSensor(gpio))

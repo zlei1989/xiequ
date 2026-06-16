@@ -38,6 +38,8 @@ interface SensorConfigPickerProps {
   onConfirm: (s: SensorConfig) => void;
   /** 关闭回调 */
   onClose: () => void;
+  /** 编辑标识符，用于 SensorFormBody 的 key，切换编辑目标时强制重挂载 */
+  editKey?: string | number;
 }
 
 /** 默认传感器配置 */
@@ -243,6 +245,7 @@ export function SensorConfigPicker({
   gpio,
   onConfirm,
   onClose,
+  editKey,
 }: SensorConfigPickerProps) {
   useBackButton(open, onClose);
 
@@ -261,6 +264,7 @@ export function SensorConfigPicker({
         {open && (
           <SensorFormBody
             gpio={gpio}
+            key={editKey}
             sensor={sensor}
             onConfirm={onConfirm}
           />
