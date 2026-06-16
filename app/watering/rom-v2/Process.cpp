@@ -50,7 +50,7 @@ void Process::next() {
       if (changeHandler) {
         char buffer[256];
         sprintf(buffer,
-                "{processName:%s}流程的{stepName:%s}{stepId:%d}环节持续{"
+                "{processName:%s}流程的{stepName:%s}({stepId:%d})环节持续{"
                 "timeout:%lu}超时。",
                 name.c_str(), steps[current.index].name.c_str(), current.index,
                 (unsigned long)((now - current.executeTime) / 1000));
@@ -80,8 +80,8 @@ void Process::next() {
         if (changeHandler) {
           char buffer[256];
           sprintf(buffer,
-                  "{processName:%s}流程的{stepName:%s}{stepId:%d}环节已被{"
-                  "interruptName:%s}{interruptId:%d}{componentKey:%s}{state:%s}"
+                  "{processName:%s}流程的{stepName:%s}({stepId:%d})环节已被{"
+                  "interruptName:%s}({interruptId:%d}){componentKey:%s}({state:%s})"
                   "中断。",
                   name.c_str(), steps[current.index].name.c_str(),
                   current.index,
@@ -115,8 +115,8 @@ void Process::next() {
     if (changeHandler) {
       char buffer[256];
       sprintf(buffer,
-              "{processName:%s}流程的{stepName:%s}{stepId:%d}环节结束。负载{"
-              "componentKey:%s}{value:%s}已关闭。环节持续{stepDuration:%lu}"
+              "{processName:%s}流程的{stepName:%s}({stepId:%d})环节结束。负载{"
+              "componentKey:%s}({value:%s})已关闭。环节持续{stepDuration:%lu}"
               "，流程持续{duration:%lu}。",
               name.c_str(), steps[current.index].name.c_str(), current.index,
               steps[current.index].componentKey.c_str(),
@@ -169,7 +169,7 @@ void Process::next() {
     if (changeHandler) {
       char buffer[256];
       sprintf(buffer,
-              "{processName:%s}流程的{stepName:%s}{stepId:%d}环节开始执行。负载{componentKey:%s}{value:%s}已打开。",
+              "{processName:%s}流程的{stepName:%s}({stepId:%d})环节开始执行。负载{componentKey:%s}({value:%s})已打开。",
               name.c_str(), steps[current.index].name.c_str(), current.index,
               steps[current.index].componentKey.c_str(),
               steps[current.index].value.begin.c_str());
@@ -552,7 +552,7 @@ void Process::calculateStep(Current *current, Step *step) {
   if (changeHandler) {
     char buffer[256];
     sprintf(buffer,
-            "{processName:%s}流程的{stepName:%s}{stepId:%d}"
+            "{processName:%s}流程的{stepName:%s}({stepId:%d})"
             "环节已经准备就绪，执行{expire:%lu}"
             "后超时。",
             name.c_str(), step->name.c_str(), current->index,
@@ -600,8 +600,8 @@ void Process::terminate() {
     char buffer[256];
     sprintf(
         buffer,
-        "{processName:%s}流程的{stepName:%s}{stepId:%d}环节终止。负载{"
-        "componentKey:%s}{componentValue:%s}已关闭。环节持续{stepDuration:%lu}"
+        "{processName:%s}流程的{stepName:%s}({stepId:%d})环节终止。负载{"
+        "componentKey:%s}({componentValue:%s})已关闭。环节持续{stepDuration:%lu}"
         "，流程持续{duration:%lu}。",
         name.c_str(), steps[current.index].name.c_str(), current.index,
         steps[current.index].componentKey.c_str(),
