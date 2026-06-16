@@ -3,7 +3,7 @@
 /**
  * log-card 工具函数单元测试
  *
- * 测试 groupByStateId / formatDuration / formatSimpleDuration / formatMessage /
+ * 测试 formatDuration / formatSimpleDuration / formatMessage /
  * formatCause / extractProcessNames / countSteps / calcSleepDuration。
  */
 

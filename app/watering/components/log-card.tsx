@@ -12,24 +12,6 @@ import React, { useEffect, useState } from 'react';
 
 /** ── 常量 ── */
 
-const eventLabels: Record<string, string> = {
-  bootstrap: '开机',
-  execute: '执行',
-  finish: '完成',
-  terminate: '终止',
-  change: '变更',
-  heartbeat: '心跳',
-};
-
-const eventColors: Record<string, string> = {
-  bootstrap: 'success',
-  execute: 'warning',
-  finish: 'success',
-  terminate: 'danger',
-  change: 'primary',
-  heartbeat: 'default',
-};
-
 /** 变更类型中文标签 */
 export const changeTypeLabels: Record<string, string> = {
   step_ready: '步骤就绪',
@@ -70,8 +52,6 @@ export type Segment =
   | { type: 'text'; value: string }
   | { type: 'var'; value: string };
 
-/** 按 stateId 分组后的日志组 */
-export type LogGroup = { stateId: string; items: LogItem[] };
 
 /** 按流程分组后的组类型 */
 export type ProcessGroup = {
@@ -175,40 +155,7 @@ export function groupByProcess(logs: LogItem[]): ProcessGroup[] {
   }
 
   return groups.reverse();
-}
-
-/**
- * 按 stateId 分组，每组按时间排序
- * 组内按时间正序，组间按最新一条时间倒序（最新的组在前）
- */
-export function groupByStateId(logs: LogItem[]): Array<{ stateId: string; items: LogItem[] }> {
-  const map: Record<string, LogItem[]> = {};
-  for (const log of logs) {
-    const key = log.stateId || '_unknown';
-    if (!map[key]) map[key] = [];
-    map[key].push(log);
-  }
-  // 组内按时间正序
-  for (const key of Object.keys(map)) {
-    const bucket = map[key];
-    if (bucket) {
-      bucket.sort(
-        (a, b) =>
-          new Date(a.createdTime).getTime() - new Date(b.createdTime).getTime(),
-      );
-    }
-  }
-  // 组间按最新一条时间倒序（最新的组在前）
-  return Object.entries(map)
-    .map(([stateId, items]) => ({ stateId, items }))
-    .sort((a, b) => {
-      const lastA = new Date(a.items[a.items.length - 1]?.createdTime ?? 0).getTime();
-      const lastB = new Date(b.items[b.items.length - 1]?.createdTime ?? 0).getTime();
-      return lastB - lastA;
-    });
-}
-
-/**
+}/**
  * 格式化时长为中文简化形式
  *
  * 规则：<1 分钟 → 刚刚，<1 小时 → X 分钟，<1 天 → X 小时，≥1 天 → X 天
@@ -378,11 +325,6 @@ export function BootCard({ group, allLogs }: { group: ProcessGroup; allLogs: Log
   );
 }
 
-/** 判断是否包含执行事件 */
-function hasExecute(items: LogItem[]): boolean {
-  return items.some((item) => item.event === 'execute' || item.event === 'change');
-}
-
 /**
  * 格式化日志消息为可渲染的 ReactNode
  *
@@ -490,21 +432,6 @@ function getStepStatus(event: string): 'wait' | 'finish' | 'error' {
   }
 }
 
-/**
- * 判定组的整体状态
- *
- * 包含 finish 且不含 terminate → 已完成
- * execute 仅表示流程触发，不代表完成，不作为「已完成」的判定依据
- */
-function getGroupStatus(items: LogItem[]): { label: string; color: string } {
-  const hasFinish = items.some((i) => i.event === 'finish');
-  const hasAbnormal = items.some((i) => i.event === 'terminate');
-  if (hasFinish && !hasAbnormal) {
-    return { label: '已完成', color: 'success' };
-  }
-  return { label: '异常', color: 'danger' };
-}
-
 /** 格式化时间为 HH:MM:SS */
 function formatTime(isoString: string): string {
   return new Date(isoString).toLocaleString('zh-CN', {
@@ -512,30 +439,6 @@ function formatTime(isoString: string): string {
     minute: '2-digit',
     second: '2-digit',
   });
-}
-
-/**
- * 渲染 bootstrap 步骤的增强描述
- *
- * 格式：{唤醒原因} · 休眠 {X小时} · {电压}V
- */
-function renderBootstrapDescription(
-  item: LogItem,
-  allLogs: LogItem[],
-): string {
-  const parts: string[] = [];
-  const stateObj = item.state as Record<string, unknown> | undefined;
-  const cause = stateObj?.cause;
-  const causeLabel = formatCause(typeof cause === 'string' || typeof cause === 'number' ? String(cause) : '');
-  if (causeLabel) parts.push(causeLabel);
-  const sleepSec = calcSleepDuration(item, allLogs);
-  if (sleepSec >= 60) {
-    parts.push(`休眠 ${formatSimpleDuration(sleepSec)}`);
-  }
-  if (item.readings && item.readings.length > 0) {
-    parts.push(item.readings.map((r) => `${r.label}: ${r.value}`).join(' · '));
-  }
-  return parts.join(' · ');
 }
 
 /**
@@ -736,92 +639,4 @@ export function ProcessCard({ group }: { group: ProcessGroup }) {
   );
 }
 
-/** ── 组件 ── */
 
-export function LogCard({ group }: { group: LogGroup }) {
-  const groupStatus = getGroupStatus(group.items);
-  const duration = hasExecute(group.items) ? formatDuration(group.items) : null;
-
-  // 摘要行数据
-  const processNames = extractProcessNames(group.items);
-  const stepCount = countSteps(group.items);
-  const summaryReadings = group.items.reduce<LogItem['readings']>((found, item) => {
-    return item.readings?.length ? item.readings : found;
-  }, undefined);
-
-  const summaryParts: string[] = [];
-  if (processNames.length > 0) {
-    summaryParts.push(processNames.join('、'));
-  }
-  if (stepCount > 0) {
-    summaryParts.push(`共 ${String(stepCount)} 个步骤`);
-  }
-  if (duration) {
-    summaryParts.push(duration);
-  }
-  if (summaryReadings && summaryReadings.length > 0) {
-    summaryParts.push(summaryReadings.map((r) => `${r.label}: ${r.value}`).join(' · '));
-  }
-  const summaryText = summaryParts.join(' · ');
-
-  return (
-    <Card
-      extra={
-        <Tag color={groupStatus.color}>
-          {groupStatus.label}
-        </Tag>
-      }
-      key={group.stateId}
-      title={`第 ${group.stateId} 批次运行`}
-    >
-      {summaryText && (
-        <div className="mb-2 text-xs text-gray-400">
-          {summaryText}
-        </div>
-      )}
-      <Steps direction="vertical">
-        {group.items.map((item, idx) => (
-          <Steps.Step
-            description={
-              <span className="text-[13px] text-gray-700">
-                {item.event === 'bootstrap'
-                  ? renderBootstrapDescription(item, group.items)
-                  : formatMessage(item)}
-              </span>
-            }
-            key={`${group.stateId}-${idx}`}
-            status={getStepStatus(item.event)}
-            title={
-              <Space align="center">
-                <Tag color={eventColors[item.event] || 'default'}>
-                  {eventLabels[item.event] || item.event}
-                </Tag>
-                {item.event === 'change' && (() => {
-                  const stateObj = item.state as Record<string, unknown> | undefined;
-                  const type = stateObj?.type;
-                  const changeType = typeof type === 'string' || typeof type === 'number' ? String(type) : '';
-                  if (changeType && changeTypeLabels[changeType]) {
-                    return (
-                      <Tag color={changeTypeColors[changeType] || 'default'}>
-                        {changeTypeLabels[changeType]}
-                      </Tag>
-                    );
-                  }
-                  return null;
-                })()}
-                <span className="text-xs text-gray-400">
-                  {formatTime(item.createdTime)}
-                </span>
-              </Space>
-            }
-          />
-        ))}
-      </Steps>
-      {duration && (
-        <div className="mt-2 flex justify-end text-xs text-gray-400">
-          用时 {duration}
-        </div>
-      )}
-    </Card>
-  );
-}
