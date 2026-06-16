@@ -12,11 +12,11 @@
 
 'use client';
 
+import { ActionSheet, Button, Dialog, DotLoading, Input, List, NavBar, SafeArea, SwipeAction, Toast } from 'antd-mobile';
+import { AppstoreOutline, MoreOutline } from 'antd-mobile-icons';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 
-import { ActionSheet, Button, Dialog, DotLoading, Input, List, NavBar, SafeArea, SwipeAction, Toast } from 'antd-mobile';
-import { AppstoreOutline, MoreOutline } from 'antd-mobile-icons';
 
 import { backupToOss, checkAuth, getFiles, logout, removeFile, verifyPassword } from './actions';
 
@@ -35,13 +35,13 @@ export default function AdminPage() {
 
   /** 页面加载时检查认证状态，已认证则预加载文件列表 */
   useEffect(() => {
-    checkAuth().then((r) => {
+    void checkAuth().then((r) => {
       setAuthenticated(r.authenticated);
       if (r.authenticated) {
         void loadFiles();
       }
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- 仅挂载时执行一次
+     
   }, []);
 
   /** 加载文件列表，UNAUTHORIZED 时回退到登录状态 */
@@ -104,7 +104,7 @@ export default function AdminPage() {
 
   /** 删除文件（Dialog.confirm 二次确认） */
   function handleDelete(name: string) {
-    Dialog.confirm({
+    void Dialog.confirm({
       content: `确认删除「${name}」？不可恢复。`,
       confirmText: '确认删除',
       cancelText: '取消',
@@ -167,7 +167,7 @@ export default function AdminPage() {
 
       return actions;
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- handleUpload/handleDelete 每次渲染重建，此处有意保持引用稳定
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   );
 
@@ -196,8 +196,8 @@ export default function AdminPage() {
         <div className="flex flex-1 flex-col items-center justify-center gap-4 px-8">
           <h2 className="text-lg font-medium">请输入管理密码</h2>
           <Input
-            className="w-full"
             clearable
+            className="w-full"
             placeholder="密码"
             type="password"
             value={password}
