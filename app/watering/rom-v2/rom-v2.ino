@@ -118,8 +118,6 @@ bool _idled = true;
 bool _bootstrap = false;
 /** 异步请求响应是否已处理（防止 readyStateDone 状态下重复处理空响应） */
 bool _asyncResponseProcessed = false;
-/** 深度睡眠时长（毫秒），0 表示不启用 */
-unsigned long _sleepDuration = 0;
 
 // ==================== 回调函数前向声明 ====================
 
@@ -266,12 +264,12 @@ void setup()
  */
 void loop()
 {
-  // 收到睡眠指令后立即进入深睡眠（带定时唤醒）
-  if (_sleepDuration > 0 && _idled) {
-    log("Sleep {\"duration\":%lu}", _sleepDuration);
+  // 收到睡眠指令后立即进入深睡眠（睡眠时长由 NetworkExt 从服务端响应中提取）
+  if (network.getSleepDuration() > 0 && _idled) {
+    log("Sleep {\"duration\":%lu}", network.getSleepDuration());
     Serial.flush();
     // 配置定时唤醒（参数单位：微秒）
-    esp_sleep_enable_timer_wakeup(_sleepDuration * 1000ULL);
+    esp_sleep_enable_timer_wakeup(network.getSleepDuration() * 1000ULL);
     esp_deep_sleep_start();
   }
 
@@ -466,29 +464,27 @@ void networkStateChangeHandler(JsonDocument *state, NetworkExt *network,
     yield();
   }
 
-  // 设备开关关闭：记录 sleepDuration（loop 中检测到后立即深度睡眠）
+  // 设备开关关闭：sleepDuration 已在 setStateJSONString 中提取，
+  // 此处无需重复处理，loop() 中检测到 network.getSleepDuration()>0 后立即深度睡眠
   if ((*state)["switch"] != "on")
   {
-    if ((*state)["sleepDuration"].is<unsigned long>())
-    {
-      _sleepDuration = (*state)["sleepDuration"].as<unsigned long>();
-      log("Sleep Duration Set {\"duration\":%lu}", _sleepDuration);
-    }
     yield();
     return;
   }
 
-  // 设备开关打开但无有效流程配置：仅更新状态
+  // 设备开关打开但无有效流程配置：仅更新状态，清除睡眠时长
   if (!(*state)["process"].is<JsonObject>() ||
       !(*state)["process"]["steps"].is<JsonArray>())
   {
     _idled = true;
+    network.setSleepDuration(0); // 无流程执行则清除睡眠时长
     yield();
     return;
   }
 
-  // 启动新流程
+  // 启动新流程：清除睡眠时长，防止流程执行中被错误休眠
   _idled = false;
+  network.setSleepDuration(0);
   process.setSchema((*state).as<JsonObject>());
   // 支持从指定步骤开始执行
   if ((*state)["stepIndex"].is<int>()) {

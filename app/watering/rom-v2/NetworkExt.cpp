@@ -307,6 +307,17 @@ void NetworkExt::setStateJSONString(String value) {
     nextTimestamp = millis() + state["sleep"].as<unsigned int>();
   }
 
+  // 2b. 提取睡眠时长（必须不依赖 changed 标志，保持和 sleep 字段一致的处理逻辑）
+  // 原因：sleepDuration 首次出现在响应中时 changed 通常已为 false，
+  // 若仅在 stateChangeHandler 中处理会导致 ROM 永远无法进入深睡眠。
+  if (state["sleepDuration"].is<unsigned long>()) {
+    _sleepDuration = state["sleepDuration"].as<unsigned long>();
+    log("Network Sleep Duration Set {\"duration\":%lu,\"changed\":%s}",
+        _sleepDuration, state["changed"] ? "true" : "false");
+  } else {
+    _sleepDuration = 0; // 响应中无 sleepDuration 时清除，防止使用过期值
+  }
+
   // 3. 状态变化时触发回调（去掉 code 检查）
   if (state["changed"] == true) {
     stateChangeHandler(&state, this, context);

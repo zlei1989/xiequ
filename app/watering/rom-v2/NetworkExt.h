@@ -207,6 +207,16 @@ public:
    * @return processes JSON 字符串
    */
   String getProcessesCache();
+  /**
+   * 设置睡眠时长（毫秒），0 表示不启用
+   * @param value 睡眠时长
+   */
+  void setSleepDuration(unsigned long value) { _sleepDuration = value; }
+  /**
+   * 获得睡眠时长（毫秒）
+   * @return 睡眠时长，0 表示不启用
+   */
+  unsigned long getSleepDuration() { return _sleepDuration; }
 
 protected:
   /**
@@ -250,6 +260,8 @@ protected:
   unsigned long connecting = 0;
   /** 延迟回调执行队列 */
   std::vector<InvokeParams> invokeParams;
+  /** 服务端下发的睡眠时长（毫秒），由 setStateJSONString 从响应中提取，0=不启用 */
+  unsigned long _sleepDuration = 0;
 };
 
 #endif /* NETWORK_H_ */
