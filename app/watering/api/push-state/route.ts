@@ -125,13 +125,39 @@ export async function GET(request: NextRequest) {
       const message = searchParams.get('message') || '';
       // 持久化步骤索引（ROM 新增上报）
       const stepIndex = searchParams.get('stepIndex');
+      const stepIndexNum = stepIndex !== null ? parseInt(stepIndex, 10) : null;
+      // 诊断日志：记录 ROM change 事件中的 stepIndex 参数
+      console.info('[Watering] change 事件 stepIndex', {
+        chipId,
+        type,
+        stepIndexRaw: stepIndex,
+        stepIndexNum,
+        romStateId: stateId,
+      });
       if (stepIndex !== null) {
         const state = await getDeviceState(chipId);
+        const dbStateId = state?.stateId;
         // 仅当 stateId 匹配时接受 ROM 上报的 stepIndex：
         // 防止用户手动切换步骤后，ROM 延迟到达的旧 change 事件覆盖新值
-        if (state && state.stateId === stateId) {
-          state.stepIndex = parseInt(stepIndex, 10);
+        if (state && dbStateId === stateId) {
+          const oldStepIndex = state.stepIndex;
+          state.stepIndex = stepIndexNum!;
+          console.info('[Watering] stepIndex 已写入', {
+            chipId,
+            type,
+            oldStepIndex,
+            newStepIndex: state.stepIndex,
+          });
           await saveDeviceState(state);
+        } else {
+          console.warn('[Watering] stepIndex 写入被拒绝（stateId 不匹配）', {
+            chipId,
+            type,
+            stepIndexNum,
+            romStateId: stateId,
+            dbStateId: dbStateId ?? '无状态记录',
+            hasState: !!state,
+          });
         }
       }
       const changeReadings = calcSensorReadings(config?.sensors ?? [], gpioState.sensors);

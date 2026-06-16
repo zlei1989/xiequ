@@ -2,18 +2,19 @@
  * format-desc 工具函数单元测试
  *
  * 测试 formatMs / formatStepDesc / formatInterruptDesc /
- * formatScheduleDesc / formatProcessDesc。
+ * formatScheduleDesc / formatProcessDesc / formatSensorDesc。
  */
 
 import { describe, it, expect } from 'vitest';
 
-import type { StepConfig, InterruptConfig, ScheduleConfig, ProcessConfig } from '@/app/watering/types';
+import type { StepConfig, InterruptConfig, ScheduleConfig, ProcessConfig, SensorConfig } from '@/app/watering/types';
 import {
   formatMs,
   formatStepDesc,
   formatInterruptDesc,
   formatScheduleDesc,
   formatProcessDesc,
+  formatSensorDesc,
 } from '@/app/watering/utils/format-desc';
 
 // ================================================================
@@ -204,5 +205,64 @@ describe('formatProcessDesc', () => {
   it('0个步骤时显示 0个步骤', () => {
     const proc: ProcessConfig = { name: '空', steps: [] };
     expect(formatProcessDesc(proc)).toBe('0个步骤');
+  });
+});
+
+// ================================================================
+// formatSensorDesc
+// ================================================================
+
+describe('formatSensorDesc', () => {
+  it('数字信号 — 显示引脚名和"数字"', () => {
+    const s: SensorConfig = { name: '按钮', sensor: 'sensor_0', type: 'digital' };
+    expect(formatSensorDesc(s)).toBe('sensor_0 · 数字');
+  });
+
+  it('模拟信号无转换 — 显示引脚名和"模拟 · ADC"', () => {
+    const s: SensorConfig = { name: '原始值', sensor: 'sensor_1', type: 'analog' };
+    expect(formatSensorDesc(s)).toBe('sensor_1 · 模拟 · ADC');
+  });
+
+  it('分压电阻 — 显示 R1/R2 值', () => {
+    const s: SensorConfig = {
+      name: '电压',
+      sensor: 'sensor_0',
+      type: 'analog',
+      conversion: 'resistor_divider',
+      r1: 30000,
+      r2: 10000,
+    };
+    expect(formatSensorDesc(s)).toBe('sensor_0 · 模拟 · 分压 · R1=30kΩ R2=10kΩ');
+  });
+
+  it('NTC 温感 — 显示 B 值', () => {
+    const s: SensorConfig = {
+      name: '温度',
+      sensor: 'sensor_1',
+      type: 'analog',
+      conversion: 'ntc_10k',
+      bValue: 3950,
+    };
+    expect(formatSensorDesc(s)).toBe('sensor_1 · 模拟 · 温感 · B=3950');
+  });
+
+  it('分压电阻缺省 R1/R2 — 使用默认值 30kΩ/10kΩ', () => {
+    const s: SensorConfig = {
+      name: '默认分压',
+      sensor: 'sensor_0',
+      type: 'analog',
+      conversion: 'resistor_divider',
+    };
+    expect(formatSensorDesc(s)).toBe('sensor_0 · 模拟 · 分压 · R1=30kΩ R2=10kΩ');
+  });
+
+  it('NTC 温感缺省 B 值 — 使用默认 3435', () => {
+    const s: SensorConfig = {
+      name: '默认温感',
+      sensor: 'sensor_1',
+      type: 'analog',
+      conversion: 'ntc_10k',
+    };
+    expect(formatSensorDesc(s)).toBe('sensor_1 · 模拟 · 温感 · B=3435');
   });
 });
