@@ -109,7 +109,7 @@ export default function DeviceLogsPage({
     const groups: ProcessGroup[] = groupByProcess(logs);
     return (
       <PullToRefresh onRefresh={handleRefresh}>
-        <Space direction="vertical" block className="px-3 pb-3">
+        <Space block className="px-3 pb-3" direction="vertical">
           {groups.map((group) =>
             group.type === 'boot' ? (
               <BootCard

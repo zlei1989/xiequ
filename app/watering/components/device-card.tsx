@@ -8,7 +8,7 @@
 'use client';
 
 import { ActionSheet, Button, Card, Dialog, Tag, Toast } from 'antd-mobile';
-import { SetOutline } from 'antd-mobile-icons';
+import { TextOutline, SetOutline } from 'antd-mobile-icons';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
