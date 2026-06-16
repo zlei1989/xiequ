@@ -73,7 +73,109 @@ export type Segment =
 /** 按 stateId 分组后的日志组 */
 export type LogGroup = { stateId: string; items: LogItem[] };
 
+/** 按流程分组后的组类型 */
+export type ProcessGroup = {
+  type: 'boot' | 'process';
+  /** 开机信息（type='boot' 时必有） */
+  bootItem?: LogItem;
+  /** 流程名（从 execute 事件 state.process.name 或 change 的 processName 提取） */
+  processName?: string;
+  /** 流程内的事件（change + finish/terminate），正序 */
+  items: LogItem[];
+  /** 结束类型：finish=正常完成, terminate=手动终止, pending=缺失结束 */
+  endType?: 'finish' | 'terminate' | 'pending';
+};
+
 /** ── 工具函数 ── */
+
+/**
+ * 按流程分组日志
+ *
+ * 以 execute 事件为流程切割点，bootstrap 永远独立为开机记录，
+ * change/finish/terminate 归入当前流程组。
+ * 过滤 heartbeat，卡片倒序（最新在前），卡片内部正序。
+ */
+export function groupByProcess(logs: LogItem[]): ProcessGroup[] {
+  // 过滤 heartbeat
+  const filtered = logs.filter((l) => l.event !== 'heartbeat');
+  if (filtered.length === 0) return [];
+
+  // 按时间正序排列（输入可能为倒序）
+  const sorted = [...filtered].sort(
+    (a, b) =>
+      new Date(a.createdTime).getTime() - new Date(b.createdTime).getTime(),
+  );
+
+  const groups: ProcessGroup[] = [];
+  let currentProcess: ProcessGroup | null = null;
+
+  for (const log of sorted) {
+    switch (log.event) {
+      case 'bootstrap': {
+        if (currentProcess && !currentProcess.endType) {
+          currentProcess.endType = 'pending';
+          currentProcess = null;
+        }
+        groups.push({ type: 'boot', bootItem: log, items: [] });
+        break;
+      }
+
+      case 'execute': {
+        if (currentProcess && !currentProcess.endType) {
+          currentProcess.endType = 'pending';
+        }
+        const stateObj = log.state as Record<string, unknown> | undefined;
+        const processName =
+          log.process?.name ||
+          (stateObj && typeof stateObj.process === 'object' && stateObj.process
+            ? (stateObj.process as { name?: string }).name
+            : undefined);
+        currentProcess = {
+          type: 'process',
+          processName,
+          items: [],
+          endType: undefined,
+        };
+        groups.push(currentProcess);
+        break;
+      }
+
+      case 'change': {
+        if (currentProcess) {
+          currentProcess.items.push(log);
+        }
+        break;
+      }
+
+      case 'finish': {
+        if (currentProcess) {
+          currentProcess.items.push(log);
+          currentProcess.endType = 'finish';
+          currentProcess = null;
+        }
+        break;
+      }
+
+      case 'terminate': {
+        if (currentProcess) {
+          currentProcess.items.push(log);
+          currentProcess.endType = 'terminate';
+          currentProcess = null;
+        }
+        break;
+      }
+
+      default:
+        break;
+    }
+  }
+
+  if (currentProcess && !currentProcess.endType) {
+    currentProcess.endType = 'pending';
+  }
+
+  return groups.reverse();
+}
 
 /**
  * 按 stateId 分组，每组按时间排序

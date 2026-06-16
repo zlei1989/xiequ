@@ -11,7 +11,7 @@ import { renderToString } from 'react-dom/server';
 import { describe, it, expect } from 'vitest';
 
 import {
-  groupByStateId,
+  groupByProcess,
   formatDuration,
   formatMessage,
   formatCause,
@@ -37,59 +37,153 @@ function makeLog(overrides: Partial<LogItem> = {}): LogItem {
 }
 
 // ================================================================
-// groupByStateId
+// groupByProcess
 // ================================================================
 
-describe('groupByStateId', () => {
+describe('groupByProcess', () => {
   it('空数组返回空列表', () => {
-    expect(groupByStateId([])).toEqual([]);
+    expect(groupByProcess([])).toEqual([]);
   });
 
-  it('单组单条日志直接返回一组', () => {
-    const result = groupByStateId([makeLog()]);
-    expect(result).toHaveLength(1);
-    expect(result[0]?.stateId).toBe('state_001');
-    expect(result[0]?.items).toHaveLength(1);
-  });
-
-  it('多条同 stateId 归入同组，组内按时间正序', () => {
+  it('过滤 heartbeat 事件', () => {
     const logs = [
-      makeLog({ createdTime: '2026-06-13T10:00:03.000Z', stateId: 's1' }),
-      makeLog({ createdTime: '2026-06-13T10:00:01.000Z', stateId: 's1' }),
-      makeLog({ createdTime: '2026-06-13T10:00:02.000Z', stateId: 's1' }),
+      makeLog({ event: 'heartbeat', createdTime: '2026-06-13T10:00:00.000Z' }),
+      makeLog({ event: 'bootstrap', createdTime: '2026-06-13T10:00:01.000Z' }),
     ];
-    const result = groupByStateId(logs);
+    const result = groupByProcess(logs);
     expect(result).toHaveLength(1);
-    expect(result[0]?.stateId).toBe('s1');
-    expect(result[0]?.items.map((i) => i.createdTime)).toEqual([
-      '2026-06-13T10:00:01.000Z',
-      '2026-06-13T10:00:02.000Z',
-      '2026-06-13T10:00:03.000Z',
-    ]);
+    expect(result[0]?.type).toBe('boot');
   });
 
-  it('不同 stateId 分组，组间按最新事件倒序', () => {
+  it('全部 heartbeat 返回空列表', () => {
     const logs = [
-      makeLog({ createdTime: '2026-06-13T10:00:01.000Z', stateId: 'group_A' }),
-      makeLog({ createdTime: '2026-06-13T10:00:05.000Z', stateId: 'group_A' }),
-      makeLog({ createdTime: '2026-06-13T10:00:10.000Z', stateId: 'group_B' }),
-      makeLog({ createdTime: '2026-06-13T10:00:08.000Z', stateId: 'group_B' }),
+      makeLog({ event: 'heartbeat', createdTime: '2026-06-13T10:00:00.000Z' }),
+      makeLog({ event: 'heartbeat', createdTime: '2026-06-13T10:00:01.000Z' }),
     ];
-    const result = groupByStateId(logs);
+    expect(groupByProcess(logs)).toEqual([]);
+  });
+
+  it('单个 bootstrap 产生独立开机记录', () => {
+    const logs = [
+      makeLog({ event: 'bootstrap', createdTime: '2026-06-13T10:00:00.000Z', cause: '4' }),
+    ];
+    const result = groupByProcess(logs);
+    expect(result).toHaveLength(1);
+    expect(result[0]?.type).toBe('boot');
+    expect(result[0]?.bootItem?.event).toBe('bootstrap');
+    expect(result[0]?.bootItem?.cause).toBe('4');
+  });
+
+  it('bootstrap 永远独立于 execute，不合并', () => {
+    const logs = [
+      makeLog({ event: 'bootstrap', createdTime: '2026-06-13T10:00:00.000Z' }),
+      makeLog({ event: 'execute', createdTime: '2026-06-13T10:00:01.000Z', process: { name: '浇花' } }),
+    ];
+    const result = groupByProcess(logs);
     expect(result).toHaveLength(2);
-    expect(result[0]?.stateId).toBe('group_B');
-    expect(result[1]?.stateId).toBe('group_A');
+    expect(result[0]?.type).toBe('process');
+    expect(result[1]?.type).toBe('boot');
   });
 
-  it('缺失 stateId 归入 _unknown 组', () => {
-    const items = [
-      makeLog({ createdTime: '2026-06-13T10:00:01.000Z', stateId: undefined }),
-      makeLog({ createdTime: '2026-06-13T10:00:02.000Z', stateId: undefined }),
-    ] as LogItem[];
-    const result = groupByStateId(items);
+  it('execute 切割新流程组，change 归入当前组', () => {
+    const logs = [
+      makeLog({ event: 'execute', createdTime: '2026-06-13T10:00:01.000Z' }),
+      makeLog({ event: 'change', createdTime: '2026-06-13T10:00:02.000Z', message: '{processName:浇花}...' }),
+      makeLog({ event: 'change', createdTime: '2026-06-13T10:00:03.000Z', message: '{processName:浇花}...' }),
+    ];
+    const result = groupByProcess(logs);
     expect(result).toHaveLength(1);
-    expect(result[0]?.stateId).toBe('_unknown');
+    expect(result[0]?.type).toBe('process');
     expect(result[0]?.items).toHaveLength(2);
+    expect(result[0]?.endType).toBe('pending');
+  });
+
+  it('finish 闭合流程组', () => {
+    const logs = [
+      makeLog({ event: 'execute', createdTime: '2026-06-13T10:00:01.000Z' }),
+      makeLog({ event: 'change', createdTime: '2026-06-13T10:00:02.000Z' }),
+      makeLog({ event: 'finish', createdTime: '2026-06-13T10:00:05.000Z' }),
+    ];
+    const result = groupByProcess(logs);
+    expect(result).toHaveLength(1);
+    expect(result[0]?.type).toBe('process');
+    expect(result[0]?.endType).toBe('finish');
+    expect(result[0]?.items).toHaveLength(2);
+  });
+
+  it('terminate 闭合流程组', () => {
+    const logs = [
+      makeLog({ event: 'execute', createdTime: '2026-06-13T10:00:01.000Z' }),
+      makeLog({ event: 'change', createdTime: '2026-06-13T10:00:02.000Z' }),
+      makeLog({ event: 'terminate', createdTime: '2026-06-13T10:00:05.000Z' }),
+    ];
+    const result = groupByProcess(logs);
+    expect(result).toHaveLength(1);
+    expect(result[0]?.endType).toBe('terminate');
+  });
+
+  it('多条 execute 连续出现，前一个自动闭合为 pending', () => {
+    const logs = [
+      makeLog({ event: 'execute', createdTime: '2026-06-13T10:00:01.000Z', process: { name: '浇花' } }),
+      makeLog({ event: 'change', createdTime: '2026-06-13T10:00:02.000Z' }),
+      makeLog({ event: 'execute', createdTime: '2026-06-13T10:05:01.000Z', process: { name: '施肥' } }),
+      makeLog({ event: 'change', createdTime: '2026-06-13T10:05:02.000Z' }),
+      makeLog({ event: 'finish', createdTime: '2026-06-13T10:10:00.000Z' }),
+    ];
+    const result = groupByProcess(logs);
+    expect(result).toHaveLength(2);
+    expect(result[0]?.processName).toBe('施肥');
+    expect(result[0]?.endType).toBe('finish');
+    expect(result[1]?.processName).toBe('浇花');
+    expect(result[1]?.endType).toBe('pending');
+  });
+
+  it('卡片倒序排列（最新在前）', () => {
+    const logs = [
+      makeLog({ event: 'bootstrap', createdTime: '2026-06-13T08:00:00.000Z' }),
+      makeLog({ event: 'execute', createdTime: '2026-06-13T10:00:01.000Z' }),
+      makeLog({ event: 'finish', createdTime: '2026-06-13T10:05:00.000Z' }),
+      makeLog({ event: 'bootstrap', createdTime: '2026-06-13T12:00:00.000Z' }),
+      makeLog({ event: 'execute', createdTime: '2026-06-13T14:00:01.000Z' }),
+      makeLog({ event: 'terminate', createdTime: '2026-06-13T14:05:00.000Z' }),
+    ];
+    const result = groupByProcess(logs);
+    expect(result[0]?.type).toBe('process');
+    expect(result[1]?.type).toBe('boot');
+    expect(result[2]?.type).toBe('process');
+    expect(result[3]?.type).toBe('boot');
+  });
+
+  it('流程内部事件正序排列', () => {
+    const logs = [
+      makeLog({ event: 'execute', createdTime: '2026-06-13T10:00:01.000Z' }),
+      makeLog({ event: 'change', createdTime: '2026-06-13T10:00:03.000Z', message: 'step 3' }),
+      makeLog({ event: 'change', createdTime: '2026-06-13T10:00:02.000Z', message: 'step 2' }),
+      makeLog({ event: 'finish', createdTime: '2026-06-13T10:00:05.000Z' }),
+    ];
+    const result = groupByProcess(logs);
+    const items = result[0]?.items ?? [];
+    expect(items[0]?.message).toBe('step 2');
+    expect(items[1]?.message).toBe('step 3');
+    expect(items[2]?.event).toBe('finish');
+  });
+
+  it('change 无 execute 前驱时被丢弃', () => {
+    const logs = [
+      makeLog({ event: 'change', createdTime: '2026-06-13T10:00:01.000Z', message: 'orphan' }),
+      makeLog({ event: 'bootstrap', createdTime: '2026-06-13T10:00:02.000Z' }),
+    ];
+    const result = groupByProcess(logs);
+    expect(result).toHaveLength(1);
+    expect(result[0]?.type).toBe('boot');
+  });
+
+  it('execute 流程名从 process.name 提取', () => {
+    const logs = [
+      makeLog({ event: 'execute', createdTime: '2026-06-13T10:00:01.000Z', process: { name: '抽水' } }),
+    ];
+    const result = groupByProcess(logs);
+    expect(result[0]?.processName).toBe('抽水');
   });
 });
 
