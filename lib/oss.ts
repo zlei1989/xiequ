@@ -80,6 +80,8 @@ export interface OssAdapter {
   appendString(path: string, content: string, options?: OssPutOptions): Promise<void>;
   /** 删除内容 */
   delete(path: string): Promise<void>;
+  /** 上传二进制内容（Buffer） */
+  putBuffer(path: string, buffer: Buffer, options?: OssPutOptions): Promise<void>;
 }
 
 /**
@@ -410,6 +412,53 @@ export class TencentCosAdapter implements OssAdapter {
             reject(toOssError(err)); return;
           }
           if (elapsed > 500) console.log(`[OSS] deleteObject OK (${String(elapsed)}ms) path=${path}`);
+          resolve();
+        },
+      );
+    });
+  }
+
+  /**
+   * 上传二进制内容（Buffer）
+   *
+   * 与 putString 结构一致，但 Body 直接接受 Buffer，
+   * 默认 Content-Type 为 application/octet-stream，适用于 SQLite .db 等二进制文件。
+   * 日志：耗时 > 500ms 打印 INFO，失败打印 ERROR + 堆栈。
+   */
+  public putBuffer(
+    path: string,
+    buffer: Buffer,
+    options?: OssPutOptions,
+  ): Promise<void> {
+    const start = Date.now();
+    return new Promise((resolve, reject) => {
+      if (!options) {
+        options = {};
+      }
+      if (!options.headers) {
+        options.headers = {};
+      }
+      if (!('Content-Type' in options.headers)) {
+        options.headers['Content-Type'] = 'application/octet-stream';
+      }
+
+      this.getSdk().putObject(
+        {
+          Bucket: this.getBucket(),
+          Region: this.getEndpoint(),
+          Key: path,
+          ContentType: options.headers['Content-Type'],
+          ContentEncoding: options.headers['Content-Encoding'],
+          Body: buffer,
+        },
+        (err: OssErr | null, _data: unknown) => {
+          const elapsed = Date.now() - start;
+          if (err) {
+            console.error(`[OSS] putBuffer failed (${String(elapsed)}ms) path=${path}:`, err.message || err);
+            if (err.stack) console.error(err.stack);
+            reject(toOssError(err)); return;
+          }
+          if (elapsed > 500) console.log(`[OSS] putBuffer OK (${String(elapsed)}ms) path=${path}`);
           resolve();
         },
       );

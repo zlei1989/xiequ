@@ -117,6 +117,7 @@ describe('lib/oss', () => {
       expect(typeof adapter.putString).toBe('function');
       expect(typeof adapter.appendString).toBe('function');
       expect(typeof adapter.delete).toBe('function');
+      expect(typeof adapter.putBuffer).toBe('function');
     });
   });
 });
