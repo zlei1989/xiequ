@@ -10,6 +10,7 @@
 import { clearLogs as _clearLogs } from './actions/clear-logs';
 import { removeDevice as _removeDevice } from './actions/delete-device';
 import { getLogs as _getLogs } from './actions/get-logs';
+import { getSensorLogs as _getSensorLogs } from './actions/get-sensor-logs';
 import { updateDeviceConfig as _updateDeviceConfig } from './actions/set-config';
 import { setDeviceSwitch as _setDeviceSwitch } from './actions/set-state';
 import { getAllDevices } from './services/db';
@@ -60,4 +61,10 @@ export async function getLogs(chipId: string) {
 export async function clearLogs(chipId: string) {
   console.log('[Watering] 清空设备日志:', { chipId });
   return _clearLogs(chipId);
+}
+
+/** 获取设备传感器采样日志（环境数据折线图） */
+export async function getSensorLogs(chipId: string, range: '1h' | '6h' | '24h' | '7d') {
+  console.log('[Watering] 获取传感器采样日志:', { chipId, range });
+  return _getSensorLogs(chipId, range);
 }
