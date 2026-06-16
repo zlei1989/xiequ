@@ -261,7 +261,7 @@ export function DeviceCard({
                   return reading.value > 0 ? '高电平' : '低电平';
                 }
                 if (config.conversion === 'resistor_divider') {
-                  return `${reading.value.toFixed(2)}V`;
+                  return `${reading.value.toFixed(1)}V`;
                 }
                 if (config.conversion === 'ntc_10k') {
                   return `${reading.value.toFixed(1)}°C`;
