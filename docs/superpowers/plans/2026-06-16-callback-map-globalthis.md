@@ -1,3 +1,25 @@
+# callback-map globalThis 迁移实现计划
+
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+
+**Goal:** 将 callback-map 的模块级 Map 迁移到 globalThis，解决跨编译单元模块隔离问题
+
+**Architecture:** 单文件内部重构，通过 `Symbol.for('watering.callbackMap')` 在 `globalThis` 上挂载全局 Map，`setCallback`/`execCallback`/`deleteCallback` 内部从直接引用闭包变量改为通过 getter 函数获取。导出签名不变，调用方零改动。
+
+**Tech Stack:** TypeScript, Next.js 16 standalone
+
+---
+
+### Task 1: 迁移 callbackMap 到 globalThis
+
+**Files:**
+- Modify: `app/watering/services/callback-map.ts`
+
+- [ ] **Step 1: 将模块级 Map 改为 globalThis 懒初始化**
+
+将文件内容替换为：
+
+```ts
 /**
  * IoT 设备 HTTP 长轮询回调映射表
  *
@@ -69,3 +91,27 @@ export function deleteCallback(chipId: string): void {
     map.delete(chipId);
   }
 }
+```
+
+- [ ] **Step 2: 运行类型检查与格式化**
+
+```bash
+npm run format && npm run check
+```
+
+期望：无错误
+
+- [ ] **Step 3: 构建验证**
+
+```bash
+npm run build
+```
+
+期望：构建成功
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add app/watering/services/callback-map.ts
+git commit -m "fix: migrate callbackMap to globalThis for cross-chunk singleton"
+```
