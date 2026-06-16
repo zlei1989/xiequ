@@ -560,6 +560,7 @@ void Process::calculateStep(Current *current, Step *step) {
     Change *change = new Change();
     change->stateId = stateId;
     change->type = "step_ready";
+    change->stepIndex = current->index;
     change->message = String(buffer);
     changeHandler(change, this, context);
   }

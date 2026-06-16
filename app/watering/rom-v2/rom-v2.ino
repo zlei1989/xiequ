@@ -449,6 +449,14 @@ void networkStateChangeHandler(JsonDocument *state, NetworkExt *network,
   // 指示灯闪烁提示收到状态更新
   light.twinkle(2, Light::SPEED_FAST);
 
+  // 同步服务端最新 stateId 到 Process：
+  // 服务端 stateId 在 bootstrap/finish/setDeviceSwitch 时会更换，
+  // 非启动时固定值。Process 需始终使用最新 stateId，
+  // 否则 change 事件的 stateId 与服务端不匹配，stepIndex 写入被静默拒绝。
+  if ((*state)["stateId"].is<const char *>()) {
+    process.setStateId((*state)["stateId"].as<String>());
+  }
+
   // 如果设备开关关闭或需要执行新流程，先终止当前流程
   if ((*state)["switch"] != "on" ||
       (*state)["process"].is<JsonObject>())
@@ -504,7 +512,7 @@ void processChangeHandler(Process::Change *change, Process *process,
 {
   // 通过 invoke 延迟执行网络请求，确保网络空闲时才推送
   network.invoke(
-      [](NetworkExt *network, void *context)
+      [process](NetworkExt *network, void *context)
       {
         Process::Change *change = reinterpret_cast<Process::Change *>(context);
         // 构建推送数据
@@ -516,6 +524,10 @@ void processChangeHandler(Process::Change *change, Process *process,
         object["stepIndex"] = change->stepIndex;
         // 推送变更事件（异步请求期间会返回 false，由 invoke 队列稍后重试）
         bool ok = network->pushState("change", &fields);
+        // 每次 change 事件后同步 stateId：
+        // 服务端可能在用户手动切换步骤时更新 stateId，
+        // Process 需同步最新值以确保后续 change 事件不被 stateId 校验拒绝
+        process->setStateId(network->getStateId());
         // 无论成功或失败都释放内存（change 通过 new 创建）
         delete change;
         return ok;

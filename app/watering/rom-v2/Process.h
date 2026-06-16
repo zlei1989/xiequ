@@ -199,6 +199,17 @@ public:
    */
   String getStateId();
   /**
+   * 设置会话标识（同步服务端最新 stateId）
+   *
+   * 服务端 stateId 在以下场景会更新：
+   * - bootstrap / finish / setDeviceSwitch
+   * 每次 get-state 返回的 stateId 为准，
+   * 非固定值，需同步到 Process 以确保 change 事件不被服务端拒绝。
+   *
+   * @param id 会话标识字符串
+   */
+  void setStateId(String id) { stateId = id; }
+  /**
    * 设置流程描述（从 JSON 文档解析步骤和中断）
    * @param value 流程配置 JSON 文档
    */
