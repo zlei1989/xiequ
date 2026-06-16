@@ -10,7 +10,8 @@ let execCallback: (chipId: string) => void;
 let deleteCallback: (chipId: string) => void;
 
 beforeEach(async () => {
-  // 使用动态导入 + vitest 模块缓存清理确保 Map 初始为空
+  // 清除 globalThis 上的单例 + 重置模块缓存，确保每个测试用例的 Map 初始为空
+  Reflect.deleteProperty(globalThis, Symbol.for('watering.callbackMap'));
   vi.resetModules();
   const mod = await import('@/app/watering/services/callback-map');
   setCallback = mod.setCallback;
