@@ -5,6 +5,9 @@ import { calcSensorReadings } from '../utils/calc-sensor';
 
 import type { DeviceConfig, DeviceState, DeviceItem } from '../types';
 
+/** 日志保留天数 */
+const LOG_RETENTION_DAYS = 7;
+
 /** watering_devices 表 SQLite 原始行 */
 interface DeviceRow {
   chip_id: string;
@@ -452,14 +455,16 @@ export async function updateIdleSince(
 }
 
 /**
- * 获取设备日志
+ * 获取设备日志（仅返回最近 7 天内的日志）
  */
 // eslint-disable-next-line @typescript-eslint/require-await -- SQLite WASM 驱动为同步，保持 async 契约
-export async function getDeviceLogs(chipId: string, limit = 100) {
+export async function getDeviceLogs(chipId: string) {
   const db = getDb();
+  /** 7 天前的 ISO 时间字符串 */
+  const since = new Date(Date.now() - LOG_RETENTION_DAYS * 24 * 60 * 60 * 1000).toISOString();
   const rows = db.all(
-    'SELECT id, chip_id, mac_address, event, state_id, message, state, readings, created_time FROM watering_logs WHERE chip_id = ? ORDER BY created_time DESC LIMIT ?',
-    [chipId, limit],
+    'SELECT id, chip_id, mac_address, event, state_id, message, state, readings, created_time FROM watering_logs WHERE chip_id = ? AND created_time > ? ORDER BY created_time DESC',
+    [chipId, since],
   ) as unknown as LogRow[];
   return rows.map((row) => ({
     id: row.id,
