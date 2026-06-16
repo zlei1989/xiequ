@@ -5,7 +5,7 @@
  * 字段有值才显示，disabled 时追加【已禁用】标记。
  */
 
-import type { ProcessConfig, StepConfig, InterruptConfig, ScheduleConfig } from '../types';
+import type { ProcessConfig, StepConfig, InterruptConfig, ScheduleConfig, SensorConfig } from '../types';
 
 /**
  * 将毫秒转为中文时间字符串
@@ -114,6 +114,37 @@ export function formatProcessDesc(proc: ProcessConfig): string {
   parts.push(`${proc.steps.length}个步骤`);
 
   if (proc.trigger) parts.push(`触发:${proc.trigger}`);
+
+  return parts.join(' · ');
+}
+
+/**
+ * 生成传感器列表描述
+ * 格式按类型/转换：
+ * - 数字信号：sensor_0 · 数字
+ * - 模拟信号无转换：sensor_1 · 模拟 · ADC
+ * - 分压：sensor_0 · 模拟 · 分压 · R1=30kΩ R2=10kΩ
+ * - 温感：sensor_1 · 模拟 · 温感 · B=3435
+ */
+export function formatSensorDesc(s: SensorConfig): string {
+  const typeLabels: Record<string, string> = {
+    digital: '数字',
+    analog: '模拟',
+  };
+
+  const parts = [s.sensor, typeLabels[s.type] ?? s.type];
+
+  if (s.type === 'analog') {
+    if (s.conversion === 'resistor_divider') {
+      const r1 = (s.r1 ?? 30000) / 1000;
+      const r2 = (s.r2 ?? 10000) / 1000;
+      parts.push('分压', `R1=${r1}kΩ R2=${r2}kΩ`);
+    } else if (s.conversion === 'ntc_10k') {
+      parts.push('温感', `B=${s.bValue ?? 3435}`);
+    } else {
+      parts.push('ADC');
+    }
+  }
 
   return parts.join(' · ');
 }
