@@ -210,6 +210,7 @@ export function DeviceCard({
                 );
               }}
             >
+              <TextOutline />
               日志
             </Button>
             <Button

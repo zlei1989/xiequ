@@ -22,7 +22,7 @@ import { DeleteOutline } from 'antd-mobile-icons';
 import { useRouter } from 'next/navigation';
 import { use, useEffect } from 'react';
 
-import { LogCard, groupByStateId, type LogGroup } from '../../../components/log-card';
+import { BootCard, ProcessCard, groupByProcess, type ProcessGroup } from '../../../components/log-card';
 import { useDeviceLogs } from '../../../hooks/use-device-logs';
 
 /** 设备日志页 */
@@ -105,14 +105,25 @@ export default function DeviceLogsPage({
       );
     }
 
-    // 有日志数据 — 下拉刷新包裹，按 stateId 分组后逐个渲染卡片
-    const groups: LogGroup[] = groupByStateId(logs);
+    // 有日志数据 — 下拉刷新包裹，按流程分组后渲染开机卡/流程卡
+    const groups: ProcessGroup[] = groupByProcess(logs);
     return (
       <PullToRefresh onRefresh={handleRefresh}>
         <List>
-          {groups.map((group) => (
-            <LogCard group={group} key={group.stateId} />
-          ))}
+          {groups.map((group) =>
+            group.type === 'boot' ? (
+              <BootCard
+                allLogs={logs}
+                group={group}
+                key={`boot-${group.bootItem?.createdTime ?? ''}`}
+              />
+            ) : (
+              <ProcessCard
+                group={group}
+                key={`process-${group.items[0]?.createdTime ?? ''}`}
+              />
+            ),
+          )}
         </List>
       </PullToRefresh>
     );
