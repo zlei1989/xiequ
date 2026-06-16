@@ -76,6 +76,15 @@ interface LogRow {
   created_time: string;
 }
 
+/** watering_sensor_log 表 SQLite 原始行 */
+interface SensorLogRow {
+  id: number;
+  chip_id: string;
+  record_time: string;
+  readings: string;
+  created_time: string;
+}
+
 /**
  * sql.js 的 getAsObject() 将 JSON 列作为字符串返回（不自动解析）。
  * 此辅助函数安全地将 JSON 字符串解析为对象/数组，如果已经是对象则直接返回。
@@ -205,6 +214,23 @@ export async function initDb() {
       created_time INTEGER NOT NULL,
       PRIMARY KEY (chip_id, trigger_time, process_index)
     )
+  `);
+
+  // 传感器采样日志表（每 15 分钟一条）
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS watering_sensor_log (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      chip_id TEXT NOT NULL,
+      record_time TEXT NOT NULL,
+      readings JSON NOT NULL,
+      created_time TEXT NOT NULL,
+      FOREIGN KEY (chip_id) REFERENCES watering_devices(chip_id)
+    )
+  `);
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_sensor_log_time
+    ON watering_sensor_log(chip_id, record_time)
   `);
 
   // ---- voltage → sensors 迁移 ----
@@ -553,6 +579,57 @@ export async function writeDeviceLog(
 export async function clearDeviceLogs(chipId: string) {
   const db = getDb();
   db.run('DELETE FROM watering_logs WHERE chip_id = ?', chipId);
+}
+
+/**
+ * 写入传感器采样日志
+ *
+ * 每次写入后附带清理 7 天前的数据，保持表规模可控。
+ * SQLite WASM 驱动为同步，函数签名保持 async 以兼容上层契约。
+ *
+ * @param chipId 设备芯片 ID
+ * @param recordTime 采样时间点（对齐到 15 分钟自然时间），ISO 8601
+ * @param readings 计算后的传感器读数数组
+ */
+// eslint-disable-next-line @typescript-eslint/require-await -- SQLite WASM 驱动为同步，保持 async 契约
+export async function writeSensorLog(
+  chipId: string,
+  recordTime: string,
+  readings: { label: string; value: number }[],
+): Promise<void> {
+  const db = getDbSync();
+  db.run(
+    'INSERT INTO watering_sensor_log (chip_id, record_time, readings, created_time) VALUES (?, ?, ?, ?)',
+    [chipId, recordTime, JSON.stringify(readings), new Date().toISOString()],
+  );
+  // 清理 7 天前的数据
+  const cutoff = new Date(Date.now() - LOG_RETENTION_DAYS * 24 * 60 * 60 * 1000).toISOString();
+  db.run('DELETE FROM watering_sensor_log WHERE record_time < ?', [cutoff]);
+}
+
+/**
+ * 查询设备传感器采样日志
+ *
+ * 按时间范围筛选，按 record_time 升序排列，供前端绘制折线图。
+ * SQLite WASM 驱动为同步，函数签名保持 async 以兼容上层契约。
+ *
+ * @param chipId 设备芯片 ID
+ * @param since ISO 8601 起始时间
+ */
+// eslint-disable-next-line @typescript-eslint/require-await -- SQLite WASM 驱动为同步，保持 async 契约
+export async function getSensorLogs(
+  chipId: string,
+  since: string,
+): Promise<{ recordTime: string; readings: { label: string; value: number }[] }[]> {
+  const db = getDb();
+  const rows = db.all(
+    'SELECT id, chip_id, record_time, readings, created_time FROM watering_sensor_log WHERE chip_id = ? AND record_time >= ? ORDER BY record_time ASC',
+    [chipId, since],
+  ) as unknown as SensorLogRow[];
+  return rows.map((row) => ({
+    recordTime: row.record_time,
+    readings: parseJSON(row.readings, [] as { label: string; value: number }[]),
+  }));
 }
 
 /**
