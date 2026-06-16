@@ -28,6 +28,7 @@ export function DeviceCard({
 }) {
   const router = useRouter();
   const [actionVisible, setActionVisible] = useState(false);
+  const [logsVisible, setLogsVisible] = useState(false);
 
   /** ActionSheet 菜单分发 */
   function handleAction(action: { key: string | number }) {
@@ -182,9 +183,7 @@ export function DeviceCard({
               fill="none"
               size="small"
               onClick={() => {
-                router.push(
-                  `/watering/logs/${device.chipId}?macAddress=${encodeURIComponent(device.macAddress)}`,
-                );
+                setLogsVisible(true);
               }}
             >
               <TextOutline />
@@ -360,6 +359,36 @@ export function DeviceCard({
         onAction={handleAction}
         onClose={() => {
           setActionVisible(false);
+        }}
+      />
+
+      <ActionSheet
+        closeOnAction
+        safeArea
+        actions={[
+          {
+            key: 'exec',
+            text: '执行日志',
+            onClick: () => {
+              router.push(
+                `/watering/logs/${device.chipId}?macAddress=${encodeURIComponent(device.macAddress)}`,
+              );
+            },
+          },
+          {
+            key: 'env',
+            text: '环境日志',
+            onClick: () => {
+              router.push(
+                `/watering/charts/${device.chipId}?macAddress=${encodeURIComponent(device.macAddress)}`,
+              );
+            },
+          },
+        ]}
+        cancelText="取消"
+        visible={logsVisible}
+        onClose={() => {
+          setLogsVisible(false);
         }}
       />
     </>
