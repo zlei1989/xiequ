@@ -272,7 +272,7 @@ export function DeviceCard({
 
               return (
                 <div className="flex items-center" key={`${config.sensor}-${idx}`}>
-                  <span className="text-xs text-gray-400">{config.name}:</span>
+                  <span className="text-xs text-gray-400">{config.name}: </span>
                   <span className="text-[13px] font-medium">
                     {typeof reading.value === 'number' ? displayValue : '—'}
                   </span>
