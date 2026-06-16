@@ -40,7 +40,7 @@ export function DebugResponseList({
       title="请求日志"
     >
       {logs.length === 0 ? (
-        <ErrorBlock status="empty" title="" description="" />
+        <ErrorBlock description="" status="empty" title="" />
       ) : (
         <List
           className="max-h-[400px] overflow-y-auto text-xs"

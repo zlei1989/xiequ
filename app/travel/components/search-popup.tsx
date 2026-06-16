@@ -82,7 +82,7 @@ export function SearchPopup({
       {searching ? (
         <DotLoading />
       ) : results.length === 0 ? (
-        <ErrorBlock status="empty" title="暂无搜索结果" description="" />
+        <ErrorBlock description="" status="empty" title="暂无搜索结果" />
       ) : (
         <List>
           {results.map((item) => (

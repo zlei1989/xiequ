@@ -147,7 +147,7 @@ export function LocationViewPopup({
         title="精彩瞬间"
       >
         {moments.length === 0 ? (
-          <ErrorBlock status="empty" title="暂无记录" description="" />
+          <ErrorBlock description="" status="empty" title="暂无记录" />
         ) : (
           <Space className="w-full" direction="vertical">
             {moments.map((moment) => (

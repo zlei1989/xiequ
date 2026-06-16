@@ -125,7 +125,7 @@ export function SortableList<T>({
   const listContent = (
     <List header={header}>
       {items.length === 0 ? (
-        <ErrorBlock status="empty" title={emptyText} description="" />
+        <ErrorBlock description="" status="empty" title={emptyText} />
       ) : (
         items.map((item, index) => {
           const id = keyFn(item, index);

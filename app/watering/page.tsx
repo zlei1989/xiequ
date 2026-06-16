@@ -28,7 +28,7 @@ export default function WateringPage() {
           loading && devices.length === 0 ? (
             <DotLoading />
           ) : devices.length === 0 ? (
-            <ErrorBlock description="等待 IoT 设备上线" title="暂无设备" status="empty" />
+            <ErrorBlock description="等待 IoT 设备上线" status="empty" title="暂无设备" />
           ) : (
             <div
               className="flex flex-col gap-4 px-3 pb-3">

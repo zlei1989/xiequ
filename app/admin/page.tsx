@@ -236,7 +236,7 @@ export default function AdminPage() {
   return (
     <>
       {files.length === 0 ? (
-        <ErrorBlock status="empty" title="暂无文件" description="" />
+        <ErrorBlock description="" status="empty" title="暂无文件" />
       ) : (
         <List>
           {files.map((file) => (
