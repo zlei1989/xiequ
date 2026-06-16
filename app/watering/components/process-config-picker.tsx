@@ -116,7 +116,7 @@ export function ProcessConfigPicker({
                 onChange={(vals) => { update({ trigger: vals.length > 0 ? vals[0] : undefined }); }}
               />
             ) : (
-              <ErrorBlock description="请等待设备上报 GPIO 状态" status="empty" title="无可用按钮" />
+              <ErrorBlock description="等待设备上报 GPIO 状态" status="empty" title="无可用按钮" />
             )}
           </Form.Item>
         </Form>

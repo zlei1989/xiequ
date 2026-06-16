@@ -164,9 +164,9 @@ export default function FavouritesPage() {
       {loading && sortedLocations.length === 0 ? (
         <DotLoading />
       ) : sortedLocations.length === 0 ? (
-        <ErrorBlock status="empty" title="暂无位置" />
+        <ErrorBlock status="empty" title="暂无位置" description="" />
       ) : searchText.trim() && filteredLocations.length === 0 ? (
-        <ErrorBlock status="empty" title="暂无搜索结果" />
+        <ErrorBlock status="empty" title="暂无搜索结果" description="" />
       ) : (
         <PullToRefresh onRefresh={load}>
           <List>

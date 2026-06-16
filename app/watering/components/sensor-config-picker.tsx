@@ -96,7 +96,7 @@ function SensorFormBody({
               }}
             />
           ) : (
-            <ErrorBlock description="请等待设备上报 GPIO 状态" status="empty" title="无可用传感器" />
+            <ErrorBlock description="等待设备上报 GPIO 状态" status="empty" title="无可用传感器" />
           )}
         </Form.Item>
 

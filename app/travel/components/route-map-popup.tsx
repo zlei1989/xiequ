@@ -214,7 +214,7 @@ export function RouteMapPopup({
         onMaskClick={() => { setShowEntryList(false); }}
       >
         {groupedEntries.size === 0 ? (
-          <ErrorBlock status="empty" title="暂无位置" />
+          <ErrorBlock status="empty" title="暂无位置" description="" />
         ) : (
           Array.from(groupedEntries.entries()).map(([date, entries]) => (
             <List header={date} key={date}>
