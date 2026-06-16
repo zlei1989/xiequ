@@ -224,6 +224,12 @@ export async function initDb() {
     ON watering_sensor_log(chip_id, record_time)
   `);
 
+  // 唯一约束：同一设备同一时间点仅一条采样记录
+  db.exec(`
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_sensor_log_unique
+    ON watering_sensor_log(chip_id, record_time)
+  `);
+
   // ---- voltage → sensors 迁移 ----
   try {
     db.exec("ALTER TABLE watering_devices ADD COLUMN sensors JSON NOT NULL DEFAULT '[]'");
@@ -590,7 +596,7 @@ export async function writeSensorLog(
 ): Promise<void> {
   const db = getDbSync();
   db.run(
-    'INSERT INTO watering_sensor_log (chip_id, record_time, readings, created_time) VALUES (?, ?, ?, ?)',
+    'INSERT OR IGNORE INTO watering_sensor_log (chip_id, record_time, readings, created_time) VALUES (?, ?, ?, ?)',
     [chipId, recordTime, JSON.stringify(readings), new Date().toISOString()],
   );
   // 清理 7 天前的数据

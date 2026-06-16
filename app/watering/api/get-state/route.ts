@@ -308,7 +308,13 @@ export async function GET(request: NextRequest) {
     const config = await getDeviceConfig(chipId);
 
     // 传感器定时采样（fire-and-forget，不阻塞响应）
-    void sampleSensorIfNeeded(searchParams, config, chipId);
+    void sampleSensorIfNeeded(searchParams, config, chipId).catch((err) => {
+      console.error('[Watering] 传感器采样失败', {
+        chipId,
+        error: err instanceof Error ? err.message : String(err),
+      });
+      if (err instanceof Error && err.stack) console.error(err.stack);
+    });
 
     // 读取设备状态
     const state = await getDeviceState(chipId);
