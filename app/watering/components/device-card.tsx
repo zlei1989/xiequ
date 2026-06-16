@@ -38,9 +38,6 @@ export function DeviceCard({
           `/watering/devices/${device.chipId}?macAddress=${encodeURIComponent(device.macAddress)}`,
         );
         break;
-      case 'clear':
-        void onClickClear();
-        break;
       case 'delete':
         void Dialog.confirm({
           title: '确认删除设备？',
@@ -55,7 +52,6 @@ export function DeviceCard({
 
   const actions = [
     { key: 'config', text: '配置设备' },
-    { key: 'clear', text: '清除状态' },
     { key: 'delete', text: '删除设备', danger: true },
   ];
 
@@ -118,25 +114,6 @@ export function DeviceCard({
       Toast.show({
         content:
           err instanceof Error ? err.message : String(err) || '操作失败',
-        icon: 'fail',
-      });
-    }
-  }
-
-  /** 清除设备状态（发送 off 指令） */
-  async function onClickClear() {
-    try {
-      await setDeviceSwitch(device.chipId, 'off');
-      Toast.show({ content: '已清除状态', icon: 'success' });
-      onRefresh();
-    } catch (err: unknown) {
-      console.error(
-        `[DeviceCard] 清除设备状态失败 chipId=${device.chipId}`,
-        err,
-      );
-      Toast.show({
-        content:
-          err instanceof Error ? err.message : String(err) || '清除失败',
         icon: 'fail',
       });
     }
