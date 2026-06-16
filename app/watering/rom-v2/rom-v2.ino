@@ -477,14 +477,14 @@ void networkStateChangeHandler(JsonDocument *state, NetworkExt *network,
       !(*state)["process"]["steps"].is<JsonArray>())
   {
     _idled = true;
-    network.setSleepDuration(0); // 无流程执行则清除睡眠时长
+    network->setSleepDuration(0); // 无流程执行则清除睡眠时长
     yield();
     return;
   }
 
   // 启动新流程：清除睡眠时长，防止流程执行中被错误休眠
   _idled = false;
-  network.setSleepDuration(0);
+  network->setSleepDuration(0);
   process.setSchema((*state).as<JsonObject>());
   // 支持从指定步骤开始执行
   if ((*state)["stepIndex"].is<int>()) {
@@ -494,6 +494,15 @@ void networkStateChangeHandler(JsonDocument *state, NetworkExt *network,
     process.execute();
   }
 }
+
+/**
+ * 流程执行变化回调的 invoke 上下文
+ * 将 process 和 change 打包传递，使 lambda 无需捕获即可转为函数指针
+ */
+struct ProcessChangeInvokeContext {
+  Process *process;
+  Process::Change *change;
+};
 
 /**
  * 流程执行变化回调
@@ -507,10 +516,13 @@ void processChangeHandler(Process::Change *change, Process *process,
                           void *context)
 {
   // 通过 invoke 延迟执行网络请求，确保网络空闲时才推送
+  // 将 process 和 change 打包到上下文中，避免 lambda 捕获导致无法转为函数指针
+  auto *ctx = new ProcessChangeInvokeContext{process, change};
   network.invoke(
-      [process](NetworkExt *network, void *context)
+      [](NetworkExt *network, void *context)
       {
-        Process::Change *change = reinterpret_cast<Process::Change *>(context);
+        auto *ctx = reinterpret_cast<ProcessChangeInvokeContext *>(context);
+        Process::Change *change = ctx->change;
         // 构建推送数据
         JsonDocument fields;
         JsonObject object = fields.to<JsonObject>();
@@ -523,12 +535,13 @@ void processChangeHandler(Process::Change *change, Process *process,
         // 每次 change 事件后同步 stateId：
         // 服务端可能在用户手动切换步骤时更新 stateId，
         // Process 需同步最新值以确保后续 change 事件不被 stateId 校验拒绝
-        process->setStateId(network->getStateId());
+        ctx->process->setStateId(network->getStateId());
         // 无论成功或失败都释放内存（change 通过 new 创建）
         delete change;
+        delete ctx;
         return ok;
       },
-      change);
+      ctx);
 }
 
 /**
