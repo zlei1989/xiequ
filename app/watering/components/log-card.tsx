@@ -386,7 +386,7 @@ export function extractProcessNames(items: LogItem[]): string[] {
 
 /** 统计 change 事件数（即步骤总数） */
 export function countSteps(items: LogItem[]): number {
-  return items.filter((i) => i.event === 'change' && i?.state?.type === 'step_ready').length;
+  return items.filter((i) => i.event === 'change' && (i.state as Record<string, unknown> | undefined)?.type === 'step_ready').length;
 }
 
 /**
@@ -529,7 +529,7 @@ export function ProcessCard({ group }: { group: ProcessGroup }) {
 
   // 摘要行
   const summaryParts: string[] = [];
-  summaryParts.push(formatDate(group.items[0].createdTime));
+  summaryParts.push(formatDate(group.items[0]?.createdTime ?? ''));
   if (durationText) summaryParts.push(durationText);
   if (stepCount > 0) summaryParts.push(`共${String(stepCount)}步`);
   const summaryText = summaryParts.join(' · ');
