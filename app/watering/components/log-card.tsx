@@ -545,7 +545,7 @@ export function ProcessCard({ group }: { group: ProcessGroup }) {
       )}
 
       {/* 步骤列表 */}
-      <Steps direction="vertical" className="!p-0">
+      <Steps className="!p-0" direction="vertical">
         {group.items
           .filter((item) => item.event === 'change')
           .map((item, idx) => {
