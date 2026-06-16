@@ -76,15 +76,6 @@ interface LogRow {
   created_time: string;
 }
 
-/** watering_sensor_log 表 SQLite 原始行 */
-interface SensorLogRow {
-  id: number;
-  chip_id: string;
-  record_time: string;
-  readings: string;
-  created_time: string;
-}
-
 /**
  * sql.js 的 getAsObject() 将 JSON 列作为字符串返回（不自动解析）。
  * 此辅助函数安全地将 JSON 字符串解析为对象/数组，如果已经是对象则直接返回。
@@ -623,9 +614,9 @@ export async function getSensorLogs(
 ): Promise<{ recordTime: string; readings: { label: string; value: number }[] }[]> {
   const db = getDb();
   const rows = db.all(
-    'SELECT id, chip_id, record_time, readings, created_time FROM watering_sensor_log WHERE chip_id = ? AND record_time >= ? ORDER BY record_time ASC',
+    'SELECT record_time, readings FROM watering_sensor_log WHERE chip_id = ? AND record_time >= ? ORDER BY record_time ASC',
     [chipId, since],
-  ) as unknown as SensorLogRow[];
+  ) as unknown as { record_time: string; readings: string }[];
   return rows.map((row) => ({
     recordTime: row.record_time,
     readings: parseJSON(row.readings, [] as { label: string; value: number }[]),
