@@ -14,7 +14,7 @@ import {
   PullToRefresh,
   DotLoading,
   ErrorBlock,
-  List,
+  Space,
   Dialog,
   Toast,
 } from 'antd-mobile';
@@ -109,7 +109,7 @@ export default function DeviceLogsPage({
     const groups: ProcessGroup[] = groupByProcess(logs);
     return (
       <PullToRefresh onRefresh={handleRefresh}>
-        <List>
+        <Space block>
           {groups.map((group) =>
             group.type === 'boot' ? (
               <BootCard
@@ -124,7 +124,7 @@ export default function DeviceLogsPage({
               />
             ),
           )}
-        </List>
+        </Space>
       </PullToRefresh>
     );
   }
