@@ -1,6 +1,7 @@
 /**
  * 传感器采样逻辑单元测试
  */
+/* eslint-disable @typescript-eslint/no-non-null-assertion -- 测试中断言元素存在后使用 ! 是标准做法 */
 import { describe, it, expect } from 'vitest';
 
 /**
@@ -92,8 +93,8 @@ describe('recordsToSeries', () => {
     ];
     const result = recordsToSeries(records);
     expect(result).toHaveLength(1);
-    expect(result[0].label).toBe('温度');
-    expect(result[0].data).toEqual([
+    expect(result[0]!.label).toBe('温度');
+    expect(result[0]!.data).toEqual([
       { time: '2026-06-17T14:00:00.000Z', value: 32.5 },
       { time: '2026-06-17T14:15:00.000Z', value: 33.0 },
     ]);
@@ -118,10 +119,10 @@ describe('recordsToSeries', () => {
     ];
     const result = recordsToSeries(records);
     expect(result).toHaveLength(2);
-    expect(result[0].label).toBe('温度');
-    expect(result[1].label).toBe('电压');
-    expect(result[0].data).toHaveLength(2);
-    expect(result[1].data).toHaveLength(2);
+    expect(result[0]!.label).toBe('温度');
+    expect(result[1]!.label).toBe('电压');
+    expect(result[0]!.data).toHaveLength(2);
+    expect(result[1]!.data).toHaveLength(2);
   });
 
   it('部分记录缺少某传感器时补 0', () => {
@@ -144,7 +145,7 @@ describe('recordsToSeries', () => {
       },
     ];
     const result = recordsToSeries(records);
-    expect(result[0].label).toBe('电压');
-    expect(result[1].label).toBe('温度');
+    expect(result[0]!.label).toBe('电压');
+    expect(result[1]!.label).toBe('温度');
   });
 });
