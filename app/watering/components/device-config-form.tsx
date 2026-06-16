@@ -29,7 +29,7 @@ import {
 } from 'antd-mobile-icons';
 import { useState, useEffect } from 'react';
 
-import { formatProcessDesc, formatScheduleDesc } from '../utils/format-desc';
+import { formatProcessDesc, formatScheduleDesc, formatSensorDesc } from '../utils/format-desc';
 
 import { InterruptConfigPicker } from './interrupt-config-picker';
 import { ProcessConfigPicker } from './process-config-picker';
@@ -310,6 +310,16 @@ export function DeviceConfigForm({
     setSensorVisible(false);
   }
 
+  /** 从列表中删除指定传感器（SwipeAction 触发） */
+  function deleteSensorFromList(index: number) {
+    const newSensors = form.sensors.filter((_, i) => i !== index);
+    setForm({ ...form, sensors: newSensors });
+    if (index === sensorEditIndex) {
+      setSensorVisible(false);
+      setSensorEditIndex(-1);
+    }
+  }
+
   // ---- 确认删除的通用辅助 ----
   function confirmDelete(title: string, onConfirm: () => void) {
     void Dialog.confirm({
@@ -392,14 +402,52 @@ export function DeviceConfigForm({
           />
         </Form.Item>
 
-        {/* ======== 传感器配置摘要栏 ======== */}
-        <Form.Item label="传感器配置" onClick={() => { setSensorEditIndex(-1); setSensorVisible(true); }}>
-          <span>
-            {form.sensors.length > 0 ? `已配置 ${form.sensors.length} 项` : '未配置'}
-          </span>
-        </Form.Item>
-
       </Form>
+
+      {/* ======== 传感器列表 ======== */}
+      <SortableList
+        emptyText="暂无传感器"
+        getKey={(s, i) => (s).sensor + String(i)}
+        header="传感器"
+        items={form.sensors}
+        renderItem={(sensor, index) => (
+          <SwipeAction
+            rightActions={[
+              {
+                key: 'delete',
+                text: '删除',
+                color: 'danger',
+                onClick: () => {
+                  confirmDelete('确认删除此传感器？', () => { deleteSensorFromList(index); });
+                },
+              },
+            ]}
+          >
+            <List.Item
+              clickable
+              description={formatSensorDesc(sensor)}
+              onClick={() => {
+                setSensorEditIndex(index);
+                setSensorVisible(true);
+              }}
+            >
+              {sensor.name || '未命名'}
+            </List.Item>
+          </SwipeAction>
+        )}
+        onReorder={(from, to) => {
+          const newSensors = arrayMove(form.sensors, from, to);
+          setForm({ ...form, sensors: newSensors });
+        }}
+      />
+      <div className="p-2">
+        <Button block size="small" onClick={() => {
+          setSensorEditIndex(-1);
+          setSensorVisible(true);
+        }}>
+          <AddOutline /> 添加传感器
+        </Button>
+      </div>
 
 
 
@@ -556,14 +604,18 @@ export function DeviceConfigForm({
         onDelete={deleteSchedule}
       />
 
-      {/* 传感器配置 Picker */}
+      {/* 传感器编辑 Picker */}
       <SensorConfigPicker
         gpio={gpio}
+        key={sensorEditIndex >= 0 ? form.sensors[sensorEditIndex]?.sensor ?? 'new' : 'new'}
         open={sensorVisible}
         sensor={sensorEditIndex >= 0 && sensorEditIndex < form.sensors.length
           ? (form.sensors[sensorEditIndex] ?? defaultSensor(gpio))
           : defaultSensor(gpio)}
-        onClose={() => { setSensorVisible(false); }}
+        onClose={() => {
+          setSensorVisible(false);
+          setSensorEditIndex(-1);
+        }}
         onConfirm={confirmSensor}
       />
     </>
