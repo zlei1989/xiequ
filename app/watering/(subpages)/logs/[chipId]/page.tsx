@@ -110,17 +110,17 @@ export default function DeviceLogsPage({
     return (
       <PullToRefresh onRefresh={handleRefresh}>
         <Space block className="px-3 pb-3" direction="vertical">
-          {groups.map((group) =>
+          {groups.map((group, idx) =>
             group.type === 'boot' ? (
               <BootCard
                 allLogs={logs}
                 group={group}
-                key={`boot-${group.bootItem?.createdTime ?? ''}`}
+                key={`boot-${idx}-${group.bootItem?.createdTime ?? ''}`}
               />
             ) : (
               <ProcessCard
                 group={group}
-                key={`process-${group.items[0]?.createdTime ?? ''}`}
+                key={`process-${idx}-${group.items[0]?.createdTime ?? ''}`}
               />
             ),
           )}
