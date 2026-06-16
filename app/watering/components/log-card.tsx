@@ -304,7 +304,7 @@ export function BootCard({ group, allLogs }: { group: ProcessGroup; allLogs: Log
     <Card
       extra={
         <span className="text-xs text-gray-400">
-          {formatTime(item.createdTime)}
+          {formatDateTime(item.createdTime)}
         </span>
       }
       key={`boot-${item.createdTime}`}
@@ -386,7 +386,7 @@ export function extractProcessNames(items: LogItem[]): string[] {
 
 /** 统计 change 事件数（即步骤总数） */
 export function countSteps(items: LogItem[]): number {
-  return items.filter((i) => i.event === 'change').length;
+  return items.filter((i) => i.event === 'change' && i?.state?.type === 'step_ready').length;
 }
 
 /**
@@ -441,6 +441,27 @@ function formatTime(isoString: string): string {
   });
 }
 
+/** 格式化时间为 YYYY-MM-DD */
+function formatDate(isoString: string): string {
+  return new Date(isoString).toLocaleString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  });
+}
+
+/** 格式化时间为 YYYY-MM-DD HH:MM:SS */
+function formatDateTime(isoString: string): string {
+  return new Date(isoString).toLocaleString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  });
+}
+
 /**
  * 流程卡片
  *
@@ -477,13 +498,6 @@ export function ProcessCard({ group }: { group: ProcessGroup }) {
   // 步骤数
   const stepCount = countSteps(group.items);
 
-  // 时间区间
-  const firstTime = formatTime(group.items[0]?.createdTime ?? '');
-  const lastTime =
-    group.endType === 'pending'
-      ? '???'
-      : formatTime(group.items[group.items.length - 1]?.createdTime ?? '');
-
   // 用时
   let durationText = '';
   if (group.endType === 'pending') {
@@ -491,11 +505,11 @@ export function ProcessCard({ group }: { group: ProcessGroup }) {
     if (lastItem && now > 0) {
       const elapsed =
         (now - new Date(lastItem.createdTime).getTime()) / 1000;
-      durationText = `已运行 ${formatSimpleDuration(Math.floor(elapsed))}`;
+      durationText = `已运行${formatSimpleDuration(Math.floor(elapsed))}`;
     }
   } else {
     const d = formatDuration(group.items);
-    if (d) durationText = `用时 ${d}`;
+    if (d) durationText = `用${d}`;
   }
 
   // 状态标签
@@ -515,14 +529,10 @@ export function ProcessCard({ group }: { group: ProcessGroup }) {
 
   // 摘要行
   const summaryParts: string[] = [];
-  summaryParts.push(`${firstTime} ~ ${lastTime}`);
-  if (stepCount > 0) summaryParts.push(`${String(stepCount)}个步骤`);
+  summaryParts.push(formatDate(group.items[0].createdTime));
   if (durationText) summaryParts.push(durationText);
+  if (stepCount > 0) summaryParts.push(`共${String(stepCount)}步`);
   const summaryText = summaryParts.join(' · ');
-
-  // 结束消息
-  const lastItem = group.items[group.items.length - 1];
-  const endTime = lastItem ? formatTime(lastItem.createdTime) : '';
 
   return (
     <Card
@@ -535,7 +545,7 @@ export function ProcessCard({ group }: { group: ProcessGroup }) {
       )}
 
       {/* 步骤列表 */}
-      <Steps direction="vertical">
+      <Steps direction="vertical" className="!p-0">
         {group.items
           .filter((item) => item.event === 'change')
           .map((item, idx) => {
@@ -617,24 +627,6 @@ export function ProcessCard({ group }: { group: ProcessGroup }) {
           })}
       </Steps>
 
-      {/* 结束标记 */}
-      <div className="mt-2 text-right text-xs text-gray-400">
-        {group.endType === 'finish' && (
-          <span>
-            流程完成 · {endTime}
-          </span>
-        )}
-        {group.endType === 'terminate' && (
-          <span style={{ color: 'var(--adm-color-warning)' }}>
-            手动终止 · {endTime}
-          </span>
-        )}
-        {group.endType === 'pending' && (
-          <span style={{ color: 'var(--adm-color-warning)' }}>
-            缺少完成事件（设备可能断电或离线）
-          </span>
-        )}
-      </div>
     </Card>
   );
 }
