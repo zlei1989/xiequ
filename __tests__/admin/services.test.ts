@@ -7,6 +7,7 @@
 
 import { existsSync, mkdirSync, readdirSync, rmdirSync, unlinkSync, writeFileSync } from 'fs';
 import path from 'path';
+
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { deleteFile, listFiles } from '@/app/admin/services';
@@ -113,6 +114,7 @@ describe('admin/services', () => {
       const bigFile = files.find((f) => f.name === 'big.db');
       expect(bigFile).toBeDefined();
       // sizeDisplay 应包含空格分隔的数值和单位
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       expect(bigFile!.sizeDisplay).toMatch(/^\d+(\.\d)?\s[KMB]B?$/);
     });
   });
