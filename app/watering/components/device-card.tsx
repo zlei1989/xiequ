@@ -249,38 +249,35 @@ export function DeviceCard({
             <span className="text-xs">{device.macAddress}</span>
           </div>
           {/* 传感器展示 — 设备信息区下方 */}
-          {sensorReadings.length > 0 && (
-            <div className="mb-2 border-t border-gray-100 pt-2">
-              {sensorReadings.map((reading, idx) => {
-                const config = device.sensors[idx];
-                if (!config) return null;
+          {sensorReadings.length > 0 &&
+            sensorReadings.map((reading, idx) => {
+              const config = device.sensors[idx];
+              if (!config) return null;
 
-                // 根据类型格式化显示值
-                const displayValue = (() => {
-                  if (config.type === 'digital') {
-                    return reading.value > 0 ? '高电平' : '低电平';
-                  }
-                  if (config.conversion === 'resistor_divider') {
-                    return `${reading.value.toFixed(2)}V`;
-                  }
-                  if (config.conversion === 'ntc_10k') {
-                    return `${reading.value.toFixed(1)}°C`;
-                  }
-                  // 模拟信号无转换 — 显示 ADC 原始值
-                  return String(reading.value);
-                })();
+              // 根据类型格式化显示值
+              const displayValue = (() => {
+                if (config.type === 'digital') {
+                  return reading.value > 0 ? '高电平' : '低电平';
+                }
+                if (config.conversion === 'resistor_divider') {
+                  return `${reading.value.toFixed(2)}V`;
+                }
+                if (config.conversion === 'ntc_10k') {
+                  return `${reading.value.toFixed(1)}°C`;
+                }
+                // 模拟信号无转换 — 显示 ADC 原始值
+                return String(reading.value);
+              })();
 
-                return (
-                  <div className="flex items-center justify-between py-0.5" key={`${config.sensor}-${idx}`}>
-                    <span className="text-xs text-gray-400">{config.name}</span>
-                    <span className="text-[13px] font-medium">
-                      {typeof reading.value === 'number' ? displayValue : '—'}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+              return (
+                <div className="flex items-center" key={`${config.sensor}-${idx}`}>
+                  <span className="text-xs text-gray-400">{config.name}:</span>
+                  <span className="text-[13px] font-medium">
+                    {typeof reading.value === 'number' ? displayValue : '—'}
+                  </span>
+                </div>
+              );
+            })}
         </div>
 
         {/*
