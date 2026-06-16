@@ -8,7 +8,7 @@
 'use client';
 
 import { Card, Space, Steps, Tag } from 'antd-mobile';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 /** ── 常量 ── */
 
@@ -321,7 +321,10 @@ export function formatCause(cause: string | undefined): string {
  */
 export function formatLoadValue(component: string, value: unknown): string {
   if (value === null || value === undefined) return `${component}(空)`;
-  return `${component}(${String(value)})`;
+  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+    return `${component}(${String(value)})`;
+  }
+  return `${component}(空)`;
 }
 
 /**
@@ -352,17 +355,17 @@ export function BootCard({ group, allLogs }: { group: ProcessGroup; allLogs: Log
 
   return (
     <Card
+      extra={
+        <span className="text-xs text-gray-400">
+          {formatTime(item.createdTime)}
+        </span>
+      }
       key={`boot-${item.createdTime}`}
       title={
         <Space align="center">
           <Tag color="success">开机</Tag>
           <span>开机记录</span>
         </Space>
-      }
-      extra={
-        <span className="text-xs text-gray-400">
-          {formatTime(item.createdTime)}
-        </span>
       }
     >
       {descText && (
@@ -533,6 +536,204 @@ function renderBootstrapDescription(
     parts.push(item.readings.map((r) => `${r.label}: ${r.value}`).join(' · '));
   }
   return parts.join(' · ');
+}
+
+/**
+ * 流程卡片
+ *
+ * 展示一次完整流程执行：摘要行 + Steps 步骤列表 + 结束标记。
+ * 缺失 finish/terminate 时显示"进行中"状态。
+ */
+export function ProcessCard({ group }: { group: ProcessGroup }) {
+  // hooks 必须在条件返回之前调用
+  const [now, setNow] = useState<number>(0);
+
+  // 更新"进行中"状态的当前时间，每 10 秒刷新一次
+  useEffect(() => {
+    if (group.endType !== 'pending') return;
+    let timer: ReturnType<typeof setInterval> | undefined;
+    // 用 setTimeout 延迟初始 setState，避免在 effect 体中同步调用
+    const id = setTimeout(() => {
+      setNow(Date.now());
+      timer = setInterval(() => { setNow(Date.now()); }, 10000);
+    }, 0);
+    return () => {
+      clearTimeout(id);
+      if (timer) clearInterval(timer);
+    };
+  }, [group.endType]);
+
+  if (group.items.length === 0) return null;
+
+  // 流程名：优先 execute 的 process.name，否则从 change 的 processName 提取
+  const processName =
+    group.processName ||
+    (group.items.length > 0 ? extractProcessNames(group.items)[0] : undefined) ||
+    '未知流程';
+
+  // 步骤数
+  const stepCount = countSteps(group.items);
+
+  // 时间区间
+  const firstTime = formatTime(group.items[0]?.createdTime ?? '');
+  const lastTime =
+    group.endType === 'pending'
+      ? '???'
+      : formatTime(group.items[group.items.length - 1]?.createdTime ?? '');
+
+  // 用时
+  let durationText = '';
+  if (group.endType === 'pending') {
+    const lastItem = group.items[group.items.length - 1];
+    if (lastItem && now > 0) {
+      const elapsed =
+        (now - new Date(lastItem.createdTime).getTime()) / 1000;
+      durationText = `已运行 ${formatSimpleDuration(Math.floor(elapsed))}`;
+    }
+  } else {
+    const d = formatDuration(group.items);
+    if (d) durationText = `用时 ${d}`;
+  }
+
+  // 状态标签
+  let statusTag: { label: string; color: 'success' | 'warning' | 'danger' };
+  switch (group.endType) {
+    case 'finish':
+      statusTag = { label: '已完成', color: 'success' };
+      break;
+    case 'terminate':
+      statusTag = { label: '已终止', color: 'warning' };
+      break;
+    case 'pending':
+    default:
+      statusTag = { label: '进行中', color: 'warning' };
+      break;
+  }
+
+  // 摘要行
+  const summaryParts: string[] = [];
+  summaryParts.push(`${firstTime} ~ ${lastTime}`);
+  if (stepCount > 0) summaryParts.push(`${String(stepCount)}个步骤`);
+  if (durationText) summaryParts.push(durationText);
+  const summaryText = summaryParts.join(' · ');
+
+  // 结束消息
+  const lastItem = group.items[group.items.length - 1];
+  const endTime = lastItem ? formatTime(lastItem.createdTime) : '';
+
+  return (
+    <Card
+      extra={<Tag color={statusTag.color}>{statusTag.label}</Tag>}
+      title={processName}
+    >
+      {/* 摘要行 */}
+      {summaryText && (
+        <div className="mb-2 text-xs text-gray-400">{summaryText}</div>
+      )}
+
+      {/* 步骤列表 */}
+      <Steps direction="vertical">
+        {group.items
+          .filter((item) => item.event === 'change')
+          .map((item, idx) => {
+            const stateObj = item.state as Record<string, unknown> | undefined;
+            const type = stateObj?.type;
+            const changeType =
+              typeof type === 'string' || typeof type === 'number'
+                ? String(type)
+                : '';
+            const component = stateObj?.component;
+            const value = stateObj?.value as
+              | { begin?: number; end?: number }
+              | undefined;
+            const interrupts = stateObj?.interrupts as
+              | Array<{ name: string; disabled: boolean }>
+              | undefined;
+
+            // 负载展示：只显示目标值（end）
+            const loadDisplay =
+              typeof component === 'string'
+                ? formatLoadValue(component, value?.end ?? null)
+                : '';
+
+            // 中断描述
+            const interruptText =
+              interrupts && interrupts.length > 0
+                ? `传感器: ${interrupts
+                  .map(
+                    (ir) =>
+                      `${ir.name}${ir.disabled ? '(禁用)' : ''}`,
+                  )
+                  .join(' · ')}`
+                : '';
+
+            return (
+              <Steps.Step
+                description={
+                  <span className="text-[13px] text-gray-700">
+                    {item.message ? (
+                      formatMessage({ ...item })
+                    ) : (
+                      loadDisplay
+                    )}
+                    {loadDisplay && item.message ? (
+                      <>
+                        {' · '}
+                        <span style={{ color: 'var(--adm-color-primary)' }}>
+                          {loadDisplay}
+                        </span>
+                      </>
+                    ) : null}
+                    {interruptText && (
+                      <span className="mt-0.5 block text-xs text-gray-400">
+                        {interruptText}
+                      </span>
+                    )}
+                  </span>
+                }
+                key={`step-${idx}`}
+                status={getStepStatus(item.event)}
+                title={
+                  <Space align="center">
+                    {changeType && changeTypeLabels[changeType] ? (
+                      <Tag
+                        color={changeTypeColors[changeType] || 'default'}
+                      >
+                        {changeTypeLabels[changeType]}
+                      </Tag>
+                    ) : (
+                      <Tag color="primary">变更</Tag>
+                    )}
+                    <span className="text-xs text-gray-400">
+                      {formatTime(item.createdTime)}
+                    </span>
+                  </Space>
+                }
+              />
+            );
+          })}
+      </Steps>
+
+      {/* 结束标记 */}
+      <div className="mt-2 text-right text-xs text-gray-400">
+        {group.endType === 'finish' && (
+          <span>
+            流程完成 · {endTime}
+          </span>
+        )}
+        {group.endType === 'terminate' && (
+          <span style={{ color: 'var(--adm-color-warning)' }}>
+            手动终止 · {endTime}
+          </span>
+        )}
+        {group.endType === 'pending' && (
+          <span style={{ color: 'var(--adm-color-warning)' }}>
+            缺少完成事件（设备可能断电或离线）
+          </span>
+        )}
+      </div>
+    </Card>
+  );
 }
 
 /** ── 组件 ── */
