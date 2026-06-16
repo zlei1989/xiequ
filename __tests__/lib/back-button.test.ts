@@ -191,8 +191,10 @@ describe('useBackButton', () => {
     firePopstate();
     expect(onCloseOuter).toHaveBeenCalledOnce();
 
-    // pushState 应增加（第三次返回键时也注入了占位）
-    expect(pushState.mock.calls.length).toBeGreaterThan(pushCountAfterSecond);
+    // 第三次返回键关闭最后一个弹窗，无需注入占位
+    // handlePopstate 检测 stack.length === 1（仅剩被关闭的 entry 等待 cleanup），
+    // 跳过 pushPlaceholder，避免多注入无用占位导致用户需多按一次返回键才能离开页面
+    expect(pushState.mock.calls.length).toBe(pushCountAfterSecond);
 
     unmountInner();
     unmountOuter();
