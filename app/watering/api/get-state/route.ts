@@ -16,12 +16,79 @@
 import { NextResponse } from 'next/server';
 
 import { setCallback, deleteCallback } from '@/app/watering/services/callback-map';
-import { getDeviceState, getDeviceConfig, updateTick, insertScheduleLog, hasScheduleLog, saveDeviceState } from '@/app/watering/services/db';
+import { getDeviceState, getDeviceConfig, updateTick, insertScheduleLog, hasScheduleLog, saveDeviceState, writeSensorLog, getSensorLogs } from '@/app/watering/services/db';
 import type { DeviceState, DeviceConfig, ScheduleConfig, ProcessConfig } from '@/app/watering/types';
+import type { SensorConfig } from '@/app/watering/types';
+import { calcSensorReadings } from '@/app/watering/utils/calc-sensor';
 import { filterProcess, filterProcesses } from '@/app/watering/utils/filter-process';
 import { newId } from '@/lib/utils';
 
 import type { NextRequest } from 'next/server';
+
+
+/**
+ * 计算当前时间之前最近的自然 15 分钟 slot
+ *
+ * 对齐到自然时间：分钟数向下取整到 0/15/30/45，秒和毫秒归零。
+ * 例如 14:32:45 → 14:30:00.000
+ *
+ * @param now 当前 Date 对象
+ * @returns 对齐后的 ISO 8601 时间字符串
+ */
+function calcLatestSlot(now: Date): string {
+  const slot = new Date(now);
+  const minutes = slot.getMinutes();
+  // 向下取整到最近的 15 分钟点
+  const floored = Math.floor(minutes / 15) * 15;
+  slot.setMinutes(floored, 0, 0);
+  return slot.toISOString();
+}
+
+/**
+ * 如果需要则写入传感器采样记录
+ *
+ * 从请求的查询参数中解析 sensor:xxx 参数，
+ * 计算传感器读数，判断当前 slot 是否需要采样，是则写入。
+ *
+ * @param searchParams 请求 URL 查询参数
+ * @param config 设备配置（含 sensors 配置）
+ * @param chipId 设备芯片 ID
+ */
+async function sampleSensorIfNeeded(
+  searchParams: URLSearchParams,
+  config: { sensors: SensorConfig[] } | null,
+  chipId: string,
+): Promise<void> {
+  // 解析传感器参数（同 push-state 解析方式）
+  const rawSensors: Record<string, number> = {};
+  searchParams.forEach((value, key) => {
+    const match = key.match(/^sensor:(.+)$/);
+    if (match) {
+      const gpioKey = match[1];
+      if (gpioKey) {
+        rawSensors[gpioKey] = parseInt(value) || 0;
+      }
+    }
+  });
+
+  // 无传感器数据或未配置传感器 — 跳过
+  if (Object.keys(rawSensors).length === 0 || !config?.sensors.length) return;
+
+  // 计算传感器读数
+  const readings = calcSensorReadings(config.sensors, rawSensors);
+  if (readings.length === 0) return;
+
+  // 计算当前 slot 并判断是否需要采样
+  const now = new Date();
+  const latestSlot = calcLatestSlot(now);
+
+  // 查询该设备最后一条记录的时间
+  const existingLogs = await getSensorLogs(chipId, latestSlot);
+  if (existingLogs.length > 0) return; // 当前 slot 已有记录
+
+  // 写入采样记录
+  await writeSensorLog(chipId, latestSlot, readings);
+}
 
 /** 环境变量 */
 const POLL_INTERVAL = parseInt(process.env.WATERING_POLL_INTERVAL || '1000');
@@ -237,11 +304,14 @@ export async function GET(request: NextRequest) {
     // 刷新心跳
     await updateTick(chipId);
 
-    // 并行读取状态和配置
-    const [state, config] = await Promise.all([
-      getDeviceState(chipId),
-      getDeviceConfig(chipId),
-    ]);
+    // 读取设备配置（传感器采样和计划任务都需要 config）
+    const config = await getDeviceConfig(chipId);
+
+    // 传感器定时采样（fire-and-forget，不阻塞响应）
+    void sampleSensorIfNeeded(searchParams, config, chipId);
+
+    // 读取设备状态
+    const state = await getDeviceState(chipId);
 
     // 计划任务检查（可能更新 state）
     if (state && config) {
