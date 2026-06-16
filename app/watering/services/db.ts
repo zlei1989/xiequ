@@ -439,14 +439,21 @@ export async function updateTick(chipId: string) {
  * 每次 ROM 有动作（pushState）时调用，重置空闲倒计时。
  * 使用 getDbSync() 保持与 writeDeviceLog 一致的调用模式。
  * SQLite 为同步驱动，函数签名保持 async 以兼容上层契约。
+ *
+ * @param chipId 设备芯片 ID
+ * @param actionType 动作类型
+ * @param customIdleSince 可选 — 自定义空闲起点时间戳（毫秒）。
+ * 不传则使用当前时间。bootstrap 时传入过去的时间戳，
+ * 可使唤醒后首次 get-state 立即满足 idleTimeout 检查，无需等待。
  */
 // eslint-disable-next-line @typescript-eslint/require-await -- SQLite WASM 驱动为同步，保持 async 契约
 export async function updateIdleSince(
   chipId: string,
   actionType: 'bootstrap' | 'button' | 'change' | 'finish' | 'heartbeat',
+  customIdleSince?: number,
 ) {
   const db = getDbSync();
-  const now = Date.now();
+  const now = customIdleSince ?? Date.now();
   const existing = db.get('SELECT 1 FROM watering_device_state WHERE chip_id = ?', chipId);
   if (existing) {
     db.run('UPDATE watering_device_state SET idle_since = ?, last_action_type = ? WHERE chip_id = ?',

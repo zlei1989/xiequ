@@ -116,7 +116,11 @@ export async function GET(request: NextRequest) {
       if (state.switch === 'on' && state.process) {
         await writeDeviceLog(chipId, 'execute', macAddress, { index: state.index }, bootstrapReadings, state.stateId);
       }
-      await updateIdleSince(chipId, 'bootstrap');
+      // 将 idleSince 设为过去的时间点（now - idleTimeout - 1s），
+      // 使唤醒后首次 get-state 立即满足空闲超时检查，无需等待即可休眠。
+      // 若设备有 pending 工作（bootExec/定时任务），switch 已为 'on' 不会触发休眠。
+      const bootstrapIdleSince = Date.now() - (config?.idleTimeout ?? 30000) - 1000;
+      await updateIdleSince(chipId, 'bootstrap', bootstrapIdleSince);
       break;
     }
     case 'change': {
