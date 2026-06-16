@@ -141,7 +141,7 @@ export async function GET(request: NextRequest) {
         // 防止用户手动切换步骤后，ROM 延迟到达的旧 change 事件覆盖新值
         if (state && dbStateId === stateId) {
           const oldStepIndex = state.stepIndex;
-          state.stepIndex = stepIndexNum!;
+          state.stepIndex = stepIndexNum ?? -1;
           console.info('[Watering] stepIndex 已写入', {
             chipId,
             type,

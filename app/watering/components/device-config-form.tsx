@@ -34,7 +34,7 @@ import { formatProcessDesc, formatScheduleDesc } from '../utils/format-desc';
 import { InterruptConfigPicker } from './interrupt-config-picker';
 import { ProcessConfigPicker } from './process-config-picker';
 import { ScheduleConfigPicker } from './schedule-config-picker';
-import { SensorConfigPicker } from './sensor-config-picker';
+import { defaultSensor, SensorConfigPicker } from './sensor-config-picker';
 import { SortableList } from './sortable-list';
 import { StepConfigPicker } from './step-config-picker';
 
@@ -84,6 +84,7 @@ export function DeviceConfigForm({
   const [scheduleIndex, setScheduleIndex] = useState(-1);
 
   const [sensorVisible, setSensorVisible] = useState(false);
+  const [sensorEditIndex, setSensorEditIndex] = useState(-1);
 
   // ---- 保存（声明在前，供 useEffect 引用）----
   async function handleSave() {
@@ -297,9 +298,16 @@ export function DeviceConfigForm({
     return `${record.type} ${record.value}`;
   }
 
-  /** 更新传感器配置 — SensorConfigPicker onChange 回调 */
-  function updateSensors(configs: SensorConfig[]) {
-    setForm({ ...form, sensors: configs });
+  /** 更新传感器配置 — SensorConfigPicker onConfirm 回调 */
+  function confirmSensor(s: SensorConfig) {
+    const updated = [...form.sensors];
+    if (sensorEditIndex >= 0) {
+      updated[sensorEditIndex] = s;
+    } else {
+      updated.push(s);
+    }
+    setForm({ ...form, sensors: updated });
+    setSensorVisible(false);
   }
 
   // ---- 确认删除的通用辅助 ----
@@ -385,7 +393,7 @@ export function DeviceConfigForm({
         </Form.Item>
 
         {/* ======== 传感器配置摘要栏 ======== */}
-        <Form.Item label="传感器配置" onClick={() => { setSensorVisible(true); }}>
+        <Form.Item label="传感器配置" onClick={() => { setSensorEditIndex(-1); setSensorVisible(true); }}>
           <span>
             {form.sensors.length > 0 ? `已配置 ${form.sensors.length} 项` : '未配置'}
           </span>
@@ -552,9 +560,11 @@ export function DeviceConfigForm({
       <SensorConfigPicker
         gpio={gpio}
         open={sensorVisible}
-        sensors={form.sensors}
-        onChange={updateSensors}
+        sensor={sensorEditIndex >= 0 && sensorEditIndex < form.sensors.length
+          ? (form.sensors[sensorEditIndex] ?? defaultSensor(gpio))
+          : defaultSensor(gpio)}
         onClose={() => { setSensorVisible(false); }}
+        onConfirm={confirmSensor}
       />
     </>
   );
