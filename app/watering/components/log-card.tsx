@@ -324,6 +324,57 @@ export function formatLoadValue(component: string, value: unknown): string {
   return `${component}(${String(value)})`;
 }
 
+/**
+ * 开机记录卡片
+ *
+ * 纯信息展示，不使用 Steps。
+ * 显示开机时间、唤醒原因、休眠时长、传感器读数。
+ */
+export function BootCard({ group, allLogs }: { group: ProcessGroup; allLogs: LogItem[] }) {
+  const item = group.bootItem;
+  if (!item) return null;
+
+  const causeLabel = formatCause(item.cause);
+  const sleepSec = calcSleepDuration(item, allLogs);
+  const sleepText = sleepSec >= 60 ? `休眠 ${formatSimpleDuration(sleepSec)}` : '';
+
+  // 描述行：唤醒原因 · 休眠时长
+  const descParts: string[] = [];
+  if (causeLabel) descParts.push(causeLabel);
+  if (sleepText) descParts.push(sleepText);
+  const descText = descParts.join(' · ');
+
+  // 传感器读数行
+  const readingText =
+    item.readings && item.readings.length > 0
+      ? item.readings.map((r) => `${r.label}: ${r.value}`).join(' · ')
+      : '';
+
+  return (
+    <Card
+      key={`boot-${item.createdTime}`}
+      title={
+        <Space align="center">
+          <Tag color="success">开机</Tag>
+          <span>开机记录</span>
+        </Space>
+      }
+      extra={
+        <span className="text-xs text-gray-400">
+          {formatTime(item.createdTime)}
+        </span>
+      }
+    >
+      {descText && (
+        <div className="mb-1 text-[13px] text-gray-700">{descText}</div>
+      )}
+      {readingText && (
+        <div className="text-xs text-gray-400">{readingText}</div>
+      )}
+    </Card>
+  );
+}
+
 /** 判断是否包含执行事件 */
 function hasExecute(items: LogItem[]): boolean {
   return items.some((item) => item.event === 'execute' || item.event === 'change');
