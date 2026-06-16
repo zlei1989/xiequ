@@ -20,6 +20,7 @@ import {
   calcSleepDuration,
   formatSeconds,
   parseLogMessage,
+  formatLoadValue,
 } from '@/app/watering/components/log-card';
 import type { LogItem } from '@/app/watering/components/log-card';
 
@@ -560,5 +561,31 @@ describe('calcSleepDuration', () => {
     const future = makeLog({ createdTime: '2026-06-13T12:00:00.000Z' });
     const allLogs = [future, current];
     expect(calcSleepDuration(current, allLogs)).toBe(0);
+  });
+});
+
+// ================================================================
+// formatLoadValue
+// ================================================================
+
+describe('formatLoadValue', () => {
+  it('load_0, 192 → "load_0(192)"', () => {
+    expect(formatLoadValue('load_0', 192)).toBe('load_0(192)');
+  });
+
+  it('load_1, 0 → "load_1(0)"', () => {
+    expect(formatLoadValue('load_1', 0)).toBe('load_1(0)');
+  });
+
+  it('load_0, null → "load_0(空)"', () => {
+    expect(formatLoadValue('load_0', null)).toBe('load_0(空)');
+  });
+
+  it('load_1, undefined → "load_1(空)"', () => {
+    expect(formatLoadValue('load_1', undefined)).toBe('load_1(空)');
+  });
+
+  it('load_3, 48 → "load_3(48)"', () => {
+    expect(formatLoadValue('load_3', 48)).toBe('load_3(48)');
   });
 });

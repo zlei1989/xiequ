@@ -313,6 +313,17 @@ export function formatCause(cause: string | undefined): string {
   return causeLabels[cause] || '';
 }
 
+/**
+ * 格式化负载值展示
+ *
+ * load_0, 192  → "load_0(192)"
+ * load_0, null → "load_0(空)"
+ */
+export function formatLoadValue(component: string, value: unknown): string {
+  if (value === null || value === undefined) return `${component}(空)`;
+  return `${component}(${String(value)})`;
+}
+
 /** 判断是否包含执行事件 */
 function hasExecute(items: LogItem[]): boolean {
   return items.some((item) => item.event === 'execute' || item.event === 'change');
