@@ -13,6 +13,7 @@ import {
   formatStepDesc,
   formatInterruptDesc,
   formatScheduleDesc,
+  formatScheduleTitle,
   formatProcessDesc,
   formatSensorDesc,
 } from '@/app/watering/utils/format-desc';
@@ -152,6 +153,46 @@ describe('formatInterruptDesc', () => {
 });
 
 // ================================================================
+// formatScheduleTitle
+// ================================================================
+
+describe('formatScheduleTitle', () => {
+  const processes: ProcessConfig[] = [
+    { name: '浇灌', steps: [] },
+  ];
+
+  it('once 类型 — 显示"单次 · yyyy-MM-dd HH:mm"', () => {
+    const sch: ScheduleConfig = { type: 'once', startTime: new Date('2026-06-17T08:30:00+08:00').getTime(), process: 0 };
+    expect(formatScheduleTitle(sch, processes)).toBe('单次 · 2026-06-17 08:30');
+  });
+
+  it('day 类型 interval=0 — 显示"每天 HH:mm"', () => {
+    const sch: ScheduleConfig = { type: 'day', startTime: Date.now(), value: 8 * 3600000 + 30 * 60000, interval: 0, process: 0 };
+    expect(formatScheduleTitle(sch, processes)).toBe('每天 08:30');
+  });
+
+  it('day 类型 interval=2 — 显示"每隔2天 HH:mm"', () => {
+    const sch: ScheduleConfig = { type: 'day', startTime: Date.now(), value: 14 * 3600000, interval: 2, process: 0 };
+    expect(formatScheduleTitle(sch, processes)).toBe('每隔2天 14:00');
+  });
+
+  it('minute 类型 — 显示"每隔N分钟"', () => {
+    const sch: ScheduleConfig = { type: 'minute', startTime: Date.now(), interval: 30, process: 0 };
+    expect(formatScheduleTitle(sch, processes)).toBe('每隔30分钟');
+  });
+
+  it('week 类型 — 显示"每周X HH:mm"', () => {
+    const sch: ScheduleConfig = { type: 'week', startTime: Date.now(), week: 1, value: 8 * 3600000, process: 0 };
+    expect(formatScheduleTitle(sch, processes)).toBe('每周一 08:00');
+  });
+
+  it('week 类型周日 — 显示"每周日"', () => {
+    const sch: ScheduleConfig = { type: 'week', startTime: Date.now(), week: 7, value: 18 * 3600000, process: 0 };
+    expect(formatScheduleTitle(sch, processes)).toBe('每周日 18:00');
+  });
+});
+
+// ================================================================
 // formatScheduleDesc
 // ================================================================
 
@@ -161,29 +202,34 @@ describe('formatScheduleDesc', () => {
     { name: '施肥', steps: [] },
   ];
 
-  it('显示流程名和间隔天', () => {
-    const sch: ScheduleConfig = { type: 'day', value: 28800000, interval: 2, process: 0 };
-    expect(formatScheduleDesc(sch, processes)).toBe('浇灌 · 间隔2天');
-  });
-
-  it('type=minute 显示间隔分钟', () => {
-    const sch: ScheduleConfig = { type: 'minute', value: 0, interval: 5, process: 1 };
-    expect(formatScheduleDesc(sch, processes)).toBe('施肥 · 间隔5分钟');
-  });
-
-  it('interval=1 不显示间隔', () => {
-    const sch: ScheduleConfig = { type: 'day', value: 28800000, interval: 1, process: 0 };
+  it('once 类型 — 仅显示流程名', () => {
+    const sch: ScheduleConfig = { type: 'once', startTime: new Date('2026-06-17T08:30:00+08:00').getTime(), process: 0 };
     expect(formatScheduleDesc(sch, processes)).toBe('浇灌');
   });
 
-  it('已禁用', () => {
-    const sch: ScheduleConfig = { type: 'day', value: 28800000, interval: 2, process: 0, disabled: true };
-    expect(formatScheduleDesc(sch, processes)).toBe('浇灌 · 间隔2天 · 【已禁用】');
+  it('day 类型 — 显示流程名 + 开始日期', () => {
+    const sch: ScheduleConfig = { type: 'day', startTime: new Date('2026-06-17T00:00:00+08:00').getTime(), value: 28800000, interval: 0, process: 0 };
+    expect(formatScheduleDesc(sch, processes)).toBe('浇灌 · 开始 2026-06-17');
+  });
+
+  it('minute 类型 — 显示流程名 + 开始日期时间', () => {
+    const sch: ScheduleConfig = { type: 'minute', startTime: new Date('2026-06-17T10:00:00+08:00').getTime(), interval: 30, process: 1 };
+    expect(formatScheduleDesc(sch, processes)).toBe('施肥 · 开始 2026-06-17 10:00');
+  });
+
+  it('week 类型 — 显示流程名 + 开始日期', () => {
+    const sch: ScheduleConfig = { type: 'week', startTime: new Date('2026-06-17T00:00:00+08:00').getTime(), week: 1, value: 28800000, process: 0 };
+    expect(formatScheduleDesc(sch, processes)).toBe('浇灌 · 开始 2026-06-17');
+  });
+
+  it('已禁用 — 追加【已禁用】', () => {
+    const sch: ScheduleConfig = { type: 'day', startTime: new Date('2026-06-17T00:00:00+08:00').getTime(), value: 28800000, interval: 0, process: 0, disabled: true };
+    expect(formatScheduleDesc(sch, processes)).toBe('浇灌 · 开始 2026-06-17 · 【已禁用】');
   });
 
   it('process 索引越界时不显示流程名', () => {
-    const sch: ScheduleConfig = { type: 'day', value: 0, interval: 3, process: 99 };
-    expect(formatScheduleDesc(sch, processes)).toBe('间隔3天');
+    const sch: ScheduleConfig = { type: 'day', startTime: new Date('2026-06-17T00:00:00+08:00').getTime(), value: 28800000, interval: 0, process: 99 };
+    expect(formatScheduleDesc(sch, processes)).toBe('开始 2026-06-17');
   });
 });
 

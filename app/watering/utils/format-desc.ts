@@ -5,6 +5,8 @@
  * 字段有值才显示，disabled 时追加【已禁用】标记。
  */
 
+import dayjs from 'dayjs';
+
 import type { ProcessConfig, StepConfig, InterruptConfig, ScheduleConfig, SensorConfig } from '../types';
 
 /**
@@ -80,11 +82,45 @@ export function formatInterruptDesc(intr: InterruptConfig): string {
   return parts.join(' · ');
 }
 
+/** 星期中文映射（1=周一...7=周日） */
+const WEEKDAY_LABELS: Record<number, string> = {
+  1: '一',
+  2: '二',
+  3: '三',
+  4: '四',
+  5: '五',
+  6: '六',
+  7: '日',
+};
+
 /**
- * 生成计划任务列表描述
- * 格式：流程名 · 间隔N天/分钟【已禁用】
- * @param sch 计划任务配置
- * @param processes 流程列表，用于根据索引查找流程名称
+ * 生成定时任务列表标题
+ * 格式按类型：单次 · yyyy-MM-dd HH:mm / 每天 HH:mm / 每隔N天 HH:mm / 每隔N分钟 / 每周X HH:mm
+ */
+export function formatScheduleTitle(sch: ScheduleConfig, _processes: ProcessConfig[]): string {
+  switch (sch.type) {
+    case 'once':
+      return `单次 · ${dayjs(sch.startTime).format('YYYY-MM-DD HH:mm')}`;
+    case 'day': {
+      const timeStr = dayjs().startOf('day').add(sch.value ?? 0, 'millisecond').format('HH:mm');
+      return sch.interval && sch.interval > 0
+        ? `每隔${sch.interval}天 ${timeStr}`
+        : `每天 ${timeStr}`;
+    }
+    case 'minute':
+      return `每隔${sch.interval ?? 30}分钟`;
+    case 'week': {
+      const weekLabel = WEEKDAY_LABELS[sch.week ?? 1] ?? '一';
+      const timeStr = dayjs().startOf('day').add(sch.value ?? 0, 'millisecond').format('HH:mm');
+      return `每周${weekLabel} ${timeStr}`;
+    }
+  }
+}
+
+/**
+ * 生成定时任务列表描述
+ * 格式：流程名 · 开始 yyyy-MM-dd[ HH:mm]【已禁用】
+ * once 类型不显示"开始"（标题已含完整时间），minute 类型"开始"含时间。
  */
 export function formatScheduleDesc(sch: ScheduleConfig, processes: ProcessConfig[]): string {
   const parts: string[] = [];
@@ -94,9 +130,15 @@ export function formatScheduleDesc(sch: ScheduleConfig, processes: ProcessConfig
     parts.push(proc.name);
   }
 
-  if (sch.interval > 1) {
-    const unit = sch.type === 'minute' ? '分钟' : '天';
-    parts.push(`间隔${sch.interval}${unit}`);
+  // once 不显示"开始"（标题已含完整时间）
+  if (sch.type !== 'once') {
+    if (sch.type === 'minute') {
+      // minute 类型"开始"含日期和时间
+      parts.push(`开始 ${dayjs(sch.startTime).format('YYYY-MM-DD HH:mm')}`);
+    } else {
+      // day/week 类型只显示日期
+      parts.push(`开始 ${dayjs(sch.startTime).format('YYYY-MM-DD')}`);
+    }
   }
 
   if (sch.disabled === true) parts.push('【已禁用】');
