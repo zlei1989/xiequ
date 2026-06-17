@@ -227,6 +227,22 @@ function SensorFormBody({
                 />
               </Form.Item>
             )}
+
+            {/* ADC 校准系数（仅模拟信号） */}
+            <Form.Item
+              help="校准系数 = 实际值 ÷ 显示值。如电压显示 10.8V 实际 12V，则填 1.11"
+              label="校准系数"
+            >
+              <Stepper
+                className="!w-2/5"
+                digits={2}
+                max={2}
+                min={0.5}
+                step={0.01}
+                value={editConfig.adcMultiplier ?? 1}
+                onChange={(v) => { updateEdit({ adcMultiplier: v === 1 ? undefined : v }); }}
+              />
+            </Form.Item>
           </>
         )}
       </Form>

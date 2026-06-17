@@ -29,9 +29,11 @@ export function calcSensorReadings(
       return { label: config.name, value: raw > 0 ? 1 : 0 };
     }
 
-    // 模拟信号
+    // 模拟信号 — 先应用 ADC 校准系数，再进行物理换算
+    const corrected = raw * (config.adcMultiplier ?? 1);
+
     if (config.conversion === 'resistor_divider') {
-      const vSensor = (raw / 4095) * 3.3;
+      const vSensor = (corrected / 4095) * 3.3;
       const r1 = config.r1 ?? 30000;
       const r2 = config.r2 ?? 10000;
       const value = r1 > 0 && r2 > 0 ? vSensor * ((r1 + r2) / r2) : vSensor;
@@ -39,7 +41,7 @@ export function calcSensorReadings(
     }
 
     if (config.conversion === 'ntc_10k') {
-      const vAdc = (raw / 4095) * 3.3;
+      const vAdc = (corrected / 4095) * 3.3;
       const rNtc = 10000 * vAdc / (3.3 - vAdc);
       const B = config.bValue ?? 3435;
       const tempK = 1 / (1 / 298.15 + Math.log(rNtc / 10000) / B);
@@ -47,7 +49,7 @@ export function calcSensorReadings(
       return { label: config.name, value: Math.round(tempC * 10) / 10 };
     }
 
-    // 无转换 — 直接返回 ADC 原始值
-    return { label: config.name, value: raw };
+    // 无转换 — 返回校准后的值
+    return { label: config.name, value: corrected };
   });
 }
