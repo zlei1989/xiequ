@@ -55,20 +55,25 @@ export type ProcessConfig = {
   steps: StepConfig[];
 };
 
-/** 定时任务 — 按周期触发指定流程 */
+/** 定时任务 — 按循环类型触发指定流程 */
 export type ScheduleConfig = {
   key?: string;
-  /** 周期类型 */
-  type: 'minute' | 'day' | 'week' | 'month';
-  day?: number;
+  /** 循环类型：once=单次, day=按天, minute=按分钟, week=按星期 */
+  type: 'once' | 'day' | 'minute' | 'week';
+  /** 开始时间（Unix 时间戳 ms）
+   *  - once: 执行时间
+   *  - day/week: 启用日期（此日期起生效）
+   *  - minute: 首次执行时间 */
+  startTime: number;
+  /** 循环时间（距 00:00 毫秒偏移）— 仅 day/week 类型，表示每天/每周几的触发时刻 */
+  value?: number;
+  /** 间隔数 — day: 间隔天数(0=每天, 1=隔天), minute: 间隔分钟数(最小30) */
+  interval?: number;
+  /** 星期几 (1=周一...7=周日) — 仅 week 类型 */
   week?: number;
-  month?: number;
-  /** 触发值（如分钟数、小时数） */
-  value: number;
-  /** 间隔数（如每 N 分钟） */
-  interval: number;
   /** 要触发的流程索引 */
   process: number;
+  /** 是否禁用（单次任务执行后自动设为 true） */
   disabled?: boolean;
 };
 
