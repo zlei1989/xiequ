@@ -112,6 +112,10 @@ export async function initDb() {
     // 表已迁移或不存在，忽略
   }
 
+  // 清理旧索引名（SQLite ALTER TABLE RENAME TO 不会自动重命名索引）
+  try { db.exec('DROP INDEX IF EXISTS idx_watering_logs_chip_id'); } catch { /* ignore */ }
+  try { db.exec('DROP INDEX IF EXISTS idx_watering_logs_state_id'); } catch { /* ignore */ }
+
   db.exec(`
     CREATE TABLE IF NOT EXISTS watering_device (
       chip_id TEXT PRIMARY KEY,
