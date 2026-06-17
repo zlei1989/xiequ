@@ -101,16 +101,14 @@ export async function initDb() {
   const db = getDb();
 
   // ---- 表名迁移：单数统一 + 语义化 ----
-  // watering_devices → watering_device
+  // watering_devices → watering_device, watering_logs → watering_state_log
+  db.exec('BEGIN');
   try {
     db.exec('ALTER TABLE watering_devices RENAME TO watering_device');
-  } catch {
-    // 表已迁移或不存在，忽略
-  }
-  // watering_logs → watering_state_log
-  try {
     db.exec('ALTER TABLE watering_logs RENAME TO watering_state_log');
+    db.exec('COMMIT');
   } catch {
+    try { db.exec('ROLLBACK'); } catch { /* 回滚失败忽略 */ }
     // 表已迁移或不存在，忽略
   }
 
