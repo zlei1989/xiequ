@@ -8,7 +8,7 @@ import type { DeviceConfig, DeviceState, DeviceItem } from '../types';
 /** 日志保留天数 */
 const LOG_RETENTION_DAYS = 7;
 
-/** watering_devices 表 SQLite 原始行 */
+/** watering_device 表 SQLite 原始行 */
 interface DeviceRow {
   chip_id: string;
   name: string;
@@ -43,7 +43,7 @@ interface StateRow {
   last_write_time: string;
 }
 
-/** watering_devices LEFT JOIN watering_device_state 原始行 */
+/** watering_device LEFT JOIN watering_device_state 原始行 */
 interface JoinRow extends DeviceRow {
   /** 对应 state 表列（LEFT JOIN 为 null 表示无状态行） */
   state_id: string | null;
@@ -63,7 +63,7 @@ interface JoinRow extends DeviceRow {
   state_last_write_time: string | null;
 }
 
-/** watering_logs 表 SQLite 原始行 */
+/** watering_state_log 表 SQLite 原始行 */
 interface LogRow {
   id: number;
   chip_id: string;
@@ -100,8 +100,22 @@ function parseJSON<T>(value: unknown, fallback: T): T {
 export async function initDb() {
   const db = getDb();
 
+  // ---- 表名迁移：单数统一 + 语义化 ----
+  // watering_devices → watering_device
+  try {
+    db.exec('ALTER TABLE watering_devices RENAME TO watering_device');
+  } catch {
+    // 表已迁移或不存在，忽略
+  }
+  // watering_logs → watering_state_log
+  try {
+    db.exec('ALTER TABLE watering_logs RENAME TO watering_state_log');
+  } catch {
+    // 表已迁移或不存在，忽略
+  }
+
   db.exec(`
-    CREATE TABLE IF NOT EXISTS watering_devices (
+    CREATE TABLE IF NOT EXISTS watering_device (
       chip_id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
       mac_address TEXT NOT NULL,
@@ -120,7 +134,7 @@ export async function initDb() {
 
   // 为旧数据库添加 processes_version 列
   try {
-    db.exec('ALTER TABLE watering_devices ADD COLUMN processes_version TEXT');
+    db.exec('ALTER TABLE watering_device ADD COLUMN processes_version TEXT');
   } catch {
     // 列已存在，忽略
   }
@@ -138,12 +152,12 @@ export async function initDb() {
       message TEXT,
       last_tick_time INTEGER DEFAULT 0,
       last_write_time TEXT NOT NULL,
-      FOREIGN KEY (chip_id) REFERENCES watering_devices(chip_id)
+      FOREIGN KEY (chip_id) REFERENCES watering_device(chip_id)
     )
   `);
 
   db.exec(`
-    CREATE TABLE IF NOT EXISTS watering_logs (
+    CREATE TABLE IF NOT EXISTS watering_state_log (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       chip_id TEXT NOT NULL,
       mac_address TEXT,
@@ -157,22 +171,22 @@ export async function initDb() {
   `);
 
   db.exec(`
-    CREATE INDEX IF NOT EXISTS idx_watering_logs_chip_id
-    ON watering_logs(chip_id, created_time DESC)
+    CREATE INDEX IF NOT EXISTS idx_watering_state_log_chip_id
+    ON watering_state_log(chip_id, created_time DESC)
   `);
 
   // 新增独立列迁移（v2: 从 state JSON 提取高频字段）
   try {
-    db.exec('ALTER TABLE watering_logs ADD COLUMN mac_address TEXT');
+    db.exec('ALTER TABLE watering_state_log ADD COLUMN mac_address TEXT');
   } catch { /* 列已存在 */ }
   try {
-    db.exec('ALTER TABLE watering_logs ADD COLUMN state_id TEXT');
+    db.exec('ALTER TABLE watering_state_log ADD COLUMN state_id TEXT');
   } catch { /* 列已存在 */ }
   try {
-    db.exec('ALTER TABLE watering_logs ADD COLUMN message TEXT');
+    db.exec('ALTER TABLE watering_state_log ADD COLUMN message TEXT');
   } catch { /* 列已存在 */ }
   try {
-    db.exec('CREATE INDEX IF NOT EXISTS idx_watering_logs_state_id ON watering_logs(state_id)');
+    db.exec('CREATE INDEX IF NOT EXISTS idx_watering_state_log_state_id ON watering_state_log(state_id)');
   } catch { /* 索引已存在 */ }
 
   // 为旧数据库添加 idle_since 列（设备空闲计时起点）
@@ -215,7 +229,7 @@ export async function initDb() {
       record_time TEXT NOT NULL,
       readings JSON NOT NULL,
       created_time TEXT NOT NULL,
-      FOREIGN KEY (chip_id) REFERENCES watering_devices(chip_id)
+      FOREIGN KEY (chip_id) REFERENCES watering_device(chip_id)
     )
   `);
 
@@ -232,16 +246,16 @@ export async function initDb() {
 
   // ---- voltage → sensors 迁移 ----
   try {
-    db.exec("ALTER TABLE watering_devices ADD COLUMN sensors JSON NOT NULL DEFAULT '[]'");
+    db.exec("ALTER TABLE watering_device ADD COLUMN sensors JSON NOT NULL DEFAULT '[]'");
   } catch { /* 列已存在 */ }
   try {
-    db.exec('ALTER TABLE watering_devices DROP COLUMN voltage');
+    db.exec('ALTER TABLE watering_device DROP COLUMN voltage');
   } catch { /* 列不存在或 SQLite 版本不支持 */ }
   try {
-    db.exec('ALTER TABLE watering_logs ADD COLUMN readings JSON');
+    db.exec('ALTER TABLE watering_state_log ADD COLUMN readings JSON');
   } catch { /* 列已存在 */ }
   try {
-    db.exec('ALTER TABLE watering_logs DROP COLUMN voltage');
+    db.exec('ALTER TABLE watering_state_log DROP COLUMN voltage');
   } catch { /* 列不存在 */ }
 }
 
@@ -258,7 +272,7 @@ export async function getAllDevices(): Promise<DeviceItem[]> {
            s.current_index, s.current_process, s.message,
            s.idle_since, s.last_action_type, s.step_index,
            s.last_tick_time as state_last_tick_time, s.last_write_time as state_last_write_time
-    FROM watering_devices d
+    FROM watering_device d
     LEFT JOIN watering_device_state s ON d.chip_id = s.chip_id
     ORDER BY d.name
   `) as unknown as JoinRow[];
@@ -314,7 +328,7 @@ export async function getAllDevices(): Promise<DeviceItem[]> {
 // eslint-disable-next-line @typescript-eslint/require-await -- SQLite WASM 驱动为同步，保持 async 契约
 export async function getDeviceConfig(chipId: string): Promise<DeviceConfig | null> {
   const db = getDb();
-  const row = db.get('SELECT * FROM watering_devices WHERE chip_id = ?', chipId) as unknown as DeviceRow | undefined;
+  const row = db.get('SELECT * FROM watering_device WHERE chip_id = ?', chipId) as unknown as DeviceRow | undefined;
   if (!row) return null;
   return {
     chipId: row.chip_id,
@@ -352,7 +366,7 @@ export async function saveDeviceConfig(config: DeviceConfig) {
   }
 
   db.run(`
-    INSERT INTO watering_devices (chip_id, name, mac_address, processes, idle_sleep, idle_timeout, boot_exec, exec_delay, schedules, sensors, processes_version, created_time, last_write_time)
+    INSERT INTO watering_device (chip_id, name, mac_address, processes, idle_sleep, idle_timeout, boot_exec, exec_delay, schedules, sensors, processes_version, created_time, last_write_time)
     VALUES (@chip_id, @name, @mac_address, @processes, @idle_sleep, @idle_timeout, @boot_exec, @exec_delay, @schedules, @sensors, @processes_version, @created_time, @last_write_time)
     ON CONFLICT(chip_id) DO UPDATE SET
       name=@name, mac_address=@mac_address, processes=@processes, idle_sleep=@idle_sleep,
@@ -383,7 +397,7 @@ export async function saveDeviceConfig(config: DeviceConfig) {
 export async function deleteDevice(chipId: string) {
   const db = getDb();
   db.run('DELETE FROM watering_device_state WHERE chip_id = ?', chipId);
-  db.run('DELETE FROM watering_devices WHERE chip_id = ?', chipId);
+  db.run('DELETE FROM watering_device WHERE chip_id = ?', chipId);
 }
 
 /**
@@ -493,7 +507,7 @@ export async function getDeviceLogs(chipId: string) {
   /** 7 天前的 ISO 时间字符串 */
   const since = new Date(Date.now() - LOG_RETENTION_DAYS * 24 * 60 * 60 * 1000).toISOString();
   const rows = db.all(
-    'SELECT id, chip_id, mac_address, event, state_id, message, state, readings, created_time FROM watering_logs WHERE chip_id = ? AND created_time > ? ORDER BY created_time DESC',
+    'SELECT id, chip_id, mac_address, event, state_id, message, state, readings, created_time FROM watering_state_log WHERE chip_id = ? AND created_time > ? ORDER BY created_time DESC',
     [chipId, since],
   ) as unknown as LogRow[];
   return rows.map((row) => ({
@@ -555,7 +569,7 @@ export async function writeDeviceLog(
 ) {
   const db = getDbSync();
   db.run(`
-    INSERT INTO watering_logs (chip_id, mac_address, event, state_id, message, state, readings, created_time)
+    INSERT INTO watering_state_log (chip_id, mac_address, event, state_id, message, state, readings, created_time)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `, [
     chipId,
@@ -575,7 +589,7 @@ export async function writeDeviceLog(
 // eslint-disable-next-line @typescript-eslint/require-await -- SQLite WASM 驱动为同步，保持 async 契约
 export async function clearDeviceLogs(chipId: string) {
   const db = getDb();
-  db.run('DELETE FROM watering_logs WHERE chip_id = ?', chipId);
+  db.run('DELETE FROM watering_state_log WHERE chip_id = ?', chipId);
 }
 
 /**
