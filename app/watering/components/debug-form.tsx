@@ -209,7 +209,7 @@ export function DebugForm({
                 />
               </Grid.Item>
               <Grid.Item span={1}>
-                <Stepper className="w-100" defaultValue={val} step={1}/>
+                <Stepper className="!w-full" defaultValue={val} step={1}/>
               </Grid.Item>
 
             </Grid>

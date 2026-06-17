@@ -189,7 +189,7 @@ export function ScheduleConfigPicker({
           {draft.type === 'day' && (
             <Form.Item help="0 表示每天执行" label="间隔（天）">
               <Stepper
-                className="w-38"
+                className="!w-2/5"
                 min={0}
                 step={1}
                 value={draft.interval ?? 0}
@@ -222,7 +222,7 @@ export function ScheduleConfigPicker({
           {draft.type === 'minute' && (
             <Form.Item help="最小 30 分钟" label="间隔（分钟）">
               <Stepper
-                className="w-38"
+                className="!w-2/5"
                 min={30}
                 step={1}
                 value={draft.interval ?? 30}

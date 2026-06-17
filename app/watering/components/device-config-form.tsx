@@ -351,7 +351,7 @@ export function DeviceConfigForm({
         {form.idleSleep && (
           <Form.Item label="空闲超时（毫秒）">
             <Stepper
-              className="w-38"
+              className="!w-2/5"
               max={86400000}
               min={0}
               step={1000}
@@ -388,7 +388,7 @@ export function DeviceConfigForm({
         {/* 延迟执行 */}
         <Form.Item label="延迟执行（毫秒）">
           <Stepper
-            className="w-38"
+            className="!w-2/5"
             disabled={form.bootExec < 0}
             min={0}
             step={1000}

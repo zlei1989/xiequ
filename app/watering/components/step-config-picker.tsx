@@ -118,7 +118,7 @@ export function StepConfigPicker({
           {/* 启动参数 */}
           <Form.Item label="启动参数">
             <Stepper
-              className="w-38"
+              className="!w-2/5"
               disabled={!hasLoad}
               value={step.value.begin as number}
               onChange={(v) => { update({ value: { ...step.value, begin: v } }); }}
@@ -128,7 +128,7 @@ export function StepConfigPicker({
           {/* 停止参数 */}
           <Form.Item label="停止参数">
             <Stepper
-              className="w-38"
+              className="!w-2/5"
               disabled={!hasLoad}
               value={step.value.end as number}
               onChange={(v) => { update({ value: { ...step.value, end: v } }); }}
@@ -138,7 +138,7 @@ export function StepConfigPicker({
           {/* 超时 */}
           <Form.Item label="超时限制 (ms)">
             <Stepper
-              className="w-38"
+              className="!w-2/5"
               min={0}
               step={1000}
               value={step.timeout}
