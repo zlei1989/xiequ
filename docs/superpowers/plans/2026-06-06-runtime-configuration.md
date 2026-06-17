@@ -634,7 +634,7 @@ export type Process = {
   steps: Step[];
 };
 
-/** 定时任务 */
+/** 计划任务 */
 export type Schedule = {
   type: "minute" | "day" | "week" | "month";
   day?: number;

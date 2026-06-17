@@ -649,7 +649,7 @@ export async function getSensorLogs(
  * 标记计划任务已执行
  *
  * 写入 (chipId, triggerTime, processIndex) 三元组，
- * 防止同一个定时任务在同一触发时间被重复执行。
+ * 防止同一个计划任务在同一触发时间被重复执行。
  * SQLite 同步驱动，函数签名保持 async 以兼容上层契约。
  */
 // eslint-disable-next-line @typescript-eslint/require-await -- SQLite WASM 驱动为同步，保持 async 契约

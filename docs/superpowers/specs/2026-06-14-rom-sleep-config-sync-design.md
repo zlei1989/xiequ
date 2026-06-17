@@ -13,7 +13,7 @@
 
 1. **`sleepDuration` 语义混淆**：环境变量值被当作"空闲倒计时"下发，实际应是"深睡眠持续时长"
 2. **`idleSleep`/`idleTimeout` 从未生效**：数据库配置被 `get-state` 完全忽略
-3. **ROM 做了不该做的判断**：自己维护 `_lastOperationTime` 做空闲倒计时，无法感知定时任务时间约束
+3. **ROM 做了不该做的判断**：自己维护 `_lastOperationTime` 做空闲倒计时，无法感知计划任务时间约束
 
 ### 架构问题
 
@@ -36,7 +36,7 @@
 | 记录设备动作时间 | ✅ `pushState` 更新 `idle_since` | — |
 | 判断是否空闲 | ✅ `now - idleSince >= idleTimeout` | — |
 | 决定是否休眠 | ✅ `idleSleep && switch==off && 空闲` | — |
-| 计算睡多久 | ✅ `min(下次定时任务时间, SLEEP_DURATION)` | — |
+| 计算睡多久 | ✅ `min(下次计划任务时间, SLEEP_DURATION)` | — |
 | 执行睡眠 | — | ✅ 收到 `sleepDuration > 0` 直接睡 |
 | 定时唤醒 | — | ✅ `esp_sleep_enable_timer_wakeup` |
 
@@ -80,7 +80,7 @@ ALTER TABLE watering_device_state ADD COLUMN last_action_type TEXT;
   │  ② switch === 'off'?                 │→ yes
   │  ③ now - idleSince >= idleTimeout?   │→ yes（已空闲超时）
   │  ④ calcSleepDuration():              │
-  │     距下次定时任务 10 分钟              │
+  │     距下次计划任务 10 分钟              │
   │     min(300000, 600000) = 300000      │
   │                                       │
   │  → sleepDuration = 300000             │
@@ -153,10 +153,10 @@ export async function updateIdleSince(chipId: string, actionType: string) {
 /**
  * 计算深睡眠时长（毫秒）
  *
- * 1. 过滤出已启用的定时任务
+ * 1. 过滤出已启用的计划任务
  * 2. 计算每个任务的下次触发时间（距现在毫秒数）
  * 3. 取最小值与 SLEEP_DURATION 比较，取较小者
- * 4. 无定时任务时直接返回 SLEEP_DURATION
+ * 4. 无计划任务时直接返回 SLEEP_DURATION
  */
 function calcSleepDuration(
   schedules: ScheduleConfig[],
@@ -175,7 +175,7 @@ function calcSleepDuration(
 }
 
 /**
- * 计算单个定时任务距现在还有多少毫秒
+ * 计算单个计划任务距现在还有多少毫秒
  */
 function calcNextScheduleDelay(
   schedule: ScheduleConfig,
@@ -285,7 +285,7 @@ if (_sleepDuration > 0 && _idled) {
 
 - [ ] `pushState` 在每次事件时更新 `idle_since` 和 `last_action_type`
 - [ ] `get-state` 在 `idleSleep=true, switch='off', 已空闲超时` 时下发 `sleepDuration`
-- [ ] `sleepDuration` 值为 `min(SLEEP_DURATION, 距下次定时任务时间)`
+- [ ] `sleepDuration` 值为 `min(SLEEP_DURATION, 距下次计划任务时间)`
 - [ ] `get-state` 在 `idleSleep=false` 时不包含 `sleepDuration`
 - [ ] `get-state` 在 `switch='on'` 时不包含 `sleepDuration`
 - [ ] `get-state` 在 `idleSince` 未超时时不包含 `sleepDuration`

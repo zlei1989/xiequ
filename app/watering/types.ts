@@ -2,7 +2,7 @@
  * 浇花 IoT 模块类型定义
  *
  * 核心实体：DeviceConfig（设备配置）、DeviceState（设备状态）、DeviceItem（合并视图）。
- * IoT 协议实体：StepConfig（流程步骤）、InterruptConfig（中断条件）、ProcessConfig（流程）、ScheduleConfig（定时任务）。
+ * IoT 协议实体：StepConfig（流程步骤）、InterruptConfig（中断条件）、ProcessConfig（流程）、ScheduleConfig（计划任务）。
  * 数据持久化在 SQLite，通过 services/db.ts 读写。
  */
 
@@ -55,7 +55,7 @@ export type ProcessConfig = {
   steps: StepConfig[];
 };
 
-/** 定时任务 — 按循环类型触发指定流程 */
+/** 计划任务 — 按循环类型触发指定流程 */
 export type ScheduleConfig = {
   key?: string;
   /** 循环类型：once=单次, day=按天, minute=按分钟, week=按星期 */

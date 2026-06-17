@@ -105,7 +105,7 @@ const SCHEDULE_OFFSET = 45 * 60 * 1000;
 
 /**
 /**
- * 计算 day/week 类型定时任务的今日触发时间戳（毫秒）
+ * 计算 day/week 类型计划任务的今日触发时间戳（毫秒）
  */
 function calcDayLoopTriggerTime(now: Date, value: number): number {
   const todayStart = new Date(now);
@@ -114,7 +114,7 @@ function calcDayLoopTriggerTime(now: Date, value: number): number {
 }
 
 /**
- * 计算 minute 类型定时任务的当前理论触发时间戳（毫秒）
+ * 计算 minute 类型计划任务的当前理论触发时间戳（毫秒）
  *
  * 从 startTime 开始，按 interval 分钟等间隔触发。
  * 计算公式：startTime + floor((now - startTime) / intervalMs) * intervalMs
@@ -129,7 +129,7 @@ function calcMinuteTriggerTime(startTime: number, intervalMinutes: number, now: 
 }
 
 /**
- * 计算 week 类型定时任务的今日触发时间戳（毫秒）
+ * 计算 week 类型计划任务的今日触发时间戳（毫秒）
  *
  * 仅当今天是指定星期时返回触发时间，否则返回 null。
  * JS getDay(): 0=周日, 1=周一, ..., 6=周六 → 转换为 1=周一...7=周日
@@ -144,7 +144,7 @@ function calcWeekTriggerTime(now: Date, value: number, week: number): number | n
 /**
  * 检查计划任务并执行
  *
- * 遍历 config.schedules，找到第一个应触发的定时任务。
+ * 遍历 config.schedules，找到第一个应触发的计划任务。
  * 支持 once/day/minute/week 四种循环类型。
  * 触发后标记 schedule_log、更新 state.switch/process/stateId。
  * once 类型触发后自动将 disabled 设为 true 并保存配置。
@@ -269,7 +269,7 @@ async function checkAndExecuteSchedule(
 }
 
 /**
- * 计算单个定时任务距现在还有多少毫秒
+ * 计算单个计划任务距现在还有多少毫秒
  */
 function calcNextScheduleDelay(schedule: ScheduleConfig, now: Date): number {
   if (schedule.disabled) return SLEEP_DURATION;

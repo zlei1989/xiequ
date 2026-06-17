@@ -131,7 +131,7 @@ WATERING_SLEEP_DURATION=300000     # 空闲深度睡眠时长（毫秒），默�
 **API `get-state/route.ts`：**
 - 每次响应都带上 `sleep`（从 `WATERING_POLL_INTERVAL` 读取）
 - `sleepDuration` 下发条件（仅当以下全部满足）：
-  1. 查询该设备配置，`schedules` 为空数组（无定时任务）
+  1. 查询该设备配置，`schedules` 为空数组（无计划任务）
   2. 当前 `switch` 不为 `"on"`（无流程执行中）
   3. 此时在响应中带上 `sleepDuration = WATERING_SLEEP_DURATION`
 

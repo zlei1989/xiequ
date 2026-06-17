@@ -265,7 +265,7 @@ function buildResponse(
     result.process = state.process;
   }
 
-  // 深度睡眠时长（仅无定时任务且无流程执行时下发）
+  // 深度睡眠时长（仅无计划任务且无流程执行时下发）
   if (
     config &&
     (!config.schedules || config.schedules.length === 0) &&

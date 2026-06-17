@@ -34,7 +34,7 @@
  * 浇花 IoT 模块类型定义
  *
  * 核心实体：DeviceConfig（设备配置）、DeviceState（设备状态）、DeviceItem（合并视图）。
- * IoT 协议实体：StepConfig（流程步骤）、InterruptConfig（中断条件）、ProcessConfig（流程）、ScheduleConfig（定时任务）。
+ * IoT 协议实体：StepConfig（流程步骤）、InterruptConfig（中断条件）、ProcessConfig（流程）、ScheduleConfig（计划任务）。
  * 数据持久化在 SQLite，通过 services/db.ts 读写。
  */
 
@@ -85,7 +85,7 @@ export type ProcessConfig = {
   steps: StepConfig[];
 };
 
-/** 定时任务 — 按周期触发指定流程 */
+/** 计划任务 — 按周期触发指定流程 */
 export type ScheduleConfig = {
   key?: string;
   /** 周期类型 */
@@ -1340,7 +1340,7 @@ git mv app/watering/components/schedule-editor.tsx app/watering/components/sched
 
 ```tsx
 /**
- * 定时任务配置 Picker — 编辑触发周期、时间、执行流程
+ * 计划任务配置 Picker — 编辑触发周期、时间、执行流程
  *
  * 使用 antd-mobile Form 替代 List 构建移动端界面。
  * 时间选择用 DatePicker(precision='minute')，显示和保存时转为距 00:00 毫秒偏移。
@@ -1416,7 +1416,7 @@ export function ScheduleConfigPicker({
   }));
 
   function confirmDelete() {
-    void Dialog.confirm({ title: '确认删除此定时任务？' }).then((confirmed) => {
+    void Dialog.confirm({ title: '确认删除此计划任务？' }).then((confirmed) => {
       if (confirmed) onDelete?.();
     });
   }
@@ -1437,7 +1437,7 @@ export function ScheduleConfigPicker({
         ) : null}
         onBack={onClose}
       >
-        编辑定时任务
+        编辑计划任务
       </NavBar>
 
       <div style={{ padding: '0 16px', overflowY: 'auto', height: 'calc(70vh - 45px)' }}>
@@ -1529,7 +1529,7 @@ export function ScheduleConfigPicker({
 }
 
 /**
- * 命令式调用 — 弹出定时任务配置 Popup
+ * 命令式调用 — 弹出计划任务配置 Popup
  *
  * 使用 antd-mobile 的 renderToBody 工具将组件挂载到 body，
  * 遵循 Picker.prompt() 相同的实现模式。
@@ -1604,7 +1604,7 @@ git mv app/watering/components/device-editor.tsx app/watering/components/device-
 
 ```tsx
 /**
- * 设备配置表单 — 管理设备基本设置、流程、步骤、中断、定时任务的 CRUD
+ * 设备配置表单 — 管理设备基本设置、流程、步骤、中断、计划任务的 CRUD
  *
  * 使用 antd-mobile Form + Popup 构建移动端界面。
  * 通过 saveRef 将 handleSave 暴露给父组件 Header 的保存按钮。
@@ -2052,7 +2052,7 @@ export function DeviceConfigForm({
       {/* ======== 计划任务列表 ======== */}
       <List header="计划任务">
         {form.schedules.length === 0 ? (
-          <ErrorBlock description="点击下方按钮添加定时任务" status="empty" title="暂无计划任务" />
+          <ErrorBlock description="点击下方按钮添加计划任务" status="empty" title="暂无计划任务" />
         ) : (
           form.schedules.map((sch, index) => (
             <SwipeAction
@@ -2063,7 +2063,7 @@ export function DeviceConfigForm({
                   text: '删除',
                   color: 'danger',
                   onClick: () => {
-                    confirmDelete('确认删除此定时任务？', () => { deleteScheduleFromList(index); });
+                    confirmDelete('确认删除此计划任务？', () => { deleteScheduleFromList(index); });
                   },
                 },
               ]}
@@ -2174,7 +2174,7 @@ export function DeviceConfigForm({
         onDelete={deleteInterrupt}
       />
 
-      {/* 定时任务编辑 Picker */}
+      {/* 计划任务编辑 Picker */}
       <ScheduleConfigPicker
         open={scheduleVisible}
         schedule={

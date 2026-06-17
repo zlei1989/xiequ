@@ -179,7 +179,7 @@ git commit -m "refactor: replace load Picker with Selector in StepConfigPicker"
 
 ---
 
-### Task 4: schedule-config-picker.tsx — 定时任务类型
+### Task 4: schedule-config-picker.tsx — 计划任务类型
 
 **Files:**
 - Modify: `app/watering/components/schedule-config-picker.tsx`

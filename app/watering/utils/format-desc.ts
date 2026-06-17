@@ -94,7 +94,7 @@ const WEEKDAY_LABELS: Record<number, string> = {
 };
 
 /**
- * 生成定时任务列表标题
+ * 生成计划任务列表标题
  * 格式按类型：单次 · yyyy-MM-dd HH:mm / 每天 HH:mm / 每隔N天 HH:mm / 每隔N分钟 / 每周X HH:mm
  */
 export function formatScheduleTitle(sch: ScheduleConfig, _processes: ProcessConfig[]): string {
@@ -118,7 +118,7 @@ export function formatScheduleTitle(sch: ScheduleConfig, _processes: ProcessConf
 }
 
 /**
- * 生成定时任务列表描述
+ * 生成计划任务列表描述
  * 格式：流程名 · 开始 yyyy-MM-dd[ HH:mm]【已禁用】
  * once 类型不显示"开始"（标题已含完整时间），minute 类型"开始"含时间。
  */

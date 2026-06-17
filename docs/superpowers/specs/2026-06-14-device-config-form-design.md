@@ -117,7 +117,7 @@ XxxPicker.prompt({
 | `interruptVisible` | `boolean` | InterruptPicker 可见性 |
 | `interruptIndex` | `number` | 当前编辑的中断索引 |
 | `scheduleVisible` | `boolean` | SchedulePicker 可见性 |
-| `scheduleIndex` | `number` | 当前编辑的定时任务索引 |
+| `scheduleIndex` | `number` | 当前编辑的计划任务索引 |
 | `voltageVisible` | `boolean` | VoltagePicker 可见性 |
 
 ### handleSave 暴露出 `saveRef`

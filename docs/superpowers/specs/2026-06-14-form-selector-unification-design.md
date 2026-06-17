@@ -10,7 +10,7 @@
 - 触发按钮（`ProcessConfigPicker`）
 - 电压检测传感器（`VoltageConfigPicker`）
 - 负载（`StepConfigPicker`）
-- 定时任务类型（`ScheduleConfigPicker`）
+- 计划任务类型（`ScheduleConfigPicker`）
 
 ## 交互规则
 
@@ -19,7 +19,7 @@
 | 触发按钮 | `process-config-picker.tsx` | 是 | 是 |
 | 电压检测传感器 | `voltage-config-picker.tsx` | 否 | 否 |
 | 负载 | `step-config-picker.tsx` | 是 | 是 |
-| 定时任务类型 | `schedule-config-picker.tsx` | 否 | 否 |
+| 计划任务类型 | `schedule-config-picker.tsx` | 否 | 否 |
 
 可为空的字段：点击已选中的选项取消选中（toggle 行为），`onChange` 传空数组时对应字段置为 `undefined`。
 不可为空的字段：与 `interrupt-config-picker` 一致的标准单选行为。
@@ -99,7 +99,7 @@
 
 **Import 清理**：移除 `Picker`，新增 `Selector`、`ErrorBlock`。`Input` 保留（步骤名称仍使用）。
 
-### 4. `schedule-config-picker.tsx` — 定时任务类型
+### 4. `schedule-config-picker.tsx` — 计划任务类型
 
 **删除**：`Form.Item` 的 `onClick` 属性及 `Picker.prompt()` 调用、`<div>` 包裹。
 **新增**：内嵌 `<Selector>`，标准单选（不可取消），复用已有 `TYPE_OPTIONS`。

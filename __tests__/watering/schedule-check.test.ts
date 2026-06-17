@@ -14,7 +14,7 @@ import { describe, it, expect } from 'vitest';
 const SCHEDULE_OFFSET = 45 * 60 * 1000;
 
 /**
- * 计算 day/week 类型定时任务的今日触发时间戳（毫秒）
+ * 计算 day/week 类型计划任务的今日触发时间戳（毫秒）
  */
 function calcDayLoopTriggerTime(now: Date, value: number): number {
   const todayStart = new Date(now);
@@ -23,7 +23,7 @@ function calcDayLoopTriggerTime(now: Date, value: number): number {
 }
 
 /**
- * 计算 minute 类型定时任务的当前理论触发时间戳（毫秒）
+ * 计算 minute 类型计划任务的当前理论触发时间戳（毫秒）
  */
 function calcMinuteTriggerTime(startTime: number, intervalMinutes: number, now: Date): number {
   const intervalMs = intervalMinutes * 60000;
@@ -34,7 +34,7 @@ function calcMinuteTriggerTime(startTime: number, intervalMinutes: number, now: 
 }
 
 /**
- * 计算 week 类型定时任务的今日触发时间戳（毫秒）
+ * 计算 week 类型计划任务的今日触发时间戳（毫秒）
  */
 function calcWeekTriggerTime(now: Date, value: number, week: number): number | null {
   const jsDay = now.getDay();

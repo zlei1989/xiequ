@@ -112,7 +112,7 @@ components/     →  app/watering/    禁止反向依赖
 |------|------|
 | 设备列表 | 展示所有设备，含在线状态、当前运行流程，自动刷新 |
 | 设备开关 | 远程开关设备、指定执行哪个流程 |
-| 设备配置编辑 | 编辑设备名称、流程（步骤+中断）、定时任务、空闲休眠 |
+| 设备配置编辑 | 编辑设备名称、流程（步骤+中断）、计划任务、空闲休眠 |
 | 设备删除 | 删除设备配置 |
 | 运行日志 | 按时间查看设备日志（bootstrap/execute/terminate 等），支持清空 |
 | 设备状态推送 | IoT 设备上报状态（bootstrap/finish/GPIO） |
@@ -139,7 +139,7 @@ app/watering/components/
 ├── process-editor.tsx            # 流程编辑器（步骤 + 中断）
 ├── process-step-editor.tsx       # 单个步骤编辑
 ├── process-interrupt-editor.tsx  # 中断条件编辑
-├── schedule-editor.tsx           # 定时任务编辑
+├── schedule-editor.tsx           # 计划任务编辑
 └── log-viewer.tsx                # 日志查看器
 ```
 
@@ -173,7 +173,7 @@ type DeviceConfig = {
   idleTimeout: number;          // 空闲超时
   bootExec: number;             // 开机执行（-1 不执行）
   execDelay: number;            // 延迟执行
-  schedules: Schedule[];        // 定时任务
+  schedules: Schedule[];        // 计划任务
   createdTime: string;
   lastWriteTime: string;
 };
@@ -220,7 +220,7 @@ type Interrupt = {
   disabled?: boolean;
 };
 
-// 定时任务
+// 计划任务
 type Schedule = {
   type: 'minute' | 'day' | 'week' | 'month';
   day?: number;

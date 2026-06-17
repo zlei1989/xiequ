@@ -1,10 +1,10 @@
 /**
- * 设备配置表单 — 管理设备基本设置、流程、步骤、中断、定时任务的 CRUD
+ * 设备配置表单 — 管理设备基本设置、流程、步骤、中断、计划任务的 CRUD
  *
  * 基本设置区使用 antd-mobile Form layout="vertical" 构建。
  * 传感器配置抽取为 SensorConfigPicker 子组件。
  * 通过 saveRef 将 handleSave 暴露给父组件 Header 的保存按钮。
- * 5 层嵌套 Picker（设备→流程→步骤→中断 + 定时 + 传感器），
+ * 5 层嵌套 Picker（设备→流程→步骤→中断 + 计划 + 传感器），
  * 各 Picker 内部接入 useBackButton 返回键栈支持。
  */
 
@@ -272,18 +272,18 @@ export function DeviceConfigForm({
     setForm({ ...form, schedules: newSchedules });
   }
 
-  /** 从列表中删除指定定时任务（SwipeAction 触发） */
+  /** 从列表中删除指定计划任务（SwipeAction 触发） */
   function deleteScheduleFromList(index: number) {
     const newSchedules = form.schedules.filter((_, i) => i !== index);
     setForm({ ...form, schedules: newSchedules });
-    // 若删除的是当前打开的定时任务，关闭 Popup
+    // 若删除的是当前打开的计划任务，关闭 Popup
     if (index === scheduleIndex) {
       setScheduleVisible(false);
       setScheduleIndex(-1);
     }
   }
 
-  /** 从 Popup 中删除当前打开的定时任务 */
+  /** 从 Popup 中删除当前打开的计划任务 */
   function deleteSchedule() {
     const newSchedules = form.schedules.filter((_, i) => i !== scheduleIndex);
     setForm({ ...form, schedules: newSchedules });
@@ -503,7 +503,7 @@ export function DeviceConfigForm({
                   text: '删除',
                   color: 'danger',
                   onClick: () => {
-                    confirmDelete('确认删除此定时任务？', () => { deleteScheduleFromList(index); });
+                    confirmDelete('确认删除此计划任务？', () => { deleteScheduleFromList(index); });
                   },
                 },
               ]}
@@ -588,7 +588,7 @@ export function DeviceConfigForm({
         />
       )}
 
-      {/* 定时任务配置 Picker */}
+      {/* 计划任务配置 Picker */}
       <ScheduleConfigPicker
         open={scheduleVisible}
         processes={form.processes}

@@ -239,7 +239,7 @@ git commit -m "feat: add IoT callback-map service for HTTP long-polling wake cha
  * 标记计划任务已执行
  *
  * 写入 (chipId, triggerTime, processIndex) 三元组，
- * 防止同一个定时任务在同一触发时间被重复执行。
+ * 防止同一个计划任务在同一触发时间被重复执行。
  * SQLite 同步驱动，函数签名保持 async 以兼容上层契约。
  */
 // eslint-disable-next-line @typescript-eslint/require-await -- SQLite WASM 驱动为同步，保持 async 契约
@@ -319,7 +319,7 @@ git commit -m "feat: add watering_schedule_log table and query helpers for sched
 import { describe, it, expect } from 'vitest';
 
 /**
- * 计算 day 类型定时任务的触发时间戳（毫秒）
+ * 计算 day 类型计划任务的触发时间戳（毫秒）
  *
  * @param now 当前时间 Date 对象
  * @param value 距 00:00 的毫秒偏移（如 28800000 = 8:00）
@@ -335,7 +335,7 @@ function calcDayTriggerTime(now: Date, value: number): number {
 const SCHEDULE_OFFSET = 45 * 60 * 1000; // 45 分钟
 
 /**
- * 检查单个 day 类型定时任务是否应触发
+ * 检查单个 day 类型计划任务是否应触发
  *
  * @returns { triggered: true, triggerTime } 或 { triggered: false }
  */
@@ -555,7 +555,7 @@ const SLEEP_DURATION = (() => {
 const SCHEDULE_OFFSET = 45 * 60 * 1000;
 
 /**
- * 计算 day 类型定时任务的今日触发时间戳（毫秒）
+ * 计算 day 类型计划任务的今日触发时间戳（毫秒）
  *
  * @param now 当前时间
  * @param value 距 00:00 的毫秒偏移
@@ -569,7 +569,7 @@ function calcDayTriggerTime(now: Date, value: number): number {
 /**
  * 检查计划任务并执行
  *
- * 遍历 config.schedules，找到第一个应触发的 day 类型定时任务。
+ * 遍历 config.schedules，找到第一个应触发的 day 类型计划任务。
  * 触发条件：已到达、未过期超 45 分钟、今日及 interval 天内未执行。
  * 触发后标记 schedule_log、更新 state.switch/process/stateId。
  *
@@ -635,7 +635,7 @@ async function checkAndExecuteSchedule(
 }
 
 /**
- * 计算单个定时任务距现在还有多少毫秒
+ * 计算单个计划任务距现在还有多少毫秒
  *
  * 目前完整支持 day 类型（value = 距 00:00 的毫秒偏移）。
  * 其他类型（minute/week/month）暂简化处理，返回 SLEEP_DURATION。

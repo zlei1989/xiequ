@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** 实现浇花模块的全部功能——设备列表（自动刷新）、设备开关、配置编辑（流程+定时任务）、运行日志查看/清空、IoT 设备状态推送/拉取 API。
+**Goal:** 实现浇花模块的全部功能——设备列表（自动刷新）、设备开关、配置编辑（流程+计划任务）、运行日志查看/清空、IoT 设备状态推送/拉取 API。
 
 **Architecture:** Next.js Server Actions 作为数据层，hooks 封装客户端状态管理，SQLite 存储设备配置和日志。IoT 设备通过 API Routes 推送/拉取状态。
 
@@ -1038,7 +1038,7 @@ export function ScheduleEditor({
         </Card>
       ))}
       <Button type="dashed" icon={<PlusOutlined />} onClick={addSchedule}>
-        添加定时任务
+        添加计划任务
       </Button>
     </div>
   );
@@ -1166,7 +1166,7 @@ export function DeviceEditor({
     },
     {
       key: "schedules",
-      label: "定时任务",
+      label: "计划任务",
       children: (
         <ScheduleEditor
           schedules={form.schedules}
@@ -1248,7 +1248,7 @@ Run: `pnpm dev`
 
 1. 先创建设备：`curl "http://localhost:3000/api/iot-wfm/push-state?chipId=12345&macAddress=AA:BB:CC:DD:EE:FF&event=bootstrap"`
 2. 打开 /watering，点击设备"编辑"按钮
-3. 修改名称、添加流程、添加定时任务、保存
+3. 修改名称、添加流程、添加计划任务、保存
 
 Expected: 保存成功，返回列表页数据已更新。
 
@@ -1256,7 +1256,7 @@ Expected: 保存成功，返回列表页数据已更新。
 
 ```bash
 git add app/watering/
-git commit -m "feat: 实现设备配置编辑（流程+定时任务）"
+git commit -m "feat: 实现设备配置编辑（流程+计划任务）"
 ```
 
 ---

@@ -250,12 +250,12 @@ import type { DeviceState, DeviceConfig, ScheduleConfig } from '@/app/watering/t
 
 ```ts
 /**
- * 计算单个定时任务距现在还有多少毫秒
+ * 计算单个计划任务距现在还有多少毫秒
  *
  * 目前完整支持 day 类型（value = 距 00:00 的毫秒偏移）。
  * 其他类型（minute/week/month）暂简化处理，返回 SLEEP_DURATION。
  *
- * @param schedule 定时任务配置
+ * @param schedule 计划任务配置
  * @param now 当前时间
  * @returns 距下次触发的毫秒数
  */
@@ -294,11 +294,11 @@ function calcNextScheduleDelay(schedule: ScheduleConfig, now: Date): number {
 /**
  * 计算深睡眠时长（毫秒）
  *
- * 1. 过滤出已启用的定时任务
+ * 1. 过滤出已启用的计划任务
  * 2. 找到最近的下次触发时间
  * 3. 取最小值与 SLEEP_DURATION 比较，取较小者
  *
- * @param schedules 定时任务列表
+ * @param schedules 计划任务列表
  * @param now 当前时间
  * @returns 实际深睡眠时长（毫秒）
  */
@@ -323,7 +323,7 @@ function calcSleepDuration(schedules: ScheduleConfig[], now: Date): number {
 替换当前第 48-55 行：
 
 ```ts
-  // 深度睡眠时长（仅无定时任务且无流程执行时下发）
+  // 深度睡眠时长（仅无计划任务且无流程执行时下发）
   if (
     config &&
     (config.schedules.length === 0) &&

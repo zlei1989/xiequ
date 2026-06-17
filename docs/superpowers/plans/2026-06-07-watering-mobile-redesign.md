@@ -985,7 +985,7 @@ export function DeviceEditor({
 
       {/* 定时编辑 Drawer (70%) */}
       <Drawer
-        title="编辑定时任务"
+        title="编辑计划任务"
         placement="bottom"
         height="70%"
         open={scheduleVisible}
@@ -993,7 +993,7 @@ export function DeviceEditor({
         destroyOnClose
         extra={
           <Space>
-            <Popconfirm title="确认删除此定时任务？" onConfirm={deleteSchedule}>
+            <Popconfirm title="确认删除此计划任务？" onConfirm={deleteSchedule}>
               <Button icon={<DeleteOutlined />} danger size="small">
                 删除
               </Button>
@@ -1956,7 +1956,7 @@ Run: `pnpm dev`
 5. 在流程 Drawer 内点击步骤编辑按钮 → 确认底部滑出 Drawer(75%) 带 ProcessStepEditor
 6. 在步骤 Drawer 内点击中断编辑按钮 → 确认底部滑出 Drawer(70%) 带 ProcessInterruptEditor
 7. 逐层关闭 Drawer，确认各层独立运作
-8. 确认定时任务的 Drawer 正常打开/编辑/关闭
+8. 确认计划任务的 Drawer 正常打开/编辑/关闭
 
 - [ ] **Step 4: 验证日志页（/watering/logs/[chipId]）**
 

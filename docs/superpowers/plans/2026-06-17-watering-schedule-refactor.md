@@ -1,8 +1,8 @@
-# 浇花定时任务重构实施计划
+# 浇花计划任务重构实施计划
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** 重构浇花定时任务，将循环类型改为单次/天/分钟/星期四种，增加开始时间和循环时间字段，实现服务端全类型触发逻辑，完善列表描述。
+**Goal:** 重构浇花计划任务，将循环类型改为单次/天/分钟/星期四种，增加开始时间和循环时间字段，实现服务端全类型触发逻辑，完善列表描述。
 
 **Architecture:** 保持扁平 ScheduleConfig 类型 + 可选字段模式，UI 按类型条件渲染表单字段，服务端在现有 switch-case 中扩展新类型分支。不考虑旧数据兼容。
 
@@ -20,7 +20,7 @@
 将 `app/watering/types.ts` 中的 `ScheduleConfig` 替换为：
 
 ```typescript
-/** 定时任务 — 按循环类型触发指定流程 */
+/** 计划任务 — 按循环类型触发指定流程 */
 export type ScheduleConfig = {
   key?: string;
   /** 循环类型：once=单次, day=按天, minute=按分钟, week=按星期 */
@@ -195,7 +195,7 @@ const WEEKDAY_LABELS: Record<number, string> = {
 };
 
 /**
- * 生成定时任务列表标题
+ * 生成计划任务列表标题
  * 格式按类型：单次 · yyyy-MM-dd HH:mm / 每天 HH:mm / 每隔N天 HH:mm / 每隔N分钟 / 每周X HH:mm
  */
 export function formatScheduleTitle(sch: ScheduleConfig, _processes: ProcessConfig[]): string {
@@ -219,7 +219,7 @@ export function formatScheduleTitle(sch: ScheduleConfig, _processes: ProcessConf
 }
 
 /**
- * 生成定时任务列表描述
+ * 生成计划任务列表描述
  * 格式：流程名 · 开始 yyyy-MM-dd[ HH:mm]【已禁用】
  * once 类型不显示"开始"（标题已含完整时间），minute 类型"开始"含时间。
  */
@@ -391,7 +391,7 @@ Run: `npx vitest run __tests__/watering/components/schedule-editor.test.tsx`
 
 ```typescript
 /**
- * 定时任务配置 Picker — 按循环类型编辑触发条件、时间、执行流程
+ * 计划任务配置 Picker — 按循环类型编辑触发条件、时间、执行流程
  *
  * 根据循环类型（once/day/minute/week）条件渲染不同表单字段。
  * 循环时间用 Picker 实现小时+分钟两列选择，值存储为距 00:00 毫秒偏移。
@@ -516,7 +516,7 @@ export function ScheduleConfigPicker({
 
   function confirmDelete() {
     void Dialog.confirm({
-      title: '确认删除此定时任务？',
+      title: '确认删除此计划任务？',
       onConfirm: () => { onDelete?.(); },
     });
   }
@@ -539,7 +539,7 @@ export function ScheduleConfigPicker({
         ) : null}
         onBack={onClose}
       >
-        编辑定时任务
+        编辑计划任务
       </NavBar>
 
       <div style={{ overflowY: 'auto', height: 'calc(70vh - 45px)' }}>
@@ -816,7 +816,7 @@ import { describe, it, expect } from 'vitest';
 const SCHEDULE_OFFSET = 45 * 60 * 1000;
 
 /**
- * 计算 day 类型定时任务的今日触发时间戳（毫秒）
+ * 计算 day 类型计划任务的今日触发时间戳（毫秒）
  * @param now 当前时间
  * @param value 距 00:00 的毫秒偏移
  */
@@ -827,7 +827,7 @@ function calcDayLoopTriggerTime(now: Date, value: number): number {
 }
 
 /**
- * 计算 minute 类型定时任务的当前理论触发时间戳（毫秒）
+ * 计算 minute 类型计划任务的当前理论触发时间戳（毫秒）
  * @param startTime 首次执行时间
  * @param intervalMinutes 间隔分钟数
  * @param now 当前时间
@@ -841,7 +841,7 @@ function calcMinuteTriggerTime(startTime: number, intervalMinutes: number, now: 
 }
 
 /**
- * 计算 week 类型定时任务的今日触发时间戳（毫秒）
+ * 计算 week 类型计划任务的今日触发时间戳（毫秒）
  * @param now 当前时间
  * @param value 距 00:00 的毫秒偏移
  * @param week 星期几 (1=周一...7=周日)
@@ -1024,7 +1024,7 @@ Run: `npx vitest run __tests__/watering/schedule-check.test.ts`
 
 ```typescript
 /**
- * 计算 day/week 类型定时任务的今日触发时间戳（毫秒）
+ * 计算 day/week 类型计划任务的今日触发时间戳（毫秒）
  *
  * @param now 当前时间
  * @param value 距 00:00 的毫秒偏移
@@ -1042,7 +1042,7 @@ function calcDayLoopTriggerTime(now: Date, value: number): number {
 
 ```typescript
 /**
- * 计算 minute 类型定时任务的当前理论触发时间戳（毫秒）
+ * 计算 minute 类型计划任务的当前理论触发时间戳（毫秒）
  *
  * 从 startTime 开始，按 interval 分钟等间隔触发。
  * 计算公式：startTime + floor((now - startTime) / intervalMs) * intervalMs
@@ -1061,7 +1061,7 @@ function calcMinuteTriggerTime(startTime: number, intervalMinutes: number, now: 
 }
 
 /**
- * 计算 week 类型定时任务的今日触发时间戳（毫秒）
+ * 计算 week 类型计划任务的今日触发时间戳（毫秒）
  *
  * 仅当今天是指定星期时返回触发时间，否则返回 null。
  * JS getDay(): 0=周日, 1=周一, ..., 6=周六 → 转换为 1=周一...7=周日
@@ -1086,7 +1086,7 @@ function calcWeekTriggerTime(now: Date, value: number, week: number): number | n
 /**
  * 检查计划任务并执行
  *
- * 遍历 config.schedules，找到第一个应触发的定时任务。
+ * 遍历 config.schedules，找到第一个应触发的计划任务。
  * 支持 once/day/minute/week 四种循环类型。
  * 触发后标记 schedule_log、更新 state.switch/process/stateId。
  * once 类型触发后自动将 disabled 设为 true 并保存配置。
@@ -1223,7 +1223,7 @@ import { getDeviceState, getDeviceConfig, updateTick, insertScheduleLog, hasSche
 
 ```typescript
 /**
- * 计算单个定时任务距现在还有多少毫秒
+ * 计算单个计划任务距现在还有多少毫秒
  *
  * once: startTime - now（已过期返回 SLEEP_DURATION）
  * day: 今天循环时间未过 → 差值；否则 → 明天 + interval天数
@@ -1369,7 +1369,7 @@ Run: `npm run dev`
 - [ ] **Step 2: 验证 UI 交互**
 
 在浏览器中打开设备配置页面，验证：
-1. 添加定时任务 → 默认为"天"类型，interval=0，循环时间 08:00
+1. 添加计划任务 → 默认为"天"类型，interval=0，循环时间 08:00
 2. 切换到"单次" → 仅显示开始时间、执行流程、禁用任务
 3. 切换到"分钟" → 显示间隔（分钟）最小 30、开始时间
 4. 切换到"星期" → 显示星期选择、开始时间、循环时间

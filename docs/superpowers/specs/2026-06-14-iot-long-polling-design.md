@@ -274,7 +274,7 @@ case 'finish':
 | 2. Web UI 点"开启" | get-state 立即返回 process，不等到超时 |
 | 3. ESP32 执行完成 | finish 后 get-state 返回 switch: off |
 | 4. 无操作等待 | get-state 超时后 ESP32 发起下一轮 |
-| 5. 定时任务到达 | 设备唤醒后 get-state 自动返回 process |
+| 5. 计划任务到达 | 设备唤醒后 get-state 自动返回 process |
 | 6. 快速开关切换 | 每次 execCallback 都能正确唤醒 |
 | 7. 设备重连 | 旧 callback 被释放，新 callback 正常注册 |
 

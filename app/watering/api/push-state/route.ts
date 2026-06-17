@@ -118,7 +118,7 @@ export async function GET(request: NextRequest) {
       }
       // 将 idleSince 设为过去的时间点（now - idleTimeout - 1s），
       // 使唤醒后首次 get-state 立即满足空闲超时检查，无需等待即可休眠。
-      // 若设备有 pending 工作（bootExec/定时任务），switch 已为 'on' 不会触发休眠。
+      // 若设备有 pending 工作（bootExec/计划任务），switch 已为 'on' 不会触发休眠。
       const bootstrapIdleSince = Date.now() - config.idleTimeout - 1000;
       await updateIdleSince(chipId, 'bootstrap', bootstrapIdleSince);
       break;

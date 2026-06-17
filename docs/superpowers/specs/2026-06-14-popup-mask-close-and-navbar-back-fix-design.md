@@ -118,7 +118,7 @@ effect cleanup 中增加 `closedByPopstate` 判断和 `history.back()` 调用。
 | 2 | `app/watering/components/step-config-picker.tsx` | 步骤配置 |
 | 3 | `app/watering/components/interrupt-config-picker.tsx` | 中断配置 |
 | 4 | `app/watering/components/voltage-config-picker.tsx` | 电压配置 |
-| 5 | `app/watering/components/schedule-config-picker.tsx` | 定时任务 |
+| 5 | `app/watering/components/schedule-config-picker.tsx` | 计划任务 |
 
 ## 测试策略
 

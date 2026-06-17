@@ -141,7 +141,7 @@ import { useBackButton } from '@/lib/back-button';
   useBackButton(interruptVisible, () => { setInterruptVisible(false); });
 ```
 
-- [ ] **Step 5: 为定时任务 Drawer 添加 hook 调用**
+- [ ] **Step 5: 为计划任务 Drawer 添加 hook 调用**
 
 接上：
 

@@ -806,7 +806,7 @@ export function DeviceEditor({
 
       {/* 定时编辑 Drawer (70%) */}
       <Drawer
-        title="编辑定时任务"
+        title="编辑计划任务"
         placement="bottom"
         size="70%"
         open={scheduleVisible}
@@ -814,7 +814,7 @@ export function DeviceEditor({
         destroyOnClose
         extra={
           <Space>
-            <Popconfirm title="确认删除此定时任务？" onConfirm={deleteSchedule}>
+            <Popconfirm title="确认删除此计划任务？" onConfirm={deleteSchedule}>
               <Button icon={<DeleteOutlined />} danger size="small">
                 删除
               </Button>

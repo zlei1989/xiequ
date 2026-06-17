@@ -1,5 +1,5 @@
 /**
- * 定时任务配置 Picker — 按循环类型编辑触发条件、时间、执行流程
+ * 计划任务配置 Picker — 按循环类型编辑触发条件、时间、执行流程
  *
  * 根据循环类型（once/day/minute/week）条件渲染不同表单字段。
  * 循环时间用 Picker 实现小时+分钟两列选择，值存储为距 00:00 毫秒偏移。
@@ -143,7 +143,7 @@ export function ScheduleConfigPicker({
 
   function confirmDelete() {
     void Dialog.confirm({
-      title: '确认删除此定时任务？',
+      title: '确认删除此计划任务？',
       onConfirm: () => { onDelete?.(); },
     });
   }
@@ -166,7 +166,7 @@ export function ScheduleConfigPicker({
         ) : null}
         onBack={onClose}
       >
-        编辑定时任务
+        编辑计划任务
       </NavBar>
 
       <div style={{ overflowY: 'auto', height: 'calc(70vh - 45px)' }}>

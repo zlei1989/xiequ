@@ -205,7 +205,7 @@
 - 持续时间：`List.Item` + `Stepper`
 - 禁用：`List.Item` + `Switch`
 
-### 6. schedule-editor.tsx — 定时任务编辑器
+### 6. schedule-editor.tsx — 计划任务编辑器
 
 当前组件（antd）：`Select`（类型）、`InputNumber`（间隔）、`TimePicker`、`Select`（执行流程）、`Switch`
 

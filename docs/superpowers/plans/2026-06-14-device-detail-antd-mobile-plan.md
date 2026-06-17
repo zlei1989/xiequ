@@ -458,7 +458,7 @@ npx vitest run __tests__/watering/components/schedule-editor.test.tsx
 
 ```tsx
 /**
- * 定时任务编辑器 — 编辑触发周期、时间、执行流程
+ * 计划任务编辑器 — 编辑触发周期、时间、执行流程
  *
  * 使用 antd-mobile List + Picker + DatePicker 构建移动端界面。
  * 时间选择用 DatePicker(precision='minute')，显示和保存时转为距 00:00 毫秒偏移。
