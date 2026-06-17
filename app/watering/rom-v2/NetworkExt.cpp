@@ -514,18 +514,30 @@ bool NetworkExt::pushState(String event, JsonDocument *extendFields) {
   JsonObject object = fields.to<JsonObject>();
   object["event"] = event;
 
-  // 合并扩展参数
+  // 合并扩展参数（支持 string / int / bool / float 四种类型，
+  // 统一转为字符串存入 fields，与 getStateQuery 的类型处理逻辑一致）
   if (extendFields) {
     JsonObject extendIter = extendFields->as<JsonObject>();
     if (extendIter.isNull() == false) {
       for (JsonPair kv : extendIter) {
-        if (kv.value().is<const char *>() == false) {
+        // 按 string / int / bool / float 顺序尝试转换，与 getStateQuery 相同
+        String value;
+        if (kv.value().is<const char *>()) {
+          value = kv.value().as<String>();
+        } else if (kv.value().is<int>()) {
+          value = String(kv.value().as<int>());
+        } else if (kv.value().is<bool>()) {
+          value = String(kv.value().as<bool>() ? 1 : 0);
+        } else if (kv.value().is<float>()) {
+          value = String(kv.value().as<float>());
+        } else {
           continue;
         }
-        String key = String(kv.key().c_str());
-        if (key.length() > 0) {
-          object[key] = kv.value().as<String>();
+        const char *keyPtr = kv.key().c_str();
+        if (keyPtr == nullptr || strlen(keyPtr) == 0) {
+          continue;
         }
+        object[keyPtr] = value;
       }
     }
   }

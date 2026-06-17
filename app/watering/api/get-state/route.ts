@@ -72,7 +72,7 @@ async function sampleSensorIfNeeded(
   });
 
   // 无传感器数据或未配置传感器 — 跳过
-  if (Object.keys(rawSensors).length === 0 || !config?.sensors?.length) return;
+  if (!config || Object.keys(rawSensors).length === 0 || !config.sensors.length) return;
 
   // 计算传感器读数
   const readings = calcSensorReadings(config.sensors, rawSensors);
