@@ -28,8 +28,9 @@ import {
   AddOutline,
 } from 'antd-mobile-icons';
 import { useState, useEffect } from 'react';
+import dayjs from 'dayjs';
 
-import { formatProcessDesc, formatScheduleDesc, formatSensorDesc } from '../utils/format-desc';
+import { formatProcessDesc, formatScheduleTitle, formatScheduleDesc, formatSensorDesc } from '../utils/format-desc';
 
 import { InterruptConfigPicker } from './interrupt-config-picker';
 import { ProcessConfigPicker } from './process-config-picker';
@@ -251,10 +252,12 @@ export function DeviceConfigForm({
 
   // ---- 定时操作 ----
   function addSchedule() {
+    const todayStart = dayjs().startOf('day').valueOf();
     const item = attachKey<ScheduleConfig>({
       type: 'day',
-      value: 8 * 3600 * 1000,
-      interval: 1,
+      startTime: todayStart,
+      value: 8 * 3600000,
+      interval: 0,
       process: 0,
     });
     const newSchedules = [...form.schedules, item];
@@ -286,16 +289,6 @@ export function DeviceConfigForm({
     setForm({ ...form, schedules: newSchedules });
     setScheduleVisible(false);
     setScheduleIndex(-1);
-  }
-
-  // ---- 定时时间格式化 ----
-  function formatScheduleTime(record: ScheduleConfig): string {
-    if (record.type === 'day') {
-      const h = Math.floor(record.value / 3600000);
-      const m = Math.floor((record.value % 3600000) / 60000);
-      return `每天 ${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-    }
-    return `${record.type} ${record.value}`;
   }
 
   /** 更新传感器配置 — SensorConfigPicker onConfirm 回调 */
@@ -521,7 +514,7 @@ export function DeviceConfigForm({
                   setScheduleVisible(true);
                 }}
               >
-                {formatScheduleTime(sch)}
+                {formatScheduleTitle(sch, form.processes)}
               </List.Item>
             </SwipeAction>
           ))
@@ -598,7 +591,7 @@ export function DeviceConfigForm({
         open={scheduleVisible}
         processes={form.processes}
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        schedule={scheduleIndex > -1 ? form.schedules[scheduleIndex]! : { type: 'day', value: 0, interval: 1, process: 0 }}
+        schedule={scheduleIndex > -1 ? form.schedules[scheduleIndex]! : { type: 'day', startTime: dayjs().startOf('day').valueOf(), value: 8 * 3600000, interval: 0, process: 0 }}
         onClose={() => { setScheduleVisible(false); }}
         onConfirm={(updated) => { updateSchedule(scheduleIndex, updated); }}
         onDelete={deleteSchedule}
