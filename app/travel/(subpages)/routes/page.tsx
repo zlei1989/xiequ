@@ -40,16 +40,6 @@ export default function RoutesPage() {
     );
   }
 
-  if (routes.length === 0) {
-    return (
-      <ErrorBlock
-        description="添加精彩瞬间后将自动生成路线"
-        status="empty"
-        title="暂无路线"
-      />
-    );
-  }
-
   return (
     <>
       {/* 搜索框 — 始终固定在顶部 */}
@@ -63,7 +53,13 @@ export default function RoutesPage() {
         />
       </div>
 
-      {searchText.trim() && filteredRoutes.length === 0 ? (
+      {routes.length === 0 ? (
+        <ErrorBlock
+          description="添加精彩瞬间后将自动生成路线"
+          status="empty"
+          title="暂无路线"
+        />
+      ) : searchText.trim() && filteredRoutes.length === 0 ? (
         <ErrorBlock description="" status="empty" title="暂无搜索结果" />
       ) : (
         <PullToRefresh onRefresh={load}>
