@@ -47,7 +47,7 @@ void AnalogSensor::setIntercept(int value) { intercept = value; }
 
 /**
  * 获得当前模拟值
- * @return 模拟值（0~1024）
+ * @return 模拟值（0~4095）
  */
 long AnalogSensor::getState() { return lastState; }
 
