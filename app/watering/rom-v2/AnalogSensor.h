@@ -15,7 +15,7 @@
 
 /**
  * 模拟传感器监视类
- * 通过 analogRead 轮询引脚模拟值（0~4095），检测数值变化并过滤抖动。
+ * 通过校准读取轮询引脚模拟值（0~4095），检测数值变化并过滤抖动。
  * 继承 IInterruptComponent 以支持流程中断检测。
  */
 class AnalogSensor : public IInterruptComponent {

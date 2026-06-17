@@ -2,7 +2,7 @@
  * @file AnalogSensor.cpp
  * @brief 模拟传感器监视对象实现
  *
- * 通过 analogRead 轮询引脚模拟值，检测数值变化，
+ * 通过校准读取轮询引脚模拟值，检测数值变化，
  * 内置 debounce 过滤，数值变化时触发回调通知。
  */
 #include "AnalogSensor.h"

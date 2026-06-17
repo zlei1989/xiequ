@@ -6,6 +6,7 @@
  */
 #include "utils.h"
 #include "config.h"
+#include "AdcCalib.h"
 #include <string.h>
 
 /**
@@ -36,12 +37,12 @@ float getVoltageBy91k10k(int pin) { return getVoltageByR1R2(pin, 91, 10); }
  */
 float getVoltageByR1R2(int pin, int r1, int r2) {
   // 读取 ADC 原始值（0~4095，对应 0~3.3V）
-  int value = analogRead(pin);
+  long value = readAdcCalibrated(pin);
   // 将 ADC 值换算为引脚电压
   float v_adc = (float)(value) / 4095 * 3.3;
   // 通过分压比反推实际电压：V_actual = V_adc * (R1 + R2) / R2
   float volts = v_adc * (r1 + r2) / r2;
-  log("Voltage {\"pin\":%d,\"value\":%d,\"volts\":%1.1f}", pin, value, volts);
+  log("Voltage {\"pin\":%d,\"value\":%ld,\"volts\":%1.1f}", pin, value, volts);
   return volts;
 }
 
