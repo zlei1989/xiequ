@@ -77,7 +77,7 @@ void AnalogSensor::next(bool silent) {
     return;
   }
   unsigned long now = millis();
-  // 读取模拟值（0~1024）
+  // 读取模拟值（0~4095）
   long state = analogRead(pin);
   // 数值未变化则跳过
   if (lastState == state) {

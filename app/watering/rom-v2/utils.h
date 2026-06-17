@@ -29,7 +29,7 @@ float getVoltageBy91k10k(int pin);
  * 分压器电路: V_actual --[R1]-- V_adc --[R2]-- GND
  * 计算公式: V_adc = V_actual * R2 / (R1 + R2)
  *          V_actual = V_adc * (R1 + R2) / R2
- * 例如：3V7 电池 - 满电(4v2) ADC=326 ~ 缺电(3v7) ADC=287
+ * 例如：12V 电源(91k/10k 分压器) - 满压(12v) ADC≈1475 ~ 低压(11v) ADC≈1352
  * @param pin 模拟输入引脚
  * @param r1 上拉电阻值（kΩ）
  * @param r2 下拉电阻值（kΩ）

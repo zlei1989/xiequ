@@ -26,19 +26,19 @@ float getVoltageBy91k10k(int pin) { return getVoltageByR1R2(pin, 91, 10); }
  * 获得当前电压 (R1/R2 分压器)
  * 分压器电路: V_actual --[R1]-- V_adc --[R2]-- GND
  * 采集 ADC 值后换算为实际电压：
- *   V_adc = ADC_VALUE / 1024 * 3.3
+ *   V_adc = ADC_VALUE / 4095 * 3.3
  *   V_actual = V_adc * (R1 + R2) / R2
- * 例如：3V7 电池 - 满电(4v2) ADC=326 ~ 缺电(3v7) ADC=287
+ * 例如：12V 电源(91k/10k 分压器) - 满压(12v) ADC≈1475 ~ 低压(11v) ADC≈1352
  * @param pin 模拟输入引脚
  * @param r1 上拉电阻值（kΩ）
  * @param r2 下拉电阻值（kΩ）
  * @return 电压值（伏特）
  */
 float getVoltageByR1R2(int pin, int r1, int r2) {
-  // 读取 ADC 原始值（0~1024，对应 0~3.3V）
+  // 读取 ADC 原始值（0~4095，对应 0~3.3V）
   int value = analogRead(pin);
   // 将 ADC 值换算为引脚电压
-  float v_adc = (float)(value) / 1024 * 3.3;
+  float v_adc = (float)(value) / 4095 * 3.3;
   // 通过分压比反推实际电压：V_actual = V_adc * (R1 + R2) / R2
   float volts = v_adc * (r1 + r2) / r2;
   log("Voltage {\"pin\":%d,\"value\":%d,\"volts\":%1.1f}", pin, value, volts);
