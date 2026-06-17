@@ -254,10 +254,11 @@ export function SensorConfigPicker({
   return (
     <Popup
       bodyStyle={{ height: '60vh' }}
-      closeOnMaskClick={false}
+      closeOnMaskClick={true}
       position="bottom"
       visible={open}
       onClose={onClose}
+      onMaskClick={onClose}
     >
       <NavBar onBack={onClose}>
         {sensor.name ? '编辑传感器' : '添加传感器'}
