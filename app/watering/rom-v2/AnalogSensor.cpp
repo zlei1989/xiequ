@@ -6,6 +6,7 @@
  * 内置 debounce 过滤，数值变化时触发回调通知。
  */
 #include "AnalogSensor.h"
+#include "AdcCalib.h"
 
 /**
  * 获得针脚标识
@@ -78,7 +79,7 @@ void AnalogSensor::next(bool silent) {
   }
   unsigned long now = millis();
   // 读取模拟值（0~4095）
-  long state = analogRead(pin);
+  long state = readAdcCalibrated(pin);
   // 数值未变化则跳过
   if (lastState == state) {
     yield();

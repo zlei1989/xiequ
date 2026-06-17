@@ -23,6 +23,7 @@
 #include <Arduino.h>
 #include <cmath>
 #include "AnalogSensor.h"
+#include "AdcCalib.h"
 #include "Button.h"
 #include "Light.h"
 #include "Motor.h"
@@ -206,6 +207,9 @@ void setup()
   button4.setContext(&process);
   button4.setChangeHandler(buttonChangeHandler);
   button4.setKey("button_4");
+
+  // ---- 初始化 ADC 校准 ----
+  initAdcCalibration();
 
   // ---- 初始化传感器 ----
   sensor0.setPin(GPIO_SENSOR0); // 温度传感器电压采集
