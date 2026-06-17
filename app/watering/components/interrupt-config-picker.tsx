@@ -184,6 +184,7 @@ export function InterruptConfigPicker({
                 label="触发阈值"
               >
                 <Stepper
+                  className="w-38"
                   min={0}
                   step={1}
                   value={config.threshold ?? 0}
@@ -196,6 +197,7 @@ export function InterruptConfigPicker({
           {/* 屏蔽抖动间隔 */}
           <Form.Item label="屏蔽抖动间隔 (ms)">
             <Stepper
+              className="w-38"
               min={0}
               step={100}
               value={config.intercept}
@@ -206,6 +208,7 @@ export function InterruptConfigPicker({
           {/* 延迟检测 */}
           <Form.Item label="延迟检测 (ms)">
             <Stepper
+              className="w-38"
               min={0}
               step={1000}
               value={config.delay}
@@ -216,6 +219,7 @@ export function InterruptConfigPicker({
           {/* 持续时间 */}
           <Form.Item label="持续时间 (ms)">
             <Stepper
+              className="w-38"
               min={0}
               step={1000}
               value={config.duration}

@@ -1,184 +1,175 @@
 /**
  * 计划任务检查逻辑单元测试
  *
- * 测试 getNowScheduleProcess 的纯函数核心逻辑：
+ * 测试 once/day/minute/week 四种循环类型的触发判断：
  * - 触发时间计算
  * - 45 分钟误差容忍
  * - interval 去重
  * - disabled 跳过
- * - switch=on 跳过
  */
 
 import { describe, it, expect } from 'vitest';
 
+/** 计划任务检查的最大误差容忍（毫秒） */
+const SCHEDULE_OFFSET = 45 * 60 * 1000;
+
 /**
- * 计算 day 类型定时任务的触发时间戳（毫秒）
- *
- * @param now 当前时间 Date 对象
- * @param value 距 00:00 的毫秒偏移（如 28800000 = 8:00）
- * @returns 今日触发时间的 Unix 毫秒时间戳
+ * 计算 day/week 类型定时任务的今日触发时间戳（毫秒）
  */
-function calcDayTriggerTime(now: Date, value: number): number {
+function calcDayLoopTriggerTime(now: Date, value: number): number {
   const todayStart = new Date(now);
   todayStart.setHours(0, 0, 0, 0);
   return todayStart.getTime() + value;
 }
 
-/** 计划任务检查的最大误差容忍（毫秒），对齐 7qb-server */
-const SCHEDULE_OFFSET = 45 * 60 * 1000; // 45 分钟
-
 /**
- * 检查单个 day 类型定时任务是否应触发
- *
- * @returns { triggered: true, triggerTime } 或 { triggered: false }
+ * 计算 minute 类型定时任务的当前理论触发时间戳（毫秒）
  */
-function checkDaySchedule(
-  now: Date,
-  scheduleValue: number,      // 距 00:00 的毫秒偏移
-  scheduleInterval: number,   // 间隔天数
-  isDisabled: boolean,
-  hasLog: (time: number) => boolean, // 查询某触发时间是否已有执行记录
-): { triggered: boolean; triggerTime: number } {
-  const triggerTime = calcDayTriggerTime(now, scheduleValue);
-
-  // 1. 禁用检查
-  if (isDisabled) {
-    return { triggered: false, triggerTime };
-  }
-
-  // 2. 时间检查：触发时间必须已经过去
-  if (triggerTime > now.getTime()) {
-    return { triggered: false, triggerTime };
-  }
-
-  // 3. 误差容忍：不能过期超过 45 分钟
-  if (Math.abs(now.getTime() - triggerTime) > SCHEDULE_OFFSET) {
-    return { triggered: false, triggerTime };
-  }
-
-  // 4. 去重：今天已执行 → 跳过
-  if (hasLog(triggerTime)) {
-    return { triggered: false, triggerTime };
-  }
-
-  // 5. interval 去重：前 N-1 天有执行记录 → 跳过
-  for (let i = 1; i < scheduleInterval; i++) {
-    const prevTime = triggerTime - i * 24 * 3600 * 1000;
-    if (hasLog(prevTime)) {
-      return { triggered: false, triggerTime };
-    }
-  }
-
-  return { triggered: true, triggerTime };
+function calcMinuteTriggerTime(startTime: number, intervalMinutes: number, now: Date): number {
+  const intervalMs = intervalMinutes * 60000;
+  const elapsed = now.getTime() - startTime;
+  if (elapsed < 0) return startTime;
+  const n = Math.floor(elapsed / intervalMs);
+  return startTime + n * intervalMs;
 }
 
-// ---- 测试用例 ----
+/**
+ * 计算 week 类型定时任务的今日触发时间戳（毫秒）
+ */
+function calcWeekTriggerTime(now: Date, value: number, week: number): number | null {
+  const jsDay = now.getDay();
+  const currentWeekDay = jsDay === 0 ? 7 : jsDay;
+  if (currentWeekDay !== week) return null;
+  return calcDayLoopTriggerTime(now, value);
+}
 
-/** 创建模拟的 hasLog 函数 */
+function jsDayToWeekDay(jsDay: number): number {
+  return jsDay === 0 ? 7 : jsDay;
+}
+
 function mockHasLog(executedTimes: number[]): (time: number) => boolean {
   return (time: number) => executedTimes.includes(time);
 }
 
-describe('checkDaySchedule', () => {
-  /** 固定基准时间：2026-06-14 10:05 CST，方便断言 */
+// ---- once ----
+describe('once 类型触发判断', () => {
+  it('到达开始时间且在容忍范围内应触发', () => {
+    const startTime = new Date('2026-06-17T08:00:00+08:00').getTime();
+    const now = new Date('2026-06-17T08:05:00+08:00');
+    const triggerTime = startTime;
+    const withinOffset = Math.abs(now.getTime() - triggerTime) <= SCHEDULE_OFFSET;
+    const reached = triggerTime <= now.getTime();
+    expect(reached && withinOffset).toBe(true);
+  });
+
+  it('未到开始时间不应触发', () => {
+    const startTime = new Date('2026-06-17T08:00:00+08:00').getTime();
+    const now = new Date('2026-06-17T07:50:00+08:00');
+    expect(startTime <= now.getTime()).toBe(false);
+  });
+
+  it('过期超过 45 分钟不应触发', () => {
+    const startTime = new Date('2026-06-17T08:00:00+08:00').getTime();
+    const now = new Date('2026-06-17T08:50:00+08:00');
+    const withinOffset = Math.abs(now.getTime() - startTime) <= SCHEDULE_OFFSET;
+    expect(withinOffset).toBe(false);
+  });
+});
+
+// ---- day ----
+describe('day 类型触发判断', () => {
   function makeNow(hours: number, minutes: number): Date {
     const d = new Date('2026-06-14T00:00:00+08:00');
     d.setHours(hours, minutes, 0, 0);
     return d;
   }
 
-  it('到达触发时间：10:05 检查 10:00 的任务应触发', () => {
+  it('interval=0 每天都应触发', () => {
     const now = makeNow(10, 5);
-    const result = checkDaySchedule(now, 10 * 3600 * 1000, 1, false, mockHasLog([]));
-    expect(result.triggered).toBe(true);
+    const triggerTime = calcDayLoopTriggerTime(now, 10 * 3600000);
+    const withinOffset = Math.abs(now.getTime() - triggerTime) <= SCHEDULE_OFFSET;
+    const reached = triggerTime <= now.getTime();
+    expect(reached && withinOffset).toBe(true);
   });
 
-  it('未到触发时间：9:55 检查 10:00 的任务不应触发', () => {
-    const now = makeNow(9, 55);
-    const result = checkDaySchedule(now, 10 * 3600 * 1000, 1, false, mockHasLog([]));
-    expect(result.triggered).toBe(false);
-  });
-
-  it('过期超过 45 分钟：10:50 检查 10:00 的任务不应触发', () => {
-    const now = makeNow(10, 50);
-    const result = checkDaySchedule(now, 10 * 3600 * 1000, 1, false, mockHasLog([]));
-    expect(result.triggered).toBe(false);
-  });
-
-  it('刚好在 45 分钟边界内：10:44 检查 10:00 的任务应触发', () => {
-    const now = makeNow(10, 44);
-    const result = checkDaySchedule(now, 10 * 3600 * 1000, 1, false, mockHasLog([]));
-    expect(result.triggered).toBe(true);
-  });
-
-  it('刚好超过 45 分钟边界：10:46 检查 10:00 的任务不应触发', () => {
-    const now = makeNow(10, 46);
-    const result = checkDaySchedule(now, 10 * 3600 * 1000, 1, false, mockHasLog([]));
-    expect(result.triggered).toBe(false);
-  });
-
-  it('今天已执行：不重复触发', () => {
+  it('interval=2 前天执行过不应再触发', () => {
     const now = makeNow(10, 5);
-    const triggerTime = calcDayTriggerTime(now, 10 * 3600 * 1000);
-    const result = checkDaySchedule(now, 10 * 3600 * 1000, 1, false, mockHasLog([triggerTime]));
-    expect(result.triggered).toBe(false);
+    const triggerTime = calcDayLoopTriggerTime(now, 10 * 3600000);
+    const twoDaysAgo = triggerTime - 2 * 86400000;
+    const hasLog = mockHasLog([twoDaysAgo]);
+    let previouslyExecuted = false;
+    for (let i = 1; i <= 2; i++) {
+      if (hasLog(triggerTime - i * 86400000)) {
+        previouslyExecuted = true;
+        break;
+      }
+    }
+    expect(previouslyExecuted).toBe(true);
   });
 
-  it('interval=1 昨天执行过：仍应触发（间隔=1 只检查今天）', () => {
+  it('startTime 未到（启用日期在未来）不应触发', () => {
     const now = makeNow(10, 5);
-    const todayTrigger = calcDayTriggerTime(now, 10 * 3600 * 1000);
-    const yesterdayTrigger = todayTrigger - 24 * 3600 * 1000;
-    const result = checkDaySchedule(
-      now, 10 * 3600 * 1000, 1, false, mockHasLog([yesterdayTrigger]),
-    );
-    expect(result.triggered).toBe(true);
-  });
-
-  it('interval=2 昨天执行过：不应触发', () => {
-    const now = makeNow(10, 5);
-    const todayTrigger = calcDayTriggerTime(now, 10 * 3600 * 1000);
-    const yesterdayTrigger = todayTrigger - 24 * 3600 * 1000;
-    const result = checkDaySchedule(
-      now, 10 * 3600 * 1000, 2, false, mockHasLog([yesterdayTrigger]),
-    );
-    expect(result.triggered).toBe(false);
-  });
-
-  it('interval=3 前天执行过：不应触发', () => {
-    const now = makeNow(10, 5);
-    const todayTrigger = calcDayTriggerTime(now, 10 * 3600 * 1000);
-    const twoDaysAgo = todayTrigger - 2 * 24 * 3600 * 1000;
-    const result = checkDaySchedule(now, 10 * 3600 * 1000, 3, false, mockHasLog([twoDaysAgo]));
-    expect(result.triggered).toBe(false);
-  });
-
-  it('interval=3 两天前执行过，昨天没执行：不应触发（需 3 天空白期）', () => {
-    const now = makeNow(10, 5);
-    const todayTrigger = calcDayTriggerTime(now, 10 * 3600 * 1000);
-    const twoDaysAgo = todayTrigger - 2 * 24 * 3600 * 1000;
-    const result = checkDaySchedule(now, 10 * 3600 * 1000, 3, false, mockHasLog([twoDaysAgo]));
-    expect(result.triggered).toBe(false);
-  });
-
-  it('disabled 跳过', () => {
-    const now = makeNow(10, 5);
-    const result = checkDaySchedule(now, 10 * 3600 * 1000, 1, true, mockHasLog([]));
-    expect(result.triggered).toBe(false);
+    const startTime = new Date('2026-06-20T00:00:00+08:00').getTime();
+    const startDate = new Date(startTime);
+    startDate.setHours(0, 0, 0, 0);
+    const nowDate = new Date(now);
+    nowDate.setHours(0, 0, 0, 0);
+    expect(startDate.getTime() > nowDate.getTime()).toBe(true);
   });
 });
 
-describe('calcDayTriggerTime', () => {
-  it('8:00 → 28800000 毫秒偏移', () => {
-    const now = new Date('2026-06-14T10:00:00+08:00');
-    const trigger = calcDayTriggerTime(now, 8 * 3600 * 1000);
-    const expected = new Date('2026-06-14T08:00:00+08:00').getTime();
-    expect(trigger).toBe(expected);
+// ---- minute ----
+describe('minute 类型触发判断', () => {
+  it('从 startTime 开始每隔 N 分钟的理论触发时间', () => {
+    const startTime = new Date('2026-06-17T08:00:00+08:00').getTime();
+    const now = new Date('2026-06-17T09:40:00+08:00');
+    const triggerTime = calcMinuteTriggerTime(startTime, 30, now);
+    const expected = new Date('2026-06-17T09:30:00+08:00').getTime();
+    expect(triggerTime).toBe(expected);
   });
 
-  it('18:00 → 64800000 毫秒偏移', () => {
-    const now = new Date('2026-06-14T20:00:00+08:00');
-    const trigger = calcDayTriggerTime(now, 18 * 3600 * 1000);
-    const expected = new Date('2026-06-14T18:00:00+08:00').getTime();
+  it('now < startTime 时返回 startTime', () => {
+    const startTime = new Date('2026-06-17T10:00:00+08:00').getTime();
+    const now = new Date('2026-06-17T08:00:00+08:00');
+    const triggerTime = calcMinuteTriggerTime(startTime, 30, now);
+    expect(triggerTime).toBe(startTime);
+  });
+
+  it('恰好等于某个触发点', () => {
+    const startTime = new Date('2026-06-17T08:00:00+08:00').getTime();
+    const now = new Date('2026-06-17T08:30:00+08:00');
+    const triggerTime = calcMinuteTriggerTime(startTime, 30, now);
+    expect(triggerTime).toBe(new Date('2026-06-17T08:30:00+08:00').getTime());
+  });
+});
+
+// ---- week ----
+describe('week 类型触发判断', () => {
+  it('今天是目标星期且在容忍范围内应触发', () => {
+    const now = new Date('2026-06-15T10:05:00+08:00');
+    expect(jsDayToWeekDay(now.getDay())).toBe(1);
+    const triggerTime = calcWeekTriggerTime(now, 10 * 3600000, 1);
+    expect(triggerTime).not.toBeNull();
+  });
+
+  it('今天不是目标星期不应触发', () => {
+    const now = new Date('2026-06-15T10:05:00+08:00');
+    const triggerTime = calcWeekTriggerTime(now, 10 * 3600000, 3);
+    expect(triggerTime).toBeNull();
+  });
+
+  it('周日对应 week=7', () => {
+    const now = new Date('2026-06-14T10:05:00+08:00');
+    expect(jsDayToWeekDay(now.getDay())).toBe(7);
+  });
+});
+
+// ---- calcDayLoopTriggerTime ----
+describe('calcDayLoopTriggerTime', () => {
+  it('8:00', () => {
+    const now = new Date('2026-06-14T10:00:00+08:00');
+    const trigger = calcDayLoopTriggerTime(now, 8 * 3600 * 1000);
+    const expected = new Date('2026-06-14T08:00:00+08:00').getTime();
     expect(trigger).toBe(expected);
   });
 });

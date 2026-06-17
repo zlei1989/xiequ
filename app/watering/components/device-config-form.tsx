@@ -27,8 +27,8 @@ import {
 import {
   AddOutline,
 } from 'antd-mobile-icons';
-import { useState, useEffect } from 'react';
 import dayjs from 'dayjs';
+import { useState, useEffect } from 'react';
 
 import { formatProcessDesc, formatScheduleTitle, formatScheduleDesc, formatSensorDesc } from '../utils/format-desc';
 
@@ -351,6 +351,7 @@ export function DeviceConfigForm({
         {form.idleSleep && (
           <Form.Item label="空闲超时（毫秒）">
             <Stepper
+              className="w-38"
               max={86400000}
               min={0}
               step={1000}
@@ -387,6 +388,7 @@ export function DeviceConfigForm({
         {/* 延迟执行 */}
         <Form.Item label="延迟执行（毫秒）">
           <Stepper
+            className="w-38"
             disabled={form.bootExec < 0}
             min={0}
             step={1000}

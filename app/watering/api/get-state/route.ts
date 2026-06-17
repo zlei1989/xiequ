@@ -16,7 +16,7 @@
 import { NextResponse } from 'next/server';
 
 import { setCallback, deleteCallback } from '@/app/watering/services/callback-map';
-import { getDeviceState, getDeviceConfig, updateTick, insertScheduleLog, hasScheduleLog, saveDeviceState, writeSensorLog, getSensorLogs } from '@/app/watering/services/db';
+import { getDeviceState, getDeviceConfig, updateTick, insertScheduleLog, hasScheduleLog, saveDeviceState, saveDeviceConfig, writeSensorLog, getSensorLogs } from '@/app/watering/services/db';
 import type { DeviceState, DeviceConfig, ScheduleConfig, ProcessConfig } from '@/app/watering/types';
 import type { SensorConfig } from '@/app/watering/types';
 import { calcSensorReadings } from '@/app/watering/utils/calc-sensor';
@@ -104,23 +104,50 @@ const SLEEP_DURATION = (() => {
 const SCHEDULE_OFFSET = 45 * 60 * 1000;
 
 /**
- * 计算 day 类型定时任务的今日触发时间戳（毫秒）
- *
- * @param now 当前时间
- * @param value 距 00:00 的毫秒偏移
+/**
+ * 计算 day/week 类型定时任务的今日触发时间戳（毫秒）
  */
-function calcDayTriggerTime(now: Date, value: number): number {
+function calcDayLoopTriggerTime(now: Date, value: number): number {
   const todayStart = new Date(now);
   todayStart.setHours(0, 0, 0, 0);
   return todayStart.getTime() + value;
 }
 
 /**
+ * 计算 minute 类型定时任务的当前理论触发时间戳（毫秒）
+ *
+ * 从 startTime 开始，按 interval 分钟等间隔触发。
+ * 计算公式：startTime + floor((now - startTime) / intervalMs) * intervalMs
+ * 结果为 ≤ now 的最大触发时间点。
+ */
+function calcMinuteTriggerTime(startTime: number, intervalMinutes: number, now: Date): number {
+  const intervalMs = intervalMinutes * 60000;
+  const elapsed = now.getTime() - startTime;
+  if (elapsed < 0) return startTime;
+  const n = Math.floor(elapsed / intervalMs);
+  return startTime + n * intervalMs;
+}
+
+/**
+ * 计算 week 类型定时任务的今日触发时间戳（毫秒）
+ *
+ * 仅当今天是指定星期时返回触发时间，否则返回 null。
+ * JS getDay(): 0=周日, 1=周一, ..., 6=周六 → 转换为 1=周一...7=周日
+ */
+function calcWeekTriggerTime(now: Date, value: number, week: number): number | null {
+  const jsDay = now.getDay();
+  const currentWeekDay = jsDay === 0 ? 7 : jsDay;
+  if (currentWeekDay !== week) return null;
+  return calcDayLoopTriggerTime(now, value);
+}
+
+/**
  * 检查计划任务并执行
  *
- * 遍历 config.schedules，找到第一个应触发的 day 类型定时任务。
- * 触发条件：已到达、未过期超 45 分钟、今日及 interval 天内未执行。
+ * 遍历 config.schedules，找到第一个应触发的定时任务。
+ * 支持 once/day/minute/week 四种循环类型。
  * 触发后标记 schedule_log、更新 state.switch/process/stateId。
+ * once 类型触发后自动将 disabled 设为 true 并保存配置。
  *
  * @returns 是否触发了计划任务（用于判断 changed）
  */
@@ -132,36 +159,83 @@ async function checkAndExecuteSchedule(
   // 仅在设备空闲时检查
   if (state.switch !== 'off') return false;
 
+  let configNeedsSave = false;
+
   for (const schedule of config.schedules) {
     if (schedule.disabled) continue;
 
     let triggerTime: number;
+
     switch (schedule.type) {
-      case 'day':
-        triggerTime = calcDayTriggerTime(now, schedule.value);
-        break;
-      default:
-        // 其他类型暂不支持
-        continue;
-    }
-
-    // 未到触发时间
-    if (triggerTime > now.getTime()) continue;
-    // 过期超过容忍误差
-    if (Math.abs(now.getTime() - triggerTime) > SCHEDULE_OFFSET) continue;
-
-    // 去重：查询当天及 interval 天内是否已执行
-    if (await hasScheduleLog(config.chipId, triggerTime)) continue;
-
-    let previouslyExecuted = false;
-    for (let i = 1; i < schedule.interval; i++) {
-      const prevTime = triggerTime - i * 24 * 3600 * 1000;
-      if (await hasScheduleLog(config.chipId, prevTime)) {
-        previouslyExecuted = true;
+      case 'once': {
+        // 单次任务：startTime 即执行时间
+        triggerTime = schedule.startTime;
+        const elapsed = now.getTime() - triggerTime;
+        if (elapsed < 0 || Math.abs(elapsed) > SCHEDULE_OFFSET) continue;
+        if (await hasScheduleLog(config.chipId, triggerTime)) continue;
         break;
       }
+
+      case 'day': {
+        // 按天：检查启用日期是否已到
+        const startDate = new Date(schedule.startTime);
+        startDate.setHours(0, 0, 0, 0);
+        const nowDate = new Date(now);
+        nowDate.setHours(0, 0, 0, 0);
+        if (startDate.getTime() > nowDate.getTime()) continue;
+
+        triggerTime = calcDayLoopTriggerTime(now, schedule.value ?? 0);
+        if (triggerTime > now.getTime()) continue;
+        if (Math.abs(now.getTime() - triggerTime) > SCHEDULE_OFFSET) continue;
+        if (await hasScheduleLog(config.chipId, triggerTime)) continue;
+
+        // interval 去重：interval=0 表示每天都执行，跳过间隔检查
+        if (schedule.interval && schedule.interval > 0) {
+          let previouslyExecuted = false;
+          for (let i = 1; i <= schedule.interval; i++) {
+            const prevTime = triggerTime - i * 86400000;
+            if (await hasScheduleLog(config.chipId, prevTime)) {
+              previouslyExecuted = true;
+              break;
+            }
+          }
+          if (previouslyExecuted) continue;
+        }
+        break;
+      }
+
+      case 'minute': {
+        // 按分钟：从 startTime 开始等间隔触发
+        triggerTime = calcMinuteTriggerTime(schedule.startTime, schedule.interval ?? 30, now);
+        // 还没到首次执行时间
+        if (triggerTime > now.getTime()) continue;
+        // 当前时间距理论触发时间超过一个间隔则跳过（防止唤醒后批量执行）
+        const intervalMs = (schedule.interval ?? 30) * 60000;
+        if (now.getTime() - triggerTime > intervalMs) continue;
+        if (await hasScheduleLog(config.chipId, triggerTime)) continue;
+        break;
+      }
+
+      case 'week': {
+        // 按星期：检查启用日期和星期
+        const startDate = new Date(schedule.startTime);
+        startDate.setHours(0, 0, 0, 0);
+        const nowDate = new Date(now);
+        nowDate.setHours(0, 0, 0, 0);
+        if (startDate.getTime() > nowDate.getTime()) continue;
+
+        const weekTriggerTime = calcWeekTriggerTime(now, schedule.value ?? 0, schedule.week ?? 1);
+        if (weekTriggerTime === null) continue;
+        triggerTime = weekTriggerTime;
+        if (triggerTime > now.getTime()) continue;
+        if (Math.abs(now.getTime() - triggerTime) > SCHEDULE_OFFSET) continue;
+        if (await hasScheduleLog(config.chipId, triggerTime)) continue;
+        break;
+      }
+
+      default:
+        continue;
     }
-    if (previouslyExecuted) continue;
 
     // 下发流程（深拷贝防止修改原始配置）
     if (
@@ -170,15 +244,23 @@ async function checkAndExecuteSchedule(
     ) {
       state.switch = 'on';
       state.index = schedule.process;
-      // 过滤禁用步骤和中断后再下发
       state.process = filterProcess(
         JSON.parse(JSON.stringify(config.processes[schedule.process])) as ProcessConfig,
       );
-      // 标记执行（先确认流程有效再标记，防止无效流程永久跳过）
+      // 标记执行
       await insertScheduleLog(config.chipId, triggerTime, schedule.process);
+      // once 类型触发后自动禁用
+      if (schedule.type === 'once') {
+        schedule.disabled = true;
+        configNeedsSave = true;
+      }
       state.stateId = newId();
       state.lastWriteTime = new Date().toISOString();
       await saveDeviceState(state);
+      // once 类型需要持久化 disabled 状态到配置
+      if (configNeedsSave) {
+        await saveDeviceConfig(config);
+      }
       return true;
     }
   }
@@ -188,30 +270,75 @@ async function checkAndExecuteSchedule(
 
 /**
  * 计算单个定时任务距现在还有多少毫秒
- *
- * 目前完整支持 day 类型（value = 距 00:00 的毫秒偏移）。
- * 其他类型（minute/week/month）暂简化处理，返回 SLEEP_DURATION。
  */
 function calcNextScheduleDelay(schedule: ScheduleConfig, now: Date): number {
   if (schedule.disabled) return SLEEP_DURATION;
 
-  if (schedule.type === 'day') {
-    const nowMs = now.getTime();
-    const todayStart = new Date(now);
-    todayStart.setHours(0, 0, 0, 0);
-    const todayStartMs = todayStart.getTime();
-
-    const todayTrigger = todayStartMs + schedule.value;
-
-    if (todayTrigger > nowMs) {
-      return todayTrigger - nowMs;
+  switch (schedule.type) {
+    case 'once': {
+      if (schedule.startTime <= now.getTime()) return SLEEP_DURATION;
+      return schedule.startTime - now.getTime();
     }
 
-    const intervalMs = (schedule.interval || 1) * 24 * 3600000;
-    return todayTrigger + intervalMs - nowMs;
-  }
+    case 'day': {
+      const startDate = new Date(schedule.startTime);
+      startDate.setHours(0, 0, 0, 0);
+      const nowDate = new Date(now);
+      nowDate.setHours(0, 0, 0, 0);
+      if (startDate.getTime() > nowDate.getTime()) {
+        return startDate.getTime() + (schedule.value ?? 0) - now.getTime();
+      }
 
-  return SLEEP_DURATION;
+      const todayTrigger = calcDayLoopTriggerTime(now, schedule.value ?? 0);
+      if (todayTrigger > now.getTime()) {
+        return todayTrigger - now.getTime();
+      }
+
+      const intervalMs = ((schedule.interval ?? 0) + 1) * 86400000;
+      return todayTrigger + intervalMs - now.getTime();
+    }
+
+    case 'minute': {
+      if (schedule.startTime > now.getTime()) {
+        return schedule.startTime - now.getTime();
+      }
+      const triggerTime = calcMinuteTriggerTime(schedule.startTime, schedule.interval ?? 30, now);
+      const intervalMs = (schedule.interval ?? 30) * 60000;
+      return triggerTime + intervalMs - now.getTime();
+    }
+
+    case 'week': {
+      const startDate = new Date(schedule.startTime);
+      startDate.setHours(0, 0, 0, 0);
+      const nowDate = new Date(now);
+      nowDate.setHours(0, 0, 0, 0);
+      if (startDate.getTime() > nowDate.getTime()) {
+        return startDate.getTime() + (schedule.value ?? 0) - now.getTime();
+      }
+
+      const weekTriggerTime = calcWeekTriggerTime(now, schedule.value ?? 0, schedule.week ?? 1);
+      if (weekTriggerTime !== null && weekTriggerTime > now.getTime()) {
+        return weekTriggerTime - now.getTime();
+      }
+
+      // 计算下一个目标星期
+      const jsDay = now.getDay();
+      const currentWeekDay = jsDay === 0 ? 7 : jsDay;
+      const targetWeekDay = schedule.week ?? 1;
+      let daysUntil = targetWeekDay - currentWeekDay;
+      if (daysUntil <= 0) daysUntil += 7;
+      if (weekTriggerTime !== null && weekTriggerTime <= now.getTime()) {
+        daysUntil = daysUntil === 0 ? 7 : daysUntil;
+      }
+      const nextWeekDate = new Date(now);
+      nextWeekDate.setDate(nextWeekDate.getDate() + daysUntil);
+      nextWeekDate.setHours(0, 0, 0, 0);
+      return nextWeekDate.getTime() + (schedule.value ?? 0) - now.getTime();
+    }
+
+    default:
+      return SLEEP_DURATION;
+  }
 }
 
 /**

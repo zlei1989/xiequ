@@ -189,6 +189,7 @@ function SensorFormBody({
               <>
                 <Form.Item help="上拉电阻 R1，上拉至被测电压。默认 30kΩ" label="R1 电阻值 (Ω)">
                   <Stepper
+                    className="w-38"
                     min={0}
                     step={1000}
                     value={editConfig.r1 ?? 30000}
@@ -198,6 +199,7 @@ function SensorFormBody({
 
                 <Form.Item help="下拉电阻 R2，下拉至 GND。默认 10kΩ" label="R2 电阻值 (Ω)">
                   <Stepper
+                    className="w-38"
                     min={0}
                     step={1000}
                     value={editConfig.r2 ?? 10000}
