@@ -57,7 +57,9 @@ describe('calcLatestSlot', () => {
 /**
  * 单元测试 — recordsToSeries 数据转换
  */
-function recordsToSeries(records: { recordTime: string; readings: { label: string; value: number }[] }[]) {
+function recordsToSeries(
+  records: { recordTime: string; readings: { label: string; value: number }[] }[],
+) {
   if (records.length === 0) return [];
 
   const labelOrder: string[] = [];

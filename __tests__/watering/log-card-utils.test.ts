@@ -515,8 +515,8 @@ describe('countSteps', () => {
   it('统计 change 事件数', () => {
     const items: LogItem[] = [
       makeLog({ event: 'bootstrap' }),
-      makeLog({ event: 'change' }),
-      makeLog({ event: 'change' }),
+      makeLog({ event: 'change', state: { type: 'step_ready' } }),
+      makeLog({ event: 'change', state: { type: 'step_ready' } }),
       makeLog({ event: 'finish' }),
     ];
     expect(countSteps(items)).toBe(2);
