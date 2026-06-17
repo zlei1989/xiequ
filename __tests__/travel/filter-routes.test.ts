@@ -60,12 +60,6 @@ describe('filterRoutes', () => {
     expect(filterRoutes(routes, '   ')).toEqual(routes);
   });
 
-  it('matches by marker name (exact)', () => {
-    const result = filterRoutes(routes, '故宫');
-    expect(result).toHaveLength(1);
-    expect(result[0]?.id).toBe('r1');
-  });
-
   it('matches by marker name (partial)', () => {
     const result = filterRoutes(routes, '故宫');
     // 'r1' has exact '故宫', 'r3' has '北京故宫' which includes '故宫'
