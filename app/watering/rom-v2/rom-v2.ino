@@ -624,6 +624,8 @@ void buttonChangeHandler(int type, float value, Button *button, void *context)
         processPtr->setSchema(schema);
         processPtr->execute();
         _idled = false;
+        // 清除睡眠时长，防止流程执行完毕后用旧的 sleepDuration 立即入睡
+        network.setSleepDuration(0);
         return;
       }
     }

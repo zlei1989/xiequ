@@ -264,9 +264,8 @@ export function DeviceCard({
          * - 偶数个流程：每行 2 列（flex-wrap，各占 50% 宽度）
          * - 奇数个流程：第 1 个占整行（100%），其余每行 2 列
          *
-         * 按钮禁用条件：
-         * 1. 设备离线 → 所有按钮不可用
-         * 2. 设备开启了 idleSleep 且该流程未在执行 → 设备待机省电，不接受实时控制
+         * 按钮禁用条件：仅设备离线时禁用所有按钮。
+         * idleSleep 模式下不额外限制，因为设备可能尚未超时，用户仍可继续操作。
          */}
         {processes.length > 0 && (
           <div className="mt-2">
@@ -301,10 +300,9 @@ export function DeviceCard({
                 <div className="mb-1 flex gap-2" key={rowIdx}>
                   {row.map(({ idx, fullWidth }) => {
                     const exec = isExec(idx);
-                    // idleSleep 模式下仅允许终止正在执行的流程
-                    const disabled =
-                      !device.isOnline ||
-                      (!exec && device.idleSleep);
+                    // 仅离线时禁用按钮。idleSleep 模式下不额外限制，
+                    // 因为设备可能尚未超时，用户仍可继续操作。
+                    const disabled = !device.isOnline;
                     return (
                       <Button
                         block
