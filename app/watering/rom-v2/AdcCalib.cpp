@@ -19,20 +19,18 @@
 // adc_cali API 暂未实现，回退到多次采样平均
 // ============================================================
 
-/** 校准是否已初始化 */
-static bool adc_calibrated = false;
-
 /**
  * 初始化 ADC 校准 — Core 3.0+ 暂未实现
  * 后续需使用 adc_cali_create_scheme_line_fitting 创建校准句柄
  */
 void initAdcCalibration() {
-  log("ADC Calibration {\"status\":\"not_supported\",\"idf\":\"5.x\"}");
-  adc_calibrated = false;
+  log("ADC Calibration {\"status\":\"not_implemented\",\"idf\":\"5.x\"}");
 }
 
 /**
  * 多次采样平均（无校准回退）
+ * 注意：此分支仅返回原始平均 raw 值（未校准），
+ * 服务端公式 raw/4095*3.3 得到的结果会有系统性偏差。
  * @param pin 模拟输入引脚
  * @return 平均 raw 值
  */
@@ -115,6 +113,8 @@ long readAdcCalibrated(int pin) {
 
   // 将毫伏转回虚拟 raw，使服务端公式 raw/4095*3.3 = mv/1000
   long virtualRaw = (long)((double)mv / 3300.0 * 4095.0);
+  // 防御性裁剪：ADC 异常值可能导致 virtualRaw 超出 12-bit 范围
+  if (virtualRaw > 4095) virtualRaw = 4095;
 
   return virtualRaw;
 }
