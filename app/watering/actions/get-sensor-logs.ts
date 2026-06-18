@@ -29,7 +29,7 @@ const RANGE_MS: Record<TimeRange, number> = {
 export async function getSensorLogs(
   chipId: string,
   range: TimeRange,
-): Promise<{ recordTime: string; readings: { label: string; value: number }[] }[]> {
+): Promise<{ recordTime: string; readings: { label: string; value: number; unit?: string }[] }[]> {
   const since = new Date(Date.now() - RANGE_MS[range]).toISOString();
   return querySensorLogs(chipId, since);
 }

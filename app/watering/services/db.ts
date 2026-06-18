@@ -520,7 +520,10 @@ export async function getDeviceLogs(chipId: string) {
     stateId: row.state_id ?? undefined,
     message: row.message ?? undefined,
     state: parseJSON(row.state, undefined as Record<string, unknown> | undefined),
-    readings: parseJSON(row.readings, undefined as { label: string; value: number }[] | undefined),
+    readings: parseJSON(
+      row.readings,
+      undefined as { label: string; value: number; unit?: string }[] | undefined,
+    ),
     createdTime: row.created_time,
   }));
 }
@@ -565,7 +568,7 @@ export async function writeDeviceLog(
   event: string,
   macAddress: string,
   state?: Record<string, unknown>,
-  readings?: { label: string; value: number }[],
+  readings?: { label: string; value: number; unit?: string }[],
   stateId?: string,
   message?: string,
 ) {
@@ -608,7 +611,7 @@ export async function clearDeviceLogs(chipId: string) {
 export async function writeSensorLog(
   chipId: string,
   recordTime: string,
-  readings: { label: string; value: number }[],
+  readings: { label: string; value: number; unit?: string }[],
 ): Promise<void> {
   const db = getDbSync();
   db.run(
@@ -633,7 +636,7 @@ export async function writeSensorLog(
 export async function getSensorLogs(
   chipId: string,
   since: string,
-): Promise<{ recordTime: string; readings: { label: string; value: number }[] }[]> {
+): Promise<{ recordTime: string; readings: { label: string; value: number; unit?: string }[] }[]> {
   const db = getDb();
   const rows = db.all(
     'SELECT record_time, readings FROM watering_sensor_log WHERE chip_id = ? AND record_time >= ? ORDER BY record_time ASC',
@@ -641,7 +644,7 @@ export async function getSensorLogs(
   ) as unknown as { record_time: string; readings: string }[];
   return rows.map((row) => ({
     recordTime: row.record_time,
-    readings: parseJSON(row.readings, [] as { label: string; value: number }[]),
+    readings: parseJSON(row.readings, [] as { label: string; value: number; unit?: string }[]),
   }));
 }
 

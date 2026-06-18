@@ -17,7 +17,7 @@ import type { SensorConfig } from '../types';
 export function calcSensorReadings(
   configs: SensorConfig[],
   sensorValues: Record<string, number> | undefined,
-): { label: string; value: number }[] {
+): { label: string; value: number; unit?: string }[] {
   if (!configs.length || !sensorValues) return [];
 
   return configs.map((config) => {
@@ -37,7 +37,7 @@ export function calcSensorReadings(
       const r1 = config.r1 ?? 30000;
       const r2 = config.r2 ?? 10000;
       const value = r1 > 0 && r2 > 0 ? vSensor * ((r1 + r2) / r2) : vSensor;
-      return { label: config.name, value: Math.round(value * 100) / 100 };
+      return { label: config.name, value: Math.round(value * 100) / 100, unit: 'V' };
     }
 
     if (config.conversion === 'ntc_10k') {
@@ -46,7 +46,7 @@ export function calcSensorReadings(
       const B = config.bValue ?? 3435;
       const tempK = 1 / (1 / 298.15 + Math.log(rNtc / 10000) / B);
       const tempC = tempK - 273.15;
-      return { label: config.name, value: Math.round(tempC * 10) / 10 };
+      return { label: config.name, value: Math.round(tempC * 100) / 100, unit: '°C' };
     }
 
     // 无转换 — 返回校准后的值

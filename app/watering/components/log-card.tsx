@@ -41,8 +41,8 @@ export type LogItem = {
   stateId?: string;
   /** 设备生成的中文描述（change 事件） */
   message?: string;
-  /** 传感器读数数组，每项包含感应名称和计算值 */
-  readings?: { label: string; value: number }[];
+  /** 传感器读数数组，每项包含感应名称、计算值和可选单位 */
+  readings?: { label: string; value: number; unit?: string }[];
   process?: { name?: string };
   cause?: string;
 };
@@ -294,10 +294,14 @@ export function BootCard({ group, allLogs }: { group: ProcessGroup; allLogs: Log
   if (sleepText) descParts.push(sleepText);
   const descText = descParts.join(' · ');
 
-  // 传感器读数行
+  // 传感器读数行（1 位小数 + 单位）
   const readingText =
     item.readings && item.readings.length > 0
-      ? item.readings.map((r) => `${r.label}: ${r.value}`).join(' · ')
+      ? item.readings.map((r) => {
+        const v = typeof r.value === 'number' ? r.value.toFixed(1) : String(r.value);
+        const u = r.unit ?? '';
+        return `${r.label}: ${v}${u}`;
+      }).join(' · ')
       : '';
 
   return (
