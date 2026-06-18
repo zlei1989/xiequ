@@ -114,7 +114,7 @@ export async function GET(request: NextRequest) {
       const bootstrapReadings = calcSensorReadings(config.sensors, gpioState.sensors);
       await writeDeviceLog(chipId, 'bootstrap', macAddress, { cause: searchParams.get('cause') || '', sensors: gpioState.sensors, loads: gpioState.loads }, bootstrapReadings, state.stateId);
       if (state.switch === 'on' && state.process) {
-        await writeDeviceLog(chipId, 'execute', macAddress, { index: state.index }, bootstrapReadings, state.stateId);
+        await writeDeviceLog(chipId, 'execute', macAddress, { index: state.index, trigger: 'bootstrap' }, bootstrapReadings, state.stateId);
       }
       // 将 idleSince 设为过去的时间点（now - idleTimeout - 1s），
       // 使唤醒后首次 get-state 立即满足空闲超时检查，无需等待即可休眠。
