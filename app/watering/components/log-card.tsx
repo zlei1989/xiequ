@@ -30,6 +30,20 @@ export const changeTypeColors: Record<string, string> = {
   step_interrupt: 'danger',
 };
 
+/** 触发来源中文标签 */
+export const triggerLabels: Record<string, string> = {
+  manual: '手动启动',
+  schedule: '定时启动',
+  bootstrap: '开机执行',
+};
+
+/** 触发来源 Tag 颜色 */
+export const triggerColors: Record<string, string> = {
+  manual: 'primary',
+  schedule: 'warning',
+  bootstrap: 'success',
+};
+
 /** ── 类型 ── */
 
 export type LogItem = {
@@ -542,14 +556,26 @@ export function ProcessCard({ group }: { group: ProcessGroup }) {
   if (stepCount > 0) summaryParts.push(`共${String(stepCount)}步`);
   const summaryText = summaryParts.join(' · ');
 
+  // 触发来源标签
+  const triggerValue = group.trigger;
+  const triggerLabel = triggerValue ? triggerLabels[triggerValue] : undefined;
+  const triggerColor = triggerValue ? triggerColors[triggerValue] : undefined;
+
   return (
     <Card
       extra={<Tag color={statusTag.color}>{statusTag.label}</Tag>}
       title={processName}
     >
       {/* 摘要行 */}
-      {summaryText && (
-        <div className="mb-2 text-xs text-gray-400">{summaryText}</div>
+      {(summaryText || triggerLabel) && (
+        <div className="mb-2 flex items-center gap-1.5 text-xs text-gray-400">
+          {summaryText && <span>{summaryText}</span>}
+          {triggerLabel && triggerColor && (
+            <Tag color={triggerColor} style={{ fontSize: 10, lineHeight: '16px', padding: '0 4px' }}>
+              {triggerLabel}
+            </Tag>
+          )}
+        </div>
       )}
 
       {/* 步骤列表 */}
