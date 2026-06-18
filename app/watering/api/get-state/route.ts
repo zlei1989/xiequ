@@ -104,13 +104,58 @@ const SLEEP_DURATION = (() => {
 const SCHEDULE_OFFSET = 45 * 60 * 1000;
 
 /**
+ * 计划任务时区偏移（分钟），由 WATERING_TZ_OFFSET 环境变量控制
+ *
+ * 优先使用 WATERING_TZ_OFFSET 显式指定（如 480 表示 UTC+8）；
+ * 未设置时自动从系统时区检测（受 TZ 环境变量影响，如 TZ=Asia/Shanghai → 480）。
+ * 所有计划任务的时间计算（零点、星期几）均使用此时区，与服务器本地时区解耦。
+ */
+const TZ_OFFSET = (() => {
+  const explicit = parseInt(process.env.WATERING_TZ_OFFSET || '');
+  if (Number.isFinite(explicit)) return explicit;
+  /** getTimezoneOffset() 返回反向偏移（UTC+8 → -480），取反得到常规值 */
+  return -new Date().getTimezoneOffset();
+})();
+
+/**
+ * 获取配置时区下某天的零点 UTC 时间戳（毫秒）
+ *
+ * 将 UTC 时间偏移到目标时区后取零点，再转回 UTC 时间戳，
+ * 不依赖服务器本地时区或 dayjs 插件。
+ */
+function startOfDayInTz(date: Date): number {
+  // 将 UTC 时间加上时区偏移，得到目标时区的本地时间
+  const localMs = date.getTime() + TZ_OFFSET * 60000;
+  // 用 UTC 方法取出目标时区的小时/分/秒/毫秒，算出零点偏移
+  const localDate = new Date(localMs);
+  const midnightOffset =
+    localDate.getUTCHours() * 3600000 +
+    localDate.getUTCMinutes() * 60000 +
+    localDate.getUTCSeconds() * 1000 +
+    localDate.getUTCMilliseconds();
+  // 目标时区零点对应的 UTC 时间戳
+  return localMs - midnightOffset - TZ_OFFSET * 60000;
+}
+
+/**
+ * 获取配置时区下的星期几（1=周一...7=周日）
+ *
+ * 将 UTC 时间偏移到目标时区后取星期，转换为 1=周一...7=周日
+ * 以匹配 ScheduleConfig.week 的定义。
+ */
+function getWeekDayInTz(date: Date): number {
+  const localDate = new Date(date.getTime() + TZ_OFFSET * 60000);
+  const jsDay = localDate.getUTCDay();
+  return jsDay === 0 ? 7 : jsDay;
+}
+
 /**
  * 计算 day/week 类型计划任务的今日触发时间戳（毫秒）
+ *
+ * 使用配置时区的零点 + value 偏移，不依赖服务器本地时区。
  */
 function calcDayLoopTriggerTime(now: Date, value: number): number {
-  const todayStart = new Date(now);
-  todayStart.setHours(0, 0, 0, 0);
-  return todayStart.getTime() + value;
+  return startOfDayInTz(now) + value;
 }
 
 /**
@@ -131,13 +176,11 @@ function calcMinuteTriggerTime(startTime: number, intervalMinutes: number, now: 
 /**
  * 计算 week 类型计划任务的今日触发时间戳（毫秒）
  *
- * 仅当今天是指定星期时返回触发时间，否则返回 null。
- * JS getDay(): 0=周日, 1=周一, ..., 6=周六 → 转换为 1=周一...7=周日
+ * 仅当在配置时区下今天是指定星期时返回触发时间，否则返回 null。
+ * 使用 getWeekDayInTz 确保星期判断不受服务器本地时区影响。
  */
 function calcWeekTriggerTime(now: Date, value: number, week: number): number | null {
-  const jsDay = now.getDay();
-  const currentWeekDay = jsDay === 0 ? 7 : jsDay;
-  if (currentWeekDay !== week) return null;
+  if (getWeekDayInTz(now) !== week) return null;
   return calcDayLoopTriggerTime(now, value);
 }
 
@@ -177,12 +220,8 @@ async function checkAndExecuteSchedule(
       }
 
       case 'day': {
-        // 按天：检查启用日期是否已到
-        const startDate = new Date(schedule.startTime);
-        startDate.setHours(0, 0, 0, 0);
-        const nowDate = new Date(now);
-        nowDate.setHours(0, 0, 0, 0);
-        if (startDate.getTime() > nowDate.getTime()) continue;
+        // 按天：检查启用日期是否已到（使用配置时区比较日期）
+        if (startOfDayInTz(new Date(schedule.startTime)) > startOfDayInTz(now)) continue;
 
         triggerTime = calcDayLoopTriggerTime(now, schedule.value ?? 0);
         if (triggerTime > now.getTime()) continue;
@@ -217,12 +256,8 @@ async function checkAndExecuteSchedule(
       }
 
       case 'week': {
-        // 按星期：检查启用日期和星期
-        const startDate = new Date(schedule.startTime);
-        startDate.setHours(0, 0, 0, 0);
-        const nowDate = new Date(now);
-        nowDate.setHours(0, 0, 0, 0);
-        if (startDate.getTime() > nowDate.getTime()) continue;
+        // 按星期：检查启用日期和星期（使用配置时区比较日期）
+        if (startOfDayInTz(new Date(schedule.startTime)) > startOfDayInTz(now)) continue;
 
         const weekTriggerTime = calcWeekTriggerTime(now, schedule.value ?? 0, schedule.week ?? 1);
         if (weekTriggerTime === null) continue;
@@ -281,12 +316,10 @@ function calcNextScheduleDelay(schedule: ScheduleConfig, now: Date): number {
     }
 
     case 'day': {
-      const startDate = new Date(schedule.startTime);
-      startDate.setHours(0, 0, 0, 0);
-      const nowDate = new Date(now);
-      nowDate.setHours(0, 0, 0, 0);
-      if (startDate.getTime() > nowDate.getTime()) {
-        return startDate.getTime() + (schedule.value ?? 0) - now.getTime();
+      const startDateMidnight = startOfDayInTz(new Date(schedule.startTime));
+      const nowMidnight = startOfDayInTz(now);
+      if (startDateMidnight > nowMidnight) {
+        return startDateMidnight + (schedule.value ?? 0) - now.getTime();
       }
 
       const todayTrigger = calcDayLoopTriggerTime(now, schedule.value ?? 0);
@@ -308,12 +341,10 @@ function calcNextScheduleDelay(schedule: ScheduleConfig, now: Date): number {
     }
 
     case 'week': {
-      const startDate = new Date(schedule.startTime);
-      startDate.setHours(0, 0, 0, 0);
-      const nowDate = new Date(now);
-      nowDate.setHours(0, 0, 0, 0);
-      if (startDate.getTime() > nowDate.getTime()) {
-        return startDate.getTime() + (schedule.value ?? 0) - now.getTime();
+      const startDateMidnight = startOfDayInTz(new Date(schedule.startTime));
+      const nowMidnight = startOfDayInTz(now);
+      if (startDateMidnight > nowMidnight) {
+        return startDateMidnight + (schedule.value ?? 0) - now.getTime();
       }
 
       const weekTriggerTime = calcWeekTriggerTime(now, schedule.value ?? 0, schedule.week ?? 1);
@@ -321,19 +352,17 @@ function calcNextScheduleDelay(schedule: ScheduleConfig, now: Date): number {
         return weekTriggerTime - now.getTime();
       }
 
-      // 计算下一个目标星期
-      const jsDay = now.getDay();
-      const currentWeekDay = jsDay === 0 ? 7 : jsDay;
+      // 计算下一个目标星期（使用配置时区的星期几）
+      const currentWeekDay = getWeekDayInTz(now);
       const targetWeekDay = schedule.week ?? 1;
       let daysUntil = targetWeekDay - currentWeekDay;
       if (daysUntil <= 0) daysUntil += 7;
       if (weekTriggerTime !== null && weekTriggerTime <= now.getTime()) {
         daysUntil = daysUntil === 0 ? 7 : daysUntil;
       }
-      const nextWeekDate = new Date(now);
-      nextWeekDate.setDate(nextWeekDate.getDate() + daysUntil);
-      nextWeekDate.setHours(0, 0, 0, 0);
-      return nextWeekDate.getTime() + (schedule.value ?? 0) - now.getTime();
+      // 计算下个目标星期的零点 + value 偏移
+      const nextWeekTrigger = startOfDayInTz(now) + daysUntil * 86400000 + (schedule.value ?? 0);
+      return nextWeekTrigger - now.getTime();
     }
 
     default:

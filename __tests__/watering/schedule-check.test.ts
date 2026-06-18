@@ -6,6 +6,7 @@
  * - 45 分钟误差容忍
  * - interval 去重
  * - disabled 跳过
+ * - 时区解耦：计算结果不依赖服务器本地时区
  */
 
 import { describe, it, expect } from 'vitest';
@@ -13,13 +14,43 @@ import { describe, it, expect } from 'vitest';
 /** 计划任务检查的最大误差容忍（毫秒） */
 const SCHEDULE_OFFSET = 45 * 60 * 1000;
 
+/** 测试用固定时区偏移（UTC+8 = 480 分钟） */
+const TZ_OFFSET = 480;
+
+/**
+ * 获取配置时区下某天的零点 UTC 时间戳（毫秒）
+ *
+ * 与 get-state/route.ts 中 startOfDayInTz 逻辑一致。
+ */
+function startOfDayInTz(date: Date): number {
+  const localMs = date.getTime() + TZ_OFFSET * 60000;
+  const localDate = new Date(localMs);
+  const midnightOffset =
+    localDate.getUTCHours() * 3600000 +
+    localDate.getUTCMinutes() * 60000 +
+    localDate.getUTCSeconds() * 1000 +
+    localDate.getUTCMilliseconds();
+  return localMs - midnightOffset - TZ_OFFSET * 60000;
+}
+
+/**
+ * 获取配置时区下的星期几（1=周一...7=周日）
+ *
+ * 与 get-state/route.ts 中 getWeekDayInTz 逻辑一致。
+ */
+function getWeekDayInTz(date: Date): number {
+  const localDate = new Date(date.getTime() + TZ_OFFSET * 60000);
+  const jsDay = localDate.getUTCDay();
+  return jsDay === 0 ? 7 : jsDay;
+}
+
 /**
  * 计算 day/week 类型计划任务的今日触发时间戳（毫秒）
+ *
+ * 使用 startOfDayInTz，与 get-state/route.ts 中实现一致。
  */
 function calcDayLoopTriggerTime(now: Date, value: number): number {
-  const todayStart = new Date(now);
-  todayStart.setHours(0, 0, 0, 0);
-  return todayStart.getTime() + value;
+  return startOfDayInTz(now) + value;
 }
 
 /**
@@ -37,14 +68,8 @@ function calcMinuteTriggerTime(startTime: number, intervalMinutes: number, now: 
  * 计算 week 类型计划任务的今日触发时间戳（毫秒）
  */
 function calcWeekTriggerTime(now: Date, value: number, week: number): number | null {
-  const jsDay = now.getDay();
-  const currentWeekDay = jsDay === 0 ? 7 : jsDay;
-  if (currentWeekDay !== week) return null;
+  if (getWeekDayInTz(now) !== week) return null;
   return calcDayLoopTriggerTime(now, value);
-}
-
-function jsDayToWeekDay(jsDay: number): number {
-  return jsDay === 0 ? 7 : jsDay;
 }
 
 function mockHasLog(executedTimes: number[]): (time: number) => boolean {
@@ -110,11 +135,9 @@ describe('day 类型触发判断', () => {
   it('startTime 未到（启用日期在未来）不应触发', () => {
     const now = makeNow(10, 5);
     const startTime = new Date('2026-06-20T00:00:00+08:00').getTime();
-    const startDate = new Date(startTime);
-    startDate.setHours(0, 0, 0, 0);
-    const nowDate = new Date(now);
-    nowDate.setHours(0, 0, 0, 0);
-    expect(startDate.getTime() > nowDate.getTime()).toBe(true);
+    const startDateMidnight = startOfDayInTz(new Date(startTime));
+    const nowMidnight = startOfDayInTz(now);
+    expect(startDateMidnight > nowMidnight).toBe(true);
   });
 });
 
@@ -147,7 +170,7 @@ describe('minute 类型触发判断', () => {
 describe('week 类型触发判断', () => {
   it('今天是目标星期且在容忍范围内应触发', () => {
     const now = new Date('2026-06-15T10:05:00+08:00');
-    expect(jsDayToWeekDay(now.getDay())).toBe(1);
+    expect(getWeekDayInTz(now)).toBe(1);
     const triggerTime = calcWeekTriggerTime(now, 10 * 3600000, 1);
     expect(triggerTime).not.toBeNull();
   });
@@ -160,7 +183,7 @@ describe('week 类型触发判断', () => {
 
   it('周日对应 week=7', () => {
     const now = new Date('2026-06-14T10:05:00+08:00');
-    expect(jsDayToWeekDay(now.getDay())).toBe(7);
+    expect(getWeekDayInTz(now)).toBe(7);
   });
 });
 
@@ -171,5 +194,58 @@ describe('calcDayLoopTriggerTime', () => {
     const trigger = calcDayLoopTriggerTime(now, 8 * 3600 * 1000);
     const expected = new Date('2026-06-14T08:00:00+08:00').getTime();
     expect(trigger).toBe(expected);
+  });
+});
+
+// ---- 时区解耦 ----
+describe('时区解耦 — startOfDayInTz / getWeekDayInTz', () => {
+  it('startOfDayInTz: UTC+8 下北京时间 6:00 的零点应与本地时区计算一致', () => {
+    // 北京时间 2026-06-18 06:05 → 零点应为 2026-06-18 00:00+08:00
+    const bjTime = new Date('2026-06-18T06:05:00+08:00');
+    const midnight = startOfDayInTz(bjTime);
+    const expected = new Date('2026-06-18T00:00:00+08:00').getTime();
+    expect(midnight).toBe(expected);
+  });
+
+  it('startOfDayInTz: UTC 时间下计算 UTC+8 零点结果一致', () => {
+    // 同一物理时刻，用 +08:00 和 Z 两种表示
+    const bjTime = new Date('2026-06-18T06:05:00+08:00');
+    const utcTime = new Date('2026-06-17T22:05:00Z');
+    expect(bjTime.getTime()).toBe(utcTime.getTime());
+    // 两种表示计算出的 UTC+8 零点应相同
+    expect(startOfDayInTz(bjTime)).toBe(startOfDayInTz(utcTime));
+  });
+
+  it('startOfDayInTz: 跨日边界 — UTC 时间仍是前一天时，UTC+8 已是新的一天', () => {
+    // UTC 22:30 = 北京时间次日 06:30，零点应是北京时间的次日零点
+    const utcLateNight = new Date('2026-06-17T22:30:00Z');
+    const midnight = startOfDayInTz(utcLateNight);
+    // 北京时间 2026-06-18 00:00 = UTC 2026-06-17T16:00:00Z
+    const expected = new Date('2026-06-17T16:00:00Z').getTime();
+    expect(midnight).toBe(expected);
+  });
+
+  it('getWeekDayInTz: UTC 时间 22:00 周日 → UTC+8 已是周一 (week=1)', () => {
+    // 2026-06-14 是周日，UTC 22:00 = 北京时间周一 06:00
+    const utcSunday = new Date('2026-06-14T22:00:00Z');
+    expect(getWeekDayInTz(utcSunday)).toBe(1); // 周一
+  });
+
+  it('getWeekDayInTz: 北京时间白天判断星期与 Date.getDay 一致', () => {
+    // 2026-06-15 周一，北京时间 10:00
+    const bjTime = new Date('2026-06-15T10:00:00+08:00');
+    expect(getWeekDayInTz(bjTime)).toBe(1);
+  });
+
+  it('calcDayLoopTriggerTime: UTC 服务器计算 UTC+8 的 6:00 触发时间', () => {
+    // 模拟 UTC 服务器：当前 UTC 06:05 = 北京时间 14:05
+    const utcNow = new Date('2026-06-18T06:05:00Z');
+    // value = 6:00 = 21600000ms，在 UTC+8 下指北京时间 06:00
+    const triggerTime = calcDayLoopTriggerTime(utcNow, 6 * 3600000);
+    // 北京时间 06:00 = UTC 前一天 22:00
+    const expected = new Date('2026-06-17T22:00:00Z').getTime();
+    expect(triggerTime).toBe(expected);
+    // 触发时间应在过去（北京时间 14:05 已过 06:00）
+    expect(triggerTime <= utcNow.getTime()).toBe(true);
   });
 });
