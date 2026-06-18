@@ -49,7 +49,7 @@ export function calcSensorReadings(
       return { label: config.name, value: Math.round(tempC * 100) / 100, unit: '°C' };
     }
 
-    // 无转换 — 返回校准后的值
-    return { label: config.name, value: corrected };
+    // 无转换 — 校准后四舍五入为整数
+    return { label: config.name, value: Math.round(corrected) };
   });
 }
