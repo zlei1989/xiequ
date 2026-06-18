@@ -186,6 +186,31 @@ describe('groupByProcess', () => {
     const result = groupByProcess(logs);
     expect(result[0]?.processName).toBe('抽水');
   });
+
+  it('execute 事件的 state.trigger 提取到 ProcessGroup.trigger', () => {
+    const logs = [
+      makeLog({ event: 'execute', createdTime: '2026-06-13T10:00:01.000Z', state: { trigger: 'manual' } }),
+      makeLog({ event: 'change', createdTime: '2026-06-13T10:00:02.000Z' }),
+      makeLog({ event: 'finish', createdTime: '2026-06-13T10:00:05.000Z' }),
+    ];
+    const result = groupByProcess(logs);
+    expect(result[0]?.trigger).toBe('manual');
+  });
+
+  it('execute 事件无 trigger 时 ProcessGroup.trigger 为 undefined', () => {
+    const logs = [
+      makeLog({ event: 'execute', createdTime: '2026-06-13T10:00:01.000Z', state: { index: 0 } }),
+    ];
+    const result = groupByProcess(logs);
+    expect(result[0]?.trigger).toBeUndefined();
+  });
+
+  it('不同 trigger 值正确提取', () => {
+    const logs1 = [makeLog({ event: 'execute', createdTime: '2026-06-13T10:00:01.000Z', state: { trigger: 'schedule' } })];
+    const logs2 = [makeLog({ event: 'execute', createdTime: '2026-06-13T10:00:01.000Z', state: { trigger: 'bootstrap' } })];
+    expect(groupByProcess(logs1)[0]?.trigger).toBe('schedule');
+    expect(groupByProcess(logs2)[0]?.trigger).toBe('bootstrap');
+  });
 });
 
 // ================================================================

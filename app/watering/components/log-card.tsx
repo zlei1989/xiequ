@@ -64,6 +64,8 @@ export type ProcessGroup = {
   items: LogItem[];
   /** 结束类型：finish=正常完成, terminate=手动终止, pending=缺失结束 */
   endType?: 'finish' | 'terminate' | 'pending';
+  /** 触发来源：manual=界面手动，schedule=计划任务，bootstrap=开机执行 */
+  trigger?: string;
 };
 
 /** ── 工具函数 ── */
@@ -110,11 +112,13 @@ export function groupByProcess(logs: LogItem[]): ProcessGroup[] {
           (stateObj && typeof stateObj.process === 'object' && stateObj.process
             ? (stateObj.process as { name?: string }).name
             : undefined);
+        const trigger = typeof stateObj?.trigger === 'string' ? stateObj.trigger : undefined;
         currentProcess = {
           type: 'process',
           processName,
           items: [],
           endType: undefined,
+          trigger,
         };
         groups.push(currentProcess);
         break;
