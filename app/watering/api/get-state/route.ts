@@ -16,7 +16,7 @@
 import { NextResponse } from 'next/server';
 
 import { setCallback, deleteCallback } from '@/app/watering/services/callback-map';
-import { getDeviceState, getDeviceConfig, updateTick, insertScheduleLog, hasScheduleLog, saveDeviceState, saveDeviceConfig, writeSensorLog, getSensorLogs } from '@/app/watering/services/db';
+import { getDeviceState, getDeviceConfig, updateTick, insertScheduleLog, hasScheduleLog, saveDeviceState, saveDeviceConfig, writeDeviceLog, writeSensorLog, getSensorLogs } from '@/app/watering/services/db';
 import type { DeviceState, DeviceConfig, ScheduleConfig, ProcessConfig } from '@/app/watering/types';
 import type { SensorConfig } from '@/app/watering/types';
 import { calcSensorReadings } from '@/app/watering/utils/calc-sensor';
@@ -198,6 +198,7 @@ async function checkAndExecuteSchedule(
   config: DeviceConfig,
   state: DeviceState,
   now: Date,
+  macAddress: string,
 ): Promise<boolean> {
   // 仅在设备空闲时检查
   if (state.switch !== 'off') return false;
@@ -292,6 +293,12 @@ async function checkAndExecuteSchedule(
       state.stateId = newId();
       state.lastWriteTime = new Date().toISOString();
       await saveDeviceState(state);
+      // 写入执行日志（trigger 标识计划任务触发，不阻断主流程）
+      try {
+        await writeDeviceLog(config.chipId, 'execute', macAddress, { index: schedule.process, trigger: 'schedule' }, undefined, state.stateId);
+      } catch (logErr) {
+        console.error('[Watering] 写入计划任务执行日志失败:', { chipId: config.chipId, scheduleType: schedule.type }, logErr);
+      }
       // once 类型需要持久化 disabled 状态到配置
       if (configNeedsSave) {
         await saveDeviceConfig(config);
@@ -477,7 +484,7 @@ export async function GET(request: NextRequest) {
 
     // 计划任务检查（可能更新 state）
     if (state && config) {
-      await checkAndExecuteSchedule(config, state, new Date());
+      await checkAndExecuteSchedule(config, state, new Date(), macAddress);
     }
 
     // 比较是否有变化
