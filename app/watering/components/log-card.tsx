@@ -310,6 +310,15 @@ export function BootCard({ group, allLogs }: { group: ProcessGroup; allLogs: Log
   const descParts: string[] = [];
   if (causeLabel) descParts.push(causeLabel);
   if (sleepText) descParts.push(sleepText);
+  // 检测是否有开机执行（bootstrap 后紧跟 trigger='bootstrap' 的 execute 日志）
+  const hasBootExec = allLogs.some(
+    (log) =>
+      log.event === 'execute' &&
+      (log.state as Record<string, unknown> | undefined)?.trigger === 'bootstrap' &&
+      log.createdTime > item.createdTime &&
+      new Date(log.createdTime).getTime() - new Date(item.createdTime).getTime() < 5000,
+  );
+  if (hasBootExec) descParts.push('开机执行');
   const descText = descParts.join(' · ');
 
   // 传感器读数行（1 位小数 + 单位）
