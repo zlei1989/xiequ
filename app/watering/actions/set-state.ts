@@ -12,7 +12,7 @@
 import { newId } from '@/lib/utils';
 
 import { execCallback } from '../services/callback-map';
-import { getDeviceConfig, getDeviceState, saveDeviceState } from '../services/db';
+import { getDeviceConfig, getDeviceState, saveDeviceState, writeDeviceLog } from '../services/db';
 import { filterProcess } from '../utils/filter-process';
 
 /**
@@ -42,8 +42,9 @@ export async function setDeviceSwitch(
       throw new Error('设备状态不存在');
     }
 
+    const processIdx = processIndex ?? 0;
+
     if (switchState === 'on') {
-      const processIdx = processIndex ?? 0;
       if (processIdx >= config.processes.length) {
         console.error('[Watering] 流程索引越界:', { chipId, processIdx, total: config.processes.length });
         throw new Error('流程索引越界');
@@ -72,6 +73,14 @@ export async function setDeviceSwitch(
     await saveDeviceState(state);
     // 唤醒正在长轮询等待的设备：立即下发最新状态，无需等到超时
     execCallback(chipId);
+    if (switchState === 'on') {
+      // 写入执行日志（trigger 标识界面手动启动，不阻断主流程）
+      try {
+        await writeDeviceLog(chipId, 'execute', config.macAddress, { index: processIdx, trigger: 'manual' }, undefined, state.stateId);
+      } catch (logErr) {
+        console.error('[Watering] 写入执行日志失败:', { chipId, switchState }, logErr);
+      }
+    }
     console.log('[Watering] 设备开关状态已更新:', { chipId, switch: state.switch, stateId: state.stateId });
 
     return { success: true };
