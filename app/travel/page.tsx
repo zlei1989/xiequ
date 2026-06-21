@@ -8,7 +8,6 @@
 
 'use client';
 
-import { useRouter } from 'next/navigation';
 import { useCallback, useRef, useState, useEffect } from 'react';
 
 import { LocationEditPopup } from './components/location-edit-popup';
@@ -22,7 +21,6 @@ import { useMoments } from './hooks/use-moments';
 import type { Location, Moment } from './types';
 
 export default function TravelPage() {
-  const router = useRouter();
   const { sortedLocations, add, update, remove } = useTravelContext();
 
   const [viewLocation, setViewLocation] = useState<Location | null>(null);
@@ -53,15 +51,14 @@ export default function TravelPage() {
     return () => { window.removeEventListener('travel:open-search', onOpenSearch); };
   }, []);
 
-  // 监听 "我的位置" 跳转（由 shell.tsx 菜单通过 URL 参数触发）
+  // 监听 shell.tsx 菜单触发的"我的位置"定位事件
   useEffect(() => {
-    const url = new URL(window.location.href);
-    if (url.searchParams.get('center') === 'my-location') {
+    function onGoMyLocation() {
       void mapRef.current?.goToMyLocation();
-      // 清除 query 参数
-      router.replace('/travel');
     }
-  }, [router]);
+    window.addEventListener('travel:go-my-location', onGoMyLocation);
+    return () => { window.removeEventListener('travel:go-my-location', onGoMyLocation); };
+  }, []);
 
   const onMarkerClick = useCallback((location: Location) => {
     setViewLocation(location);

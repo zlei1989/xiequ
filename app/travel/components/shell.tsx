@@ -95,8 +95,7 @@ export function Shell({ children }: { children: ReactNode }) {
         window.dispatchEvent(new CustomEvent('travel:open-search'));
         break;
       case 'my-location':
-        /** 通过 URL 参数触发地图页 GPS 定位居中（地图页 useEffect 已监听该参数） */
-        router.replace(`${TRAVEL_BASE_PATH}?center=my-location`);
+        window.dispatchEvent(new CustomEvent('travel:go-my-location'));
         break;
     }
   }
