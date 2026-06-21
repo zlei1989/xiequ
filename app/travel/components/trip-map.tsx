@@ -9,7 +9,7 @@
 
 'use client';
 
-import { Button, ErrorBlock } from 'antd-mobile';
+import { Button, ErrorBlock, Toast } from 'antd-mobile';
 import { forwardRef, useImperativeHandle, useEffect, useRef, useState } from 'react';
 
 import { readTheme, STYLE_MAP, useMapTheme } from '../hooks/use-map-theme';
@@ -111,12 +111,15 @@ export const TripMap = forwardRef<
           // AMap SDK 未加载时直接返回
           // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
           if (!window.AMap) return;
+          Toast.show({ icon: 'loading', content: '获取位置中…', duration: 0 });
           try {
             const pos = await getCurrentPosition();
             placeMyLocationMarker(pos);
             mapRef.current?.setCenter(pos);
             mapRef.current?.setZoom(15);
+            Toast.clear();
           } catch (err: unknown) {
+            Toast.clear();
             // WARN：GPS 不可用（用户拒绝或设备不支持），静默降级
             console.warn('[Travel] 获取当前位置失败', err);
           }
