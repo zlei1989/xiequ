@@ -80,6 +80,10 @@ export type ProcessGroup = {
   endType?: 'finish' | 'terminate' | 'pending';
   /** 触发来源：manual=界面手动，schedule=计划任务，bootstrap=开机执行 */
   trigger?: string;
+  /** 合并后唤醒次数（>1 表示合并），仅合并 boot 组 */
+  wakeCount?: number;
+  /** 合并后总休眠时长（秒），仅合并 boot 组 */
+  sleepTotal?: number;
 };
 
 /** ── 工具函数 ── */
