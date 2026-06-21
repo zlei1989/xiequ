@@ -8,7 +8,7 @@
 
 import { Button, Card, Dialog, ErrorBlock, List, Popup, Space, Switch, Toast } from 'antd-mobile';
 import { EditSOutline, AddOutline, DeleteOutline } from 'antd-mobile-icons';
-import { useState } from 'react';
+import { useRef, useEffect, useState } from 'react';
 
 import { useBackButton } from '@/lib/back-button';
 
@@ -57,6 +57,25 @@ export function LocationViewPopup({
   // eslint-disable-next-line react-hooks/purity
   const [coverKey, setCoverKey] = useState(Date.now());
 
+  /**
+   * 弹窗打开后短暂禁用遮罩点击，防止 AMap Canvas 标注点击事件
+   * 传播到 Popup 遮罩层导致"闪一下就消失"。
+   */
+  const maskEnabledRef = useRef(false);
+
+  useEffect(() => {
+    if (visible) {
+      maskEnabledRef.current = false;
+      const timer = setTimeout(() => { maskEnabledRef.current = true; }, 300);
+      return () => { clearTimeout(timer); };
+    }
+  }, [visible]);
+
+  /** 遮罩点击时，弹窗打开 300ms 内忽略（防 AMap Canvas 事件穿透） */
+  function handleMaskClick() {
+    if (maskEnabledRef.current) onClose();
+  }
+
   if (!location) return null;
 
   // 在 null 检查后提取为 const，闭包中可安全使用 Location 类型
@@ -100,12 +119,12 @@ export function LocationViewPopup({
     <Popup
       bodyClassName="overflow-auto"
       bodyStyle={{ height: '75vh' }}
-      closeOnMaskClick={true}
+      closeOnMaskClick={false}
       position="bottom"
       showCloseButton={true}
       visible={visible}
       onClose={onClose}
-      onMaskClick={onClose}
+      onMaskClick={handleMaskClick}
     >
       <CoverImage
         alt={loc.name}
