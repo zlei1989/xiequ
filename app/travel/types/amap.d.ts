@@ -158,7 +158,8 @@ declare namespace AMap {
   /** 浏览器定位 */
   class Geolocation {
     constructor(options: GeolocationOptions);
-    getCurrentPosition(): void;
+    /** 直接传入回调获取位置（AMap v2 支持，无需 addListener） */
+    getCurrentPosition(callback: (status: string, result: GeolocationResult) => void): void;
   }
   interface GeolocationOptions {
     enableHighAccuracy?: boolean;

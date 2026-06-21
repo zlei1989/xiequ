@@ -97,6 +97,9 @@ export async function searchPlace(address: string, city?: string): Promise<AMapP
 
 /**
  * 获取当前位置
+ *
+ * 使用 AMap.Geolocation 回调模式（getCurrentPosition 直接接收 callback），
+ * 避免 Turbopack dev 模式下 AMap.event 可能为 undefined 的问题。
  */
 export async function getCurrentPosition(): Promise<[number, number]> {
   const AMap = await loadAmap();
@@ -105,14 +108,13 @@ export async function getCurrentPosition(): Promise<[number, number]> {
       enableHighAccuracy: true,
       timeout: 10000,
     });
-    geolocation.getCurrentPosition();
-    /** addListener 签名中 callback 参数为 unknown，此处通过断言转为 GeolocationResult */
-    AMap.event.addListener(geolocation, 'complete', (result: unknown) => {
-      const r = result as AMap.GeolocationResult;
-      resolve([r.position.lng, r.position.lat]);
-    });
-    AMap.event.addListener(geolocation, 'error', () => {
-      reject(new Error('定位失败'));
+    geolocation.getCurrentPosition((status: string, result: unknown) => {
+      if (status === 'complete') {
+        const r = result as AMap.GeolocationResult;
+        resolve([r.position.lng, r.position.lat]);
+      } else {
+        reject(new Error('定位失败'));
+      }
     });
   });
 }
