@@ -13,7 +13,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { fetchLocations } from '../actions';
 import { createMoment, editMoment, removeMoment } from '../actions';
 
-import type { Moment } from '../types';
+import type { Location, Moment } from '../types';
 
 /** 管理指定位置的精彩瞬间列表 */
 export function useMoments(locationId: string) {
@@ -78,6 +78,45 @@ export function useMoments(locationId: string) {
   }, [locationId, load]);
 
   /**
+   * 切换位置打卡状态（收敛地图页和收藏页的共同逻辑）
+   *
+   * 待去 → 已去：检查是否存在精彩瞬间，不存在则自动创建当天日期的空文本记录；
+   * 已存在则直接切换，不重复创建。
+   * 已去 → 待去：直接切换，无任何限制。
+   * 完成后刷新数据以同步 moments 列表。
+   *
+   * @param location - 当前被切换的位置对象
+   * @param onUpdate - useLocations 的 update 方法，用于持久化 checked 状态
+   */
+  const toggleChecked = useCallback(async (
+    location: Location,
+    onUpdate: (id: string, data: Partial<Location>) => Promise<Location>,
+  ) => {
+    try {
+      // 待去 → 已去：检查是否需要自动创建精彩瞬间
+      if (!location.checked) {
+        const has = location.moments && Object.keys(location.moments).length > 0;
+        if (!has) {
+          // 不存在精彩瞬间，自动创建当天日期的空文本记录
+          // 直接调 Server Action（不用 Hook 的 add，add 绑定的是 viewLocation?.id）
+          await createMoment(location.id, {
+            date: new Date().toISOString().slice(0, 10),
+            text: '',
+          });
+        }
+      }
+      // 切换 checked 状态（useLocations.update → editLocation Server Action）
+      await onUpdate(location.id, { checked: !location.checked });
+      // 刷新数据以同步 moments 列表
+      await load();
+    } catch (err) {
+      console.error('[Travel] toggleChecked 失败:', { locationId: location.id, error: err });
+      if (err instanceof Error && err.stack) console.error(err.stack);
+      throw err;
+    }
+  }, [locationId, load]);
+
+  /**
    * 编辑精彩瞬间
    *
    * 调用 Server Action 更新后重新加载列表以同步。
@@ -109,5 +148,5 @@ export function useMoments(locationId: string) {
     }
   }, [locationId, load]);
 
-  return { moments, loading, load, add, update, remove };
+  return { moments, loading, load, add, update, remove, toggleChecked };
 }
