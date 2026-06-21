@@ -111,15 +111,15 @@ export const TripMap = forwardRef<
           // AMap SDK 未加载时直接返回
           // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
           if (!window.AMap) return;
-          Toast.show({ icon: 'loading', content: '获取位置中…', duration: 0 });
+          const handler = Toast.show({ icon: 'loading', content: '获取位置中…', duration: 0 });
           try {
             const pos = await getCurrentPosition();
             placeMyLocationMarker(pos);
             mapRef.current?.setCenter(pos);
             mapRef.current?.setZoom(15);
-            Toast.clear();
+            handler.close();
           } catch (err: unknown) {
-            Toast.clear();
+            handler.close();
             // WARN：GPS 不可用（用户拒绝或设备不支持），静默降级
             console.warn('[Travel] 获取当前位置失败', err);
           }
