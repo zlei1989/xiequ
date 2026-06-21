@@ -172,7 +172,6 @@ export default function FavouritesPage() {
           <List>
             {filteredLocations.map((location) => (
               <LocationListItem
-                hasMoments={hasMoments(location)}
                 key={location.id}
                 location={location}
                 onClick={setViewLocation}

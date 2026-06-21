@@ -1,5 +1,5 @@
 /**
- * 位置列表项 — 支持左滑操作（切换状态/删除），有精彩瞬间时状态锁定
+ * 位置列表项 — 支持左滑操作（切换状态/删除）
  */
 
 'use client';
@@ -19,18 +19,16 @@ function getErrorMessage(err: unknown, fallback: string): string {
  * 位置列表行组件
  *
  * 基于 antd-mobile SwipeAction 实现左滑操作 ——
- * 切换状态（已有精彩瞬间时隐藏）和删除（需二次确认）。
+ * 切换状态和删除（需二次确认）。
  * 点击行触发 onClick 回调。
  */
 export function LocationListItem({
   location,
-  hasMoments,
   onClick,
   onToggle,
   onDelete,
 }: {
   location: Location;
-  hasMoments: boolean;
   onClick: (location: Location) => void;
   onToggle: (location: Location) => Promise<void>;
   onDelete: (location: Location) => Promise<void>;
@@ -75,13 +73,12 @@ export function LocationListItem({
   return (
     <SwipeAction
       rightActions={[
-        // 有精彩瞬间时隐藏切换按钮（状态锁定为已去）
-        ...(hasMoments ? [] : [{
+        {
           key: 'toggle',
           text: location.checked ? '标记待去' : '标记已去',
           color: 'light' as const,
-          onClick: handleToggle,
-        }]),
+          onClick: () => { void handleToggle(); },
+        },
         {
           key: 'delete',
           text: '删除',
