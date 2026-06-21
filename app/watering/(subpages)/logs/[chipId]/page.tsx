@@ -22,7 +22,7 @@ import { DeleteOutline } from 'antd-mobile-icons';
 import { useRouter } from 'next/navigation';
 import { use, useEffect } from 'react';
 
-import { BootCard, ProcessCard, groupByProcess, type ProcessGroup } from '../../../components/log-card';
+import { BootCard, ProcessCard, groupByProcess, mergeConsecutiveBoots, type ProcessGroup } from '../../../components/log-card';
 import { useDeviceLogs } from '../../../hooks/use-device-logs';
 
 /** 设备日志页 */
@@ -106,7 +106,7 @@ export default function DeviceLogsPage({
     }
 
     // 有日志数据 — 下拉刷新包裹，按流程分组后渲染开机卡/流程卡
-    const groups: ProcessGroup[] = groupByProcess(logs);
+    const groups: ProcessGroup[] = mergeConsecutiveBoots(groupByProcess(logs), logs);
     return (
       <PullToRefresh onRefresh={handleRefresh}>
         <Space block className="px-3 pb-3" direction="vertical">
