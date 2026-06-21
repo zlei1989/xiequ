@@ -47,7 +47,10 @@ export function RouteMapPopup({
   } | null>(null);
 
   /** TripMap 引用，用于 setCenter */
-  const mapRef = useRef<{ setCenter: (pos: [number, number]) => void }>(null);
+  const mapRef = useRef<{
+    setCenter: (pos: [number, number]) => void;
+    goToMyLocation: () => Promise<void>;
+  }>(null);
 
   /** Toast 引用，用于关闭加载路线提示 */
   const loadingToastRef = useRef<ReturnType<typeof Toast.show> | null>(null);

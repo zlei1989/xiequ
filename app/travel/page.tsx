@@ -33,7 +33,10 @@ export default function TravelPage() {
     moment: Moment | null;
   } | null>(null);
   const [searchVisible, setSearchVisible] = useState(false);
-  const mapRef = useRef<{ setCenter: (pos: [number, number]) => void }>(null);
+  const mapRef = useRef<{
+    setCenter: (pos: [number, number]) => void;
+    goToMyLocation: () => Promise<void>;
+  }>(null);
 
   const {
     moments,

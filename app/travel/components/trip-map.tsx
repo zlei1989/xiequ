@@ -13,15 +13,15 @@ import { Button, ErrorBlock } from 'antd-mobile';
 import { forwardRef, useImperativeHandle, useEffect, useRef, useState } from 'react';
 
 import { readTheme, STYLE_MAP, useMapTheme } from '../hooks/use-map-theme';
-import { loadAmap } from '../services/amap';
+import { getCurrentPosition, loadAmap } from '../services/amap';
 import { createMarkerEngine } from '../services/marker-engine';
-import { createNumberedMarkerIcon } from '../services/marker-style';
+import { createMyLocationMarkerIcon, createNumberedMarkerIcon } from '../services/marker-style';
 
 import type { Location, RouteMarker } from '../types';
 import type { CSSProperties } from 'react';
 
 export const TripMap = forwardRef<
-  { setCenter: (pos: [number, number]) => void },
+  { setCenter: (pos: [number, number]) => void; goToMyLocation: () => Promise<void> },
   {
     locations: Location[];
     onMarkerClick: (location: Location) => void;
@@ -61,6 +61,8 @@ export const TripMap = forwardRef<
       /** 路线模式下的标注和连线引用（用于清理） */
       const routeMarkersRef = useRef<AMap.Marker[]>([]);
       const polylinesRef = useRef<AMap.Polyline[]>([]);
+      /** "我的位置"橙色定位标记引用（独立于 MarkerEngine，不参与增量 diff） */
+      const myLocationMarkerRef = useRef<AMap.Marker | null>(null);
 
       /** 地图实例是否就绪 */
       const [mapReady, setMapReady] = useState(false);
@@ -79,7 +81,63 @@ export const TripMap = forwardRef<
             mapRef.current.setZoom(15);
           }
         },
+        /** 获取 GPS 位置 → 创建/移动橙色标记 → 地图居中 */
+        async goToMyLocation() {
+          // AMap SDK 未加载时直接返回
+          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+          if (!window.AMap) return;
+          try {
+            const pos = await getCurrentPosition();
+            if (myLocationMarkerRef.current) {
+              // 标记已存在：仅移动位置
+              myLocationMarkerRef.current.setPosition(pos);
+            } else if (mapRef.current) {
+              // 首次定位：创建标记
+              const iconConfig = createMyLocationMarkerIcon();
+              const marker = new window.AMap.Marker({
+                position: pos,
+                title: '我的位置',
+                icon: new window.AMap.Icon(iconConfig),
+                offset: new window.AMap.Pixel(-14, -14),
+              });
+              mapRef.current.add(marker);
+              myLocationMarkerRef.current = marker;
+            }
+            mapRef.current?.setCenter(pos);
+            mapRef.current?.setZoom(15);
+          } catch (err: unknown) {
+            // WARN：GPS 不可用（用户拒绝或设备不支持），静默降级
+            console.warn('[Travel] 获取当前位置失败', err);
+          }
+        },
       }));
+
+      /** 地图首次就绪后自动获取 GPS 并显示"我的位置"标记 */
+      useEffect(() => {
+        if (!mapReady) return;
+        // 此处不通过 ref 调用 goToMyLocation（useImperativeHandle 已挂载但父组件尚未拿到 ref），
+        // 直接内联相同逻辑完成首次自动定位
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        if (!window.AMap) return;
+        getCurrentPosition()
+          .then((pos) => {
+            if (!mapRef.current) return;
+            const iconConfig = createMyLocationMarkerIcon();
+            const marker = new window.AMap.Marker({
+              position: pos,
+              title: '我的位置',
+              icon: new window.AMap.Icon(iconConfig),
+              offset: new window.AMap.Pixel(-14, -14),
+            });
+            mapRef.current.add(marker);
+            myLocationMarkerRef.current = marker;
+            mapRef.current.setCenter(pos);
+            mapRef.current.setZoom(15);
+          })
+          .catch((err: unknown) => {
+            console.warn('[Travel] 获取当前位置失败', err);
+          });
+      }, [mapReady]);
 
       /** 地图初始化 effect */
       useEffect(() => {
@@ -144,6 +202,11 @@ export const TripMap = forwardRef<
 
         return () => {
           aborted = true;
+          // 清理"我的位置"标记
+          if (myLocationMarkerRef.current && mapRef.current) {
+            mapRef.current.remove(myLocationMarkerRef.current);
+            myLocationMarkerRef.current = null;
+          }
           // 清理标注引擎
           if (engineRef.current) {
             engineRef.current.destroy();
