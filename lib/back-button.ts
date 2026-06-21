@@ -123,8 +123,15 @@ export function useBackButton(visible: boolean, onClose: () => void): void {
           window.removeEventListener('popstate', handlePopstate);
           listenerRegistered = false;
           // 若非系统返回键触发的关闭，占位状态未被消费，需手动清理
+          // 延迟校验：仅当同帧内没有新弹窗打开时才调用 history.back()
+          // 避免关闭搜索弹窗→打开位置弹窗的切换过程中误关新弹窗
           if (!closedByPopstate) {
-            window.history.back();
+            setTimeout(() => {
+              // 二次确认：栈空 + 没有新弹窗注册返回键监听器
+              if (stack.length === 0 && !listenerRegistered) {
+                window.history.back();
+              }
+            }, 0);
           }
         }
       }

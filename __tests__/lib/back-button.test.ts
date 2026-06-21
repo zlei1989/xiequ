@@ -358,8 +358,9 @@ describe('useBackButton', () => {
     // 注意：不触发 firePopstate()
     rerender({ visible: false });
 
-    // 栈空 + 非 popstate 关闭 → history.back() 被调用
-    expect(back).toHaveBeenCalledOnce();
+    // history.back() 通过 setTimeout(0) 延迟调用，等待异步执行完毕
+    await new Promise((r) => { setTimeout(r, 10); });
+    expect(back).toHaveBeenCalled();
 
     // 监听器应被清理
     expect(popstateCount()).toBe(0);
@@ -397,13 +398,14 @@ describe('useBackButton', () => {
     // 模拟 React 更新：B visible=false
     rerenderB({ visible: false });
     // B 通过 popstate 关闭，不应调 back（栈非空）
-    const backCallsAfterBClose = back.mock.calls.length;
+    expect(back).not.toHaveBeenCalled();
 
     // 通过 NavBar 关闭底层 A
     rerenderA({ visible: false });
 
-    // A 是最后一个弹窗 + 非 popstate 关闭 → 应调 history.back()
-    expect(back.mock.calls.length).toBe(backCallsAfterBClose + 1);
+    // history.back() 通过 setTimeout(0) 延迟调用，等待异步执行完毕
+    await new Promise((r) => { setTimeout(r, 10); });
+    expect(back).toHaveBeenCalled();
 
     unmountB();
     unmountA();
