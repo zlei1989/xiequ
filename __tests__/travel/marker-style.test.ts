@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 
-import { createMarkerIcon, createNumberedMarkerIcon, getAdmColor } from '@/app/travel/services/marker-style';
+import { createMarkerIcon, createMyLocationMarkerIcon, createNumberedMarkerIcon, getAdmColor } from '@/app/travel/services/marker-style';
 
 describe('getAdmColor', () => {
   it('returns fallback color when document is not available', () => {
@@ -86,6 +86,34 @@ describe('createNumberedMarkerIcon', () => {
   it('encodes # in colors to %23', () => {
     const icon = createNumberedMarkerIcon(1, true);
     // 不应出现未编码的 #（data URL 中 # 是 fragment 分隔符）
+    expect(icon.image).not.toMatch(/(?<!%23)#/);
+  });
+});
+
+describe('createMyLocationMarkerIcon', () => {
+  it('returns icon config with warning color', () => {
+    const icon = createMyLocationMarkerIcon();
+    expect(icon.image).toContain('data:image/svg+xml');
+    expect(icon.image).toContain('%23ff8f1f'); // warning fallback
+    expect(icon.size).toEqual([28, 28]);
+    expect(icon.imageSize).toEqual([28, 28]);
+  });
+
+  it('generates SVG with three circle elements', () => {
+    const icon = createMyLocationMarkerIcon();
+    const decoded = decodeURIComponent(
+      icon.image.replace('data:image/svg+xml;charset=utf-8,', ''),
+    );
+    // 应有 3 个 circle：外圈(r=13)、中圈(r=9)、内点(r=4)
+    const circles = decoded.match(/<circle/g);
+    expect(circles).toHaveLength(3);
+    expect(decoded).toContain('r="13"');
+    expect(decoded).toContain('r="9"');
+    expect(decoded).toContain('r="4"');
+  });
+
+  it('encodes # in colors to %23', () => {
+    const icon = createMyLocationMarkerIcon();
     expect(icon.image).not.toMatch(/(?<!%23)#/);
   });
 });
