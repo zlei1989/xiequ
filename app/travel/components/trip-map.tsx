@@ -71,6 +71,31 @@ export const TripMap = forwardRef<
       /** 重试计数 —— 作为 useEffect 依赖，递增时触发重新初始化 */
       const [retryKey, setRetryKey] = useState(0);
 
+      /**
+       * 在地图上放置或移动"我的位置"橙色标记
+       *
+       * 首次调用创建标记，后续调用只移动位置，消除 goToMyLocation 与
+       * auto-locate useEffect 之间的逻辑重复。
+       */
+      function placeMyLocationMarker(pos: [number, number]) {
+        if (!mapRef.current) return;
+        if (myLocationMarkerRef.current) {
+          // 标记已存在：仅移动位置
+          myLocationMarkerRef.current.setPosition(pos);
+        } else {
+          // 首次定位：创建标记
+          const iconConfig = createMyLocationMarkerIcon();
+          const marker = new window.AMap.Marker({
+            position: pos,
+            title: '我的位置',
+            icon: new window.AMap.Icon(iconConfig),
+            offset: new window.AMap.Pixel(-14, -14),
+          });
+          mapRef.current.add(marker);
+          myLocationMarkerRef.current = marker;
+        }
+      }
+
       // 主题跟随（mapReady 后再传实例）
       useMapTheme(mapReady ? mapRef.current : null);
 
@@ -88,21 +113,7 @@ export const TripMap = forwardRef<
           if (!window.AMap) return;
           try {
             const pos = await getCurrentPosition();
-            if (myLocationMarkerRef.current) {
-              // 标记已存在：仅移动位置
-              myLocationMarkerRef.current.setPosition(pos);
-            } else if (mapRef.current) {
-              // 首次定位：创建标记
-              const iconConfig = createMyLocationMarkerIcon();
-              const marker = new window.AMap.Marker({
-                position: pos,
-                title: '我的位置',
-                icon: new window.AMap.Icon(iconConfig),
-                offset: new window.AMap.Pixel(-14, -14),
-              });
-              mapRef.current.add(marker);
-              myLocationMarkerRef.current = marker;
-            }
+            placeMyLocationMarker(pos);
             mapRef.current?.setCenter(pos);
             mapRef.current?.setZoom(15);
           } catch (err: unknown) {
@@ -121,18 +132,9 @@ export const TripMap = forwardRef<
         if (!window.AMap) return;
         getCurrentPosition()
           .then((pos) => {
-            if (!mapRef.current) return;
-            const iconConfig = createMyLocationMarkerIcon();
-            const marker = new window.AMap.Marker({
-              position: pos,
-              title: '我的位置',
-              icon: new window.AMap.Icon(iconConfig),
-              offset: new window.AMap.Pixel(-14, -14),
-            });
-            mapRef.current.add(marker);
-            myLocationMarkerRef.current = marker;
-            mapRef.current.setCenter(pos);
-            mapRef.current.setZoom(15);
+            placeMyLocationMarker(pos);
+            mapRef.current?.setCenter(pos);
+            mapRef.current?.setZoom(15);
           })
           .catch((err: unknown) => {
             console.warn('[Travel] 获取当前位置失败', err);
