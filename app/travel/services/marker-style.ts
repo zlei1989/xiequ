@@ -95,28 +95,24 @@ export function createNumberedMarkerIcon(num: number, isActive: boolean) {
   };
 }
 
-/** "我的位置"定位标记图标尺寸 */
-const MY_LOCATION_ICON_SIZE = 28;
-
 /**
  * 创建"我的位置"橙色定位标记图标
  *
- * 使用 --adm-color-warning 色，三层圆形结构：
- * 半透明外圈（range）→ 实心橙色中圈 → 白色中心点，
- * 与普通位置标注（24px 蓝/绿单圈）有明显视觉区分。
+ * 使用 --adm-color-warning 色，与 NUMBERED_ICON_SIZE 同尺寸，
+ * 仅颜色与路线标注不同，便于统一维护。
  *
  * @returns 可用于 AMap.Icon 构造的配置对象
  */
 export function createMyLocationMarkerIcon() {
   const color = getAdmColor('--adm-color-warning', '#ff8f1f');
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${MY_LOCATION_ICON_SIZE}" height="${MY_LOCATION_ICON_SIZE}">
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${NUMBERED_ICON_SIZE}" height="${NUMBERED_ICON_SIZE}">
   <circle cx="14" cy="14" r="13" fill="${color}" opacity="0.3"/>
   <circle cx="14" cy="14" r="9" fill="${color}" stroke="white" stroke-width="2"/>
   <circle cx="14" cy="14" r="4" fill="white"/>
 </svg>`;
   return {
     image: encodeSvgDataUrl(svg),
-    size: [MY_LOCATION_ICON_SIZE, MY_LOCATION_ICON_SIZE] as [number, number],
-    imageSize: [MY_LOCATION_ICON_SIZE, MY_LOCATION_ICON_SIZE] as [number, number],
+    size: [NUMBERED_ICON_SIZE, NUMBERED_ICON_SIZE] as [number, number],
+    imageSize: [NUMBERED_ICON_SIZE, NUMBERED_ICON_SIZE] as [number, number],
   };
 }
