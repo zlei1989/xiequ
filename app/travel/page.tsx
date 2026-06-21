@@ -18,7 +18,6 @@ import { SearchPopup } from './components/search-popup';
 import { TripMap } from './components/trip-map';
 import { useTravelContext } from './hooks/use-locations';
 import { useMoments } from './hooks/use-moments';
-import { getCurrentPosition } from './services/amap';
 
 import type { Location, Moment } from './types';
 
@@ -54,20 +53,11 @@ export default function TravelPage() {
     return () => { window.removeEventListener('travel:open-search', onOpenSearch); };
   }, []);
 
-  // 监听 "我的位置" 跳转
+  // 监听 "我的位置" 跳转（由 shell.tsx 菜单通过 URL 参数触发）
   useEffect(() => {
     const url = new URL(window.location.href);
     if (url.searchParams.get('center') === 'my-location') {
-      getCurrentPosition()
-        .then(([lng, lat]) => {
-          if (mapRef.current) {
-            mapRef.current.setCenter([lng, lat]);
-          }
-        })
-        .catch((err: unknown) => {
-          // WARN：GPS 定位不可用（用户拒绝授权或设备不支持），地图仍可正常使用
-          console.warn('[Travel] 获取当前位置失败', err);
-        });
+      void mapRef.current?.goToMyLocation();
       // 清除 query 参数
       router.replace('/travel');
     }
