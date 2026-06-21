@@ -47,6 +47,8 @@ declare namespace AMap {
     on(event: string, callback: () => void): void;
     setIcon(icon: Icon): void;
     setLabel(label: { content: string; offset: Pixel }): void;
+    /** 更新标记点位置 */
+    setPosition(position: [number, number]): void;
   }
   interface MarkerOptions {
     position: [number, number];
