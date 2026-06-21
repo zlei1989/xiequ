@@ -40,6 +40,7 @@ export default function TravelPage() {
     add: addMoment,
     update: updateMoment,
     remove: removeMoment,
+    toggleChecked,
   } = useMoments(viewLocation?.id || '');
 
   // 监听 layout 触发的 open-search 事件
@@ -67,10 +68,11 @@ export default function TravelPage() {
   /**
    * 切换位置打卡状态
    *
-   * 更新后同步刷新当前打开的查看/编辑弹窗中的位置数据。
+   * 统一使用 useMoments.toggleChecked，待去→已去时自动检查并创建精彩瞬间。
+   * 更新后同步刷新当前打开的弹窗中的位置数据。
    */
   async function handleToggle(location: Location) {
-    await update(location.id, { checked: !location.checked });
+    await toggleChecked(location, update);
     const updated = { ...location, checked: !location.checked };
     if (viewLocation?.id === location.id) setViewLocation(updated);
     if (editLocation?.id === location.id) setEditLocation(updated);
