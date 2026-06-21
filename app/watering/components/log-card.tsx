@@ -367,13 +367,19 @@ export function BootCard({ group, allLogs }: { group: ProcessGroup; allLogs: Log
   if (!item) return null;
 
   const causeLabel = formatCause(item.cause);
-  const sleepSec = calcSleepDuration(item, allLogs);
+
+  // 休眠时长：合并后优先用 sleepTotal，否则用 calcSleepDuration
+  const sleepSec = group.sleepTotal ?? calcSleepDuration(item, allLogs);
   const sleepText = sleepSec >= 60 ? `休眠 ${formatSimpleDuration(sleepSec)}` : '';
 
-  // 描述行：唤醒原因 · 休眠时长
+  // 描述行：唤醒原因 · 休眠时长 · 唤醒N次
   const descParts: string[] = [];
   if (causeLabel) descParts.push(causeLabel);
   if (sleepText) descParts.push(sleepText);
+  // 合并后显示唤醒次数
+  if (group.wakeCount && group.wakeCount > 1) {
+    descParts.push(`唤醒${String(group.wakeCount)}次`);
+  }
   // 检测是否有开机执行（bootstrap 后紧跟 trigger='bootstrap' 的 execute 日志）
   const hasBootExec = allLogs.some(
     (log) =>
