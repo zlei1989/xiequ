@@ -27,7 +27,6 @@ function getErrorMessage(err: unknown, fallback: string): string {
  * 位置详情弹窗
  *
  * 展示封面图（支持上传替换）、名称、地址、坐标、备注、精彩瞬间列表和状态开关。
- * 精彩瞬间存在时 Switch 禁用（状态锁定为已去）。
  */
 export function LocationViewPopup({
   location,
@@ -182,7 +181,6 @@ export function LocationViewPopup({
             <Switch
               checked={loc.checked}
               checkedText="已去"
-              disabled={moments.length > 0}
               uncheckedText="待去"
               onChange={handleToggle}
             />
