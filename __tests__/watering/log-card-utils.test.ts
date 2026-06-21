@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+/* eslint-disable @typescript-eslint/no-non-null-assertion -- 测试中断言元素存在后使用 ! 是标准做法 */
 
 /**
  * log-card 工具函数单元测试
@@ -12,6 +13,7 @@ import { describe, it, expect } from 'vitest';
 
 import {
   groupByProcess,
+  mergeConsecutiveBoots,
   formatDuration,
   formatMessage,
   formatCause,
@@ -22,7 +24,7 @@ import {
   parseLogMessage,
   formatLoadValue,
 } from '@/app/watering/components/log-card';
-import type { LogItem } from '@/app/watering/components/log-card';
+import type { LogItem, ProcessGroup } from '@/app/watering/components/log-card';
 
 import type React from 'react';
 
@@ -612,5 +614,145 @@ describe('formatLoadValue', () => {
 
   it('load_3, 48 → "load_3(48)"', () => {
     expect(formatLoadValue('load_3', 48)).toBe('load_3(48)');
+  });
+});
+
+// ================================================================
+// mergeConsecutiveBoots
+// ================================================================
+
+/** 构造 ProcessGroup 快捷方法 */
+function makeBootGroup(overrides: {
+  createdTime?: string;
+  cause?: string;
+  readings?: { label: string; value: number; unit?: string }[];
+} = {}): ProcessGroup {
+  return {
+    type: 'boot',
+    bootItem: {
+      event: 'bootstrap',
+      createdTime: overrides.createdTime ?? '2026-06-13T10:00:00.000Z',
+      cause: overrides.cause ?? '4',
+      readings: overrides.readings ?? [{ label: '电压', value: 3.7 }],
+    },
+    items: [],
+  };
+}
+
+function makeProcessGroup(createdTime: string): ProcessGroup {
+  return {
+    type: 'process',
+    processName: '浇花',
+    items: [
+      makeLog({ event: 'execute', createdTime }),
+      makeLog({ event: 'change', createdTime, message: '{processName:浇花}...' }),
+      makeLog({ event: 'finish', createdTime }),
+    ],
+    endType: 'finish',
+  };
+}
+
+describe('mergeConsecutiveBoots', () => {
+  it('空数组返回空列表', () => {
+    expect(mergeConsecutiveBoots([], [])).toEqual([]);
+  });
+
+  it('单个 boot 原样返回', () => {
+    const boot = makeBootGroup({ createdTime: '2026-06-13T10:00:00.000Z' });
+    const result = mergeConsecutiveBoots([boot], [boot.bootItem!]);
+    expect(result).toHaveLength(1);
+    expect(result[0]?.wakeCount).toBeUndefined();
+    expect(result[0]?.sleepTotal).toBeUndefined();
+  });
+
+  it('连续相同 cause 的 2 条 boot 合并为 1 条', () => {
+    const boot1 = makeBootGroup({ createdTime: '2026-06-13T11:00:00.000Z', cause: '4' });
+    const boot2 = makeBootGroup({ createdTime: '2026-06-13T10:00:00.000Z', cause: '4' });
+    const allLogs = [boot1.bootItem!, boot2.bootItem!];
+    const result = mergeConsecutiveBoots([boot1, boot2], allLogs);
+    expect(result).toHaveLength(1);
+    expect(result[0]?.wakeCount).toBe(2);
+    expect(result[0]?.sleepTotal).toBeGreaterThan(0);
+    // bootItem 保留最新的一条
+    expect(result[0]?.bootItem?.createdTime).toBe('2026-06-13T11:00:00.000Z');
+  });
+
+  it('cause 不同的 boot 不合并', () => {
+    const boot1 = makeBootGroup({ createdTime: '2026-06-13T10:00:01.000Z', cause: '2' });
+    const boot2 = makeBootGroup({ createdTime: '2026-06-13T10:00:00.000Z', cause: '4' });
+    const allLogs = [boot1.bootItem!, boot2.bootItem!];
+    const result = mergeConsecutiveBoots([boot1, boot2], allLogs);
+    expect(result).toHaveLength(2);
+    expect(result[0]?.wakeCount).toBeUndefined();
+    expect(result[1]?.wakeCount).toBeUndefined();
+  });
+
+  it('3 条连续相同 cause = 4 全部合并，wakeCount = 3', () => {
+    const b1 = makeBootGroup({ createdTime: '2026-06-13T12:00:00.000Z', cause: '4' });
+    const b2 = makeBootGroup({ createdTime: '2026-06-13T11:00:00.000Z', cause: '4' });
+    const b3 = makeBootGroup({ createdTime: '2026-06-13T10:00:00.000Z', cause: '4' });
+    const allLogs = [b1.bootItem!, b2.bootItem!, b3.bootItem!];
+    const result = mergeConsecutiveBoots([b1, b2, b3], allLogs);
+    expect(result).toHaveLength(1);
+    expect(result[0]?.wakeCount).toBe(3);
+  });
+
+  it('中间有 process 组时，两侧 boot 不合并', () => {
+    const boot1 = makeBootGroup({ createdTime: '2026-06-13T12:00:00.000Z', cause: '4' });
+    const proc = makeProcessGroup('2026-06-13T11:30:00.000Z');
+    const boot2 = makeBootGroup({ createdTime: '2026-06-13T11:00:00.000Z', cause: '4' });
+    const allLogs = [boot1.bootItem!, ...proc.items, boot2.bootItem!];
+    const result = mergeConsecutiveBoots([boot1, proc, boot2], allLogs);
+    expect(result).toHaveLength(3);
+    expect(result[0]?.wakeCount).toBeUndefined();
+    expect(result[1]?.type).toBe('process');
+    expect(result[2]?.wakeCount).toBeUndefined();
+  });
+
+  it('仅 process 组时原样返回', () => {
+    const proc = makeProcessGroup('2026-06-13T10:00:00.000Z');
+    const result = mergeConsecutiveBoots([proc], proc.items);
+    expect(result).toHaveLength(1);
+    expect(result[0]?.type).toBe('process');
+  });
+
+  it('sleepTotal 正确累加各次休眠时长', () => {
+    // boot1: 12:00 (上一日志 11:00 → 休眠 3600s)
+    // boot2: 11:00 (上一日志 08:00 → 休眠 10800s)
+    // sleepTotal = 3600 + 10800 = 14400
+    const boot1 = makeBootGroup({ createdTime: '2026-06-13T12:00:00.000Z', cause: '4' });
+    const boot2 = makeBootGroup({ createdTime: '2026-06-13T11:00:00.000Z', cause: '4' });
+    const prevLog = makeLog({ event: 'finish', createdTime: '2026-06-13T08:00:00.000Z' });
+    const allLogs = [boot1.bootItem!, boot2.bootItem!, prevLog];
+    const result = mergeConsecutiveBoots([boot1, boot2], allLogs);
+    expect(result).toHaveLength(1);
+    // boot2 休眠 = 11:00 - 08:00 = 10800s
+    // boot1 休眠 = 12:00 - 11:00 = 3600s
+    expect(result[0]?.sleepTotal).toBe(14400);
+  });
+
+  it('传感器 readings 取最后一次（最新）的数据', () => {
+    const boot1 = makeBootGroup({
+      createdTime: '2026-06-13T11:00:00.000Z',
+      cause: '4',
+      readings: [{ label: '电压', value: 4.2 }],
+    });
+    const boot2 = makeBootGroup({
+      createdTime: '2026-06-13T10:00:00.000Z',
+      cause: '4',
+      readings: [{ label: '电压', value: 3.5 }],
+    });
+    const allLogs = [boot1.bootItem!, boot2.bootItem!];
+    const result = mergeConsecutiveBoots([boot1, boot2], allLogs);
+    expect(result).toHaveLength(1);
+    expect(result[0]?.bootItem?.readings?.[0]?.value).toBe(4.2);
+  });
+
+  it('cause = 0 的 boot 不和 cause = 4 合并', () => {
+    const boot1 = makeBootGroup({ createdTime: '2026-06-13T10:00:01.000Z', cause: '0' });
+    const boot2 = makeBootGroup({ createdTime: '2026-06-13T10:00:00.000Z', cause: '4' });
+    const allLogs = [boot1.bootItem!, boot2.bootItem!];
+    const result = mergeConsecutiveBoots([boot1, boot2], allLogs);
+    expect(result).toHaveLength(2);
   });
 });

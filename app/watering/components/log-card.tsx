@@ -177,7 +177,67 @@ export function groupByProcess(logs: LogItem[]): ProcessGroup[] {
   }
 
   return groups.reverse();
-}/**
+}
+
+/**
+ * 合并连续相同 cause 的开机记录
+ *
+ * 遍历 groupByProcess 结果，相邻且 cause 相同的 boot 组合并为一张卡片。
+ * - bootItem 保留最新（时间最晚）的 bootstrap 日志
+ * - wakeCount 累加合并的 boot 数
+ * - sleepTotal 累加各次 calcSleepDuration
+ * - 遇到 type='process' 或 cause 不同的 boot 时断开合并
+ */
+export function mergeConsecutiveBoots(
+  groups: ProcessGroup[],
+  allLogs: LogItem[],
+): ProcessGroup[] {
+  /** 合并后的结果栈 */
+  const result: ProcessGroup[] = [];
+
+  for (const group of groups) {
+    if (group.type !== 'boot') {
+      // process 组直接入栈，不参与合并
+      result.push(group);
+      continue;
+    }
+
+    const bootItem = group.bootItem;
+    if (!bootItem) {
+      // 保护：无 bootItem 的 boot 组原样保留
+      result.push(group);
+      continue;
+    }
+
+    const cause = bootItem.cause;
+    /** 本次休眠时长（秒） */
+    const sleepSec = calcSleepDuration(bootItem, allLogs);
+
+    // 检查栈顶是否可合并
+    const last = result[result.length - 1];
+    if (
+      last &&
+      last.type === 'boot' &&
+      last.bootItem?.cause === cause
+    ) {
+      // 合并到栈顶：wakeCount 累加，sleepTotal 累加，bootItem 保持较新的
+      last.wakeCount = (last.wakeCount ?? 1) + 1;
+      last.sleepTotal = (last.sleepTotal ?? 0) + sleepSec;
+    } else {
+      // 不可合并，作为新条目入栈（仅当存在休眠时长时设置 sleepTotal）
+      const merged: ProcessGroup = {
+        ...group,
+        wakeCount: undefined,
+        sleepTotal: sleepSec > 0 ? sleepSec : undefined,
+      };
+      result.push(merged);
+    }
+  }
+
+  return result;
+}
+
+/**
  * 格式化时长为中文简化形式
  *
  * 规则：<1 分钟 → 刚刚，<1 小时 → X 分钟，<1 天 → X 小时，≥1 天 → X 天
