@@ -126,18 +126,14 @@ export const TripMap = forwardRef<
         },
       }));
 
-      /** 地图首次就绪后自动获取 GPS 并显示"我的位置"标记（非路线模式） */
+      /** 地图首次就绪后自动获取 GPS 并放置"我的位置"标记，不移动地图中心（非路线模式） */
       useEffect(() => {
         if (!mapReady || routeMode) return;
-        // 此处不通过 ref 调用 goToMyLocation（useImperativeHandle 已挂载但父组件尚未拿到 ref），
-        // 直接内联相同逻辑完成首次自动定位
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (!window.AMap) return;
         getCurrentPosition()
           .then((pos) => {
             placeMyLocationMarker(pos);
-            mapRef.current?.setCenter(pos);
-            mapRef.current?.setZoom(15);
           })
           .catch((err: unknown) => {
             console.warn('[Travel] 获取当前位置失败', err);
