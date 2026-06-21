@@ -114,7 +114,8 @@ export function useMoments(locationId: string) {
       if (err instanceof Error && err.stack) console.error(err.stack);
       throw err;
     }
-  }, [locationId, load]);
+    // load 依赖 locationId，其重新创建时 toggleChecked 也会更新
+  }, [load]);
 
   /**
    * 编辑精彩瞬间
