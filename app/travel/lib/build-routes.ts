@@ -6,6 +6,8 @@
  * 过滤掉持续天数 ≤ 2 的短路线，polyline 固定为空数组。
  */
 
+import { DEFAULT_CENTER } from './calc-distance';
+
 import type { Location, Route, RouteMarker } from '../types';
 
 /** 扁平化条目：一次精彩瞬间 */
@@ -83,17 +85,23 @@ function groupByDateGap(entries: MomentEntry[]): MomentEntry[][] {
 }
 
 /**
- * 组内排序：时间优先，同日多条按与上一个已确定标注的距离排序
+ * 组内排序：贪心最近邻链式排序
  *
- * 算法：
- * 1. 先按日期升序（输入已保证）
- * 2. 同一日期的条目，按到"上一个已确定条目"的距离升序排列
- * 3. 第一条直接确定为组内第一个标注
+ * 从 startPoint 出发，每一天内依次贪心选择离上一个已确定条目最近的条目。
+ * 链式贯穿所有天——每天的最后一个条目会成为下一天的参考点。
+ * startPoint 未传入时回退到第一个条目的坐标。
+ *
+ * @param entries - 待排序的瞬间条目（已按日期升序排列）
+ * @param startPoint - 链式起始坐标 [lng, lat]
+ * @returns 按最近邻链式排列的条目
  */
-function sortGroupEntries(entries: MomentEntry[]): MomentEntry[] {
+function sortGroupEntries(
+  entries: MomentEntry[],
+  startPoint?: [number, number],
+): MomentEntry[] {
   if (entries.length <= 1) return entries;
 
-  // 按日期分组（保持插入顺序，即升序）
+  // 按日期分组（保持插入顺序即日期升序）
   const byDate = new Map<string, MomentEntry[]>();
   for (const e of entries) {
     const list = byDate.get(e.date);
@@ -105,25 +113,50 @@ function sortGroupEntries(entries: MomentEntry[]): MomentEntry[] {
   }
 
   const result: MomentEntry[] = [];
-  let prev: MomentEntry | null = null;
+  // 起始坐标：传入的 startPoint 或第一个条目的坐标
+  const first = entries[0];
+  // entries.length >= 2 已保证 first 存在
+  if (!first) return entries;
+  let prevCoords: [number, number] = startPoint ?? [first.longitude, first.latitude];
 
   for (const [, dayEntries] of byDate) {
-    if (prev === null) {
-      // 第一天的条目按原始顺序（已按日期排序）
-      result.push(...dayEntries);
-      const lastOfDay = dayEntries[dayEntries.length - 1];
-      if (lastOfDay) prev = lastOfDay;
-    } else {
-      // 按到 prev 的欧几里得距离排序
-      const prevRef = prev;
-      const sorted = [...dayEntries].sort((a, b) => {
-        const da = Math.hypot(a.longitude - prevRef.longitude, a.latitude - prevRef.latitude);
-        const db = Math.hypot(b.longitude - prevRef.longitude, b.latitude - prevRef.latitude);
-        return da - db;
-      });
-      result.push(...sorted);
-      const lastOfSorted = sorted[sorted.length - 1];
-      if (lastOfSorted) prev = lastOfSorted;
+    const remaining = [...dayEntries];
+
+    while (remaining.length > 0) {
+      // 贪心选择离上一个已确定坐标最近的条目
+      const firstRemaining = remaining[0];
+
+      // remaining 非空保证 firstRemaining 存在
+      if (!firstRemaining) break;
+
+      let nearestIdx = 0;
+      let nearestDist = Math.hypot(
+        firstRemaining.longitude - prevCoords[0],
+        firstRemaining.latitude - prevCoords[1],
+      );
+
+      for (let i = 1; i < remaining.length; i++) {
+        const curr = remaining[i];
+        if (!curr) continue;
+
+        const dist = Math.hypot(
+          curr.longitude - prevCoords[0],
+          curr.latitude - prevCoords[1],
+        );
+        if (dist < nearestDist) {
+          nearestDist = dist;
+          nearestIdx = i;
+        }
+      }
+
+      const picked = remaining[nearestIdx];
+      // nearestIdx 在合法范围内，picked 一定存在
+      if (!picked) break;
+
+      result.push(picked);
+      // 更新参考点，链式延续
+      prevCoords = [picked.longitude, picked.latitude];
+      remaining.splice(nearestIdx, 1);
     }
   }
 
@@ -184,7 +217,7 @@ export function buildRoutes(locations: Location[]): Route[] {
 
   return groups
     .map((group) => {
-      const sorted = sortGroupEntries(group);
+      const sorted = sortGroupEntries(group, DEFAULT_CENTER);
       const markers = buildMarkers(sorted);
 
       const first = sorted[0];
