@@ -63,7 +63,7 @@ export function Shell({ children }: { children: ReactNode }) {
   const { summary } = useTravelContext();
   const [actionVisible, setActionVisible] = useState(false);
   const searchParams = useSearchParams();
-  const filterParam = searchParams.get('filter') as 'checked' | 'uncheck' | null;
+  const filterParam = searchParams.get('filter');
   const isFiltering = filterParam === 'checked' || filterParam === 'uncheck';
   const [filterVisible, setFilterVisible] = useState(false);
 
@@ -78,7 +78,11 @@ export function Shell({ children }: { children: ReactNode }) {
   }
 
   /**
-   * ActionSheet 菜单分发 —— 根据 key 路由到概览弹窗、列表筛选或触发搜索事件
+   * ActionSheet 菜单分发 —— 根据 key 路由到概览弹窗、添加位置或触发定位事件
+   *
+   * - overview：弹出统计概览 Dialog
+   * - add：触发 travel:open-search 自定义事件打开 POI 搜索
+   * - my-location：触发 travel:go-my-location 自定义事件定位
    */
   function handleAction(action: { key: string | number }) {
     const key = String(action.key);
@@ -95,7 +99,13 @@ export function Shell({ children }: { children: ReactNode }) {
     }
   }
 
-  /** 筛选 ActionSheet 菜单分发 */
+  /**
+   * 筛选 ActionSheet 菜单分发 —— 根据 key 操作 URL 筛选参数
+   *
+   * - all：清除 filter 参数，显示全部
+   * - checked：设 ?filter=checked，筛选已去
+   * - uncheck：设 ?filter=uncheck，筛选待去
+   */
   function handleFilterAction(action: { key: string | number }) {
     const key = String(action.key);
     switch (key) {
