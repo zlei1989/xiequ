@@ -18,6 +18,7 @@ import { SearchPopup } from '../../components/search-popup';
 import { useTravelContext } from '../../hooks/use-locations';
 import { useMoments } from '../../hooks/use-moments';
 import { filterLocations } from '../../lib/filter-locations';
+import { haversineDistance, readMapCenter } from '../../lib/calc-distance';
 
 import type { Location, Moment } from '../../types';
 
@@ -33,6 +34,18 @@ export default function FavouritesPage() {
     () => filterLocations(sortedLocations, searchText),
     [sortedLocations, searchText],
   );
+
+  // 按与地图中心的距离升序排列（先筛后排）
+  const sortedByDistance = useMemo(() => {
+    const center = readMapCenter();
+    const lng = center[0];
+    const lat = center[1];
+    return [...filteredLocations].sort(
+      (a, b) =>
+        haversineDistance(lat, lng, a.latitude, a.longitude) -
+        haversineDistance(lat, lng, b.latitude, b.longitude),
+    );
+  }, [filteredLocations]);
 
   // Popup 状态
   const [viewLocation, setViewLocation] = useState<Location | null>(null);
@@ -126,7 +139,7 @@ export default function FavouritesPage() {
       ) : (
         <PullToRefresh onRefresh={load}>
           <List>
-            {filteredLocations.map((location) => (
+            {sortedByDistance.map((location) => (
               <LocationListItem
                 key={location.id}
                 location={location}
