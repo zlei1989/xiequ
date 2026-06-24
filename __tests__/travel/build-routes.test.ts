@@ -177,4 +177,35 @@ describe('buildRoutes', () => {
     expect(day2Entries[0]?.name).toBe('颐和园');
     expect(day2Entries[1]?.name).toBe('西湖');
   });
+
+  it('first day multiple locations: nearest to DEFAULT_CENTER becomes first, then chain', () => {
+    // 西湖离北京远（约 1130 km），故宫离北京近（约 0 km）
+    // DEFAULT_CENTER = [116.397477, 39.908692]（北京）
+    // 旧行为：第一天按原始数组顺序 → 西湖在前
+    // 新行为：故宫离 DEFAULT_CENTER 最近 → 故宫第一
+    const locs = [
+      makeLocation({ id: '1', name: '西湖', longitude: 120.2, latitude: 30.3, moments: mm('2024-01-01') }),
+      makeLocation({ id: '2', name: '故宫', longitude: 116.4, latitude: 39.9, moments: mm('2024-01-01') }),
+      makeLocation({ id: '3', name: '外滩', longitude: 121.5, latitude: 31.2, moments: mm('2024-01-02') }),
+      makeLocation({ id: '4', name: '长城', longitude: 116.0, latitude: 40.4, moments: mm('2024-01-03') }),
+    ];
+    const routes = buildRoutes(locs);
+    expect(routes).toHaveLength(1);
+    const r = routes[0] as Route;
+    // 故宫离 DEFAULT_CENTER 最近，链式第一；然后西湖（day1 剩余）；外滩（day2）；长城（day3）
+    expect(r.markers.map((m) => m.name)).toEqual(['故宫', '西湖', '外滩', '长城']);
+  });
+
+  it('first day single location: chain degrades to identity', () => {
+    const locs = [
+      makeLocation({ id: '1', name: '故宫', longitude: 116.4, latitude: 39.9, moments: mm('2024-01-01') }),
+      makeLocation({ id: '2', name: '南京', longitude: 118.8, latitude: 32.1, moments: mm('2024-01-02') }),
+      makeLocation({ id: '3', name: '上海', longitude: 121.5, latitude: 31.2, moments: mm('2024-01-03') }),
+    ];
+    const routes = buildRoutes(locs);
+    expect(routes).toHaveLength(1);
+    const r = routes[0] as Route;
+    // 每天一个景点，链式退化，与原始顺序一致
+    expect(r.markers.map((m) => m.name)).toEqual(['故宫', '南京', '上海']);
+  });
 });
