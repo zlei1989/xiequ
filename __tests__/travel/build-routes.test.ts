@@ -156,7 +156,7 @@ describe('buildRoutes', () => {
     expect(r.id).toBe('route-2024-06-15');
   });
 
-  it('same-day markers sorted by nearest to previous day marker', () => {
+  it('same-day entries chain-sorted from previous day last entry', () => {
     const locs = [
       makeLocation({ id: '1', name: '故宫', longitude: 116.4, latitude: 39.9, moments: mm('2024-01-01') }),
       makeLocation({ id: '2', name: '西湖', longitude: 120.2, latitude: 30.3, moments: mm('2024-01-02') }),

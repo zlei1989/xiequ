@@ -114,20 +114,20 @@ function sortGroupEntries(
 
   const result: MomentEntry[] = [];
   // 起始坐标：传入的 startPoint 或第一个条目的坐标
-  const first = entries[0];
-  // entries.length >= 2 已保证 first 存在
-  if (!first) return entries;
+  // SAFETY: entries.length >= 2 已在 L102 早返回后保证
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const first = entries[0]!;
   let prevCoords: [number, number] = startPoint ?? [first.longitude, first.latitude];
 
+  // Map 保持插入顺序，与 entries 的日期升序一致
   for (const [, dayEntries] of byDate) {
     const remaining = [...dayEntries];
 
     while (remaining.length > 0) {
       // 贪心选择离上一个已确定坐标最近的条目
-      const firstRemaining = remaining[0];
-
-      // remaining 非空保证 firstRemaining 存在
-      if (!firstRemaining) break;
+      // SAFETY: while (remaining.length > 0) 保证 remaining[0] 存在
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const firstRemaining = remaining[0]!;
 
       let nearestIdx = 0;
       let nearestDist = Math.hypot(
@@ -136,8 +136,9 @@ function sortGroupEntries(
       );
 
       for (let i = 1; i < remaining.length; i++) {
-        const curr = remaining[i];
-        if (!curr) continue;
+        // SAFETY: i 从 0 到 remaining.length-1，元素必然存在
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        const curr = remaining[i]!;
 
         const dist = Math.hypot(
           curr.longitude - prevCoords[0],
@@ -149,9 +150,9 @@ function sortGroupEntries(
         }
       }
 
-      const picked = remaining[nearestIdx];
-      // nearestIdx 在合法范围内，picked 一定存在
-      if (!picked) break;
+      // SAFETY: nearestIdx 从 0 开始，remaining.length > 0 保证元素存在
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const picked = remaining[nearestIdx]!;
 
       result.push(picked);
       // 更新参考点，链式延续
