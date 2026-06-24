@@ -1,0 +1,23 @@
+{
+  "language": "zh-cn",
+  "effortLevel": "xhigh",
+  "extraKnownMarketplaces": {
+    "ecc": {
+      "source": {
+        "source": "github",
+        "repo": "affaan-m/everything-claude-code"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "context7@claude-plugins-official": true,
+    "ecc@ecc": true,
+    "playwright@claude-plugins-official": true,
+    "superpowers@claude-plugins-official": true
+  },
+  "includeCoAuthoredBy": false,
+  "attribution": {
+    "commit": "",
+    "pr": ""
+  }
+}
