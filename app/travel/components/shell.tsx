@@ -7,9 +7,9 @@
 
 'use client';
 
-import { ActionSheet, Card, Dialog, Grid, NavBar, ProgressBar, SafeArea, TabBar } from 'antd-mobile';
-import { EnvironmentOutline, MoreOutline, StarOutline, AppstoreOutline, TravelOutline } from 'antd-mobile-icons';
-import { usePathname, useRouter } from 'next/navigation';
+import { ActionSheet, Card, Dialog, Grid, NavBar, ProgressBar, SafeArea, Space, TabBar } from 'antd-mobile';
+import { EnvironmentOutline, FilterOutline, MoreOutline, StarOutline, AppstoreOutline, TravelOutline } from 'antd-mobile-icons';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useState, type ReactNode } from 'react';
 
 import { useTravelContext } from '../hooks/use-locations';
@@ -62,6 +62,10 @@ export function Shell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { summary } = useTravelContext();
   const [actionVisible, setActionVisible] = useState(false);
+  const searchParams = useSearchParams();
+  const filterParam = searchParams.get('filter') as 'checked' | 'uncheck' | null;
+  const isFiltering = filterParam === 'checked' || filterParam === 'uncheck';
+  const [filterVisible, setFilterVisible] = useState(false);
 
   /** 弹出统计概览 Dialog，复用 Stats 组件渲染汇总数据 */
   function showStats() {
