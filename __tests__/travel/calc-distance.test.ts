@@ -32,6 +32,7 @@ function mockLocalStorage(store: Record<string, string> = {}) {
     store[key] = value;
   });
   const removeItem = vi.fn((key: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- mock 中模拟 localStorage 行为
     delete store[key];
   });
   Object.defineProperty(globalThis, 'localStorage', {

@@ -17,8 +17,8 @@ import { MomentEditPopup } from '../../components/moment-edit-popup';
 import { SearchPopup } from '../../components/search-popup';
 import { useTravelContext } from '../../hooks/use-locations';
 import { useMoments } from '../../hooks/use-moments';
-import { filterLocations } from '../../lib/filter-locations';
 import { haversineDistance, readMapCenter } from '../../lib/calc-distance';
+import { filterLocations } from '../../lib/filter-locations';
 
 import type { Location, Moment } from '../../types';
 
