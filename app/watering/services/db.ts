@@ -100,22 +100,6 @@ function parseJSON<T>(value: unknown, fallback: T): T {
 export async function initDb() {
   const db = getDb();
 
-  // ---- 表名迁移：单数统一 + 语义化 ----
-  // watering_devices → watering_device, watering_logs → watering_state_log
-  db.exec('BEGIN');
-  try {
-    db.exec('ALTER TABLE watering_devices RENAME TO watering_device');
-    db.exec('ALTER TABLE watering_logs RENAME TO watering_state_log');
-    db.exec('COMMIT');
-  } catch {
-    try { db.exec('ROLLBACK'); } catch { /* 回滚失败忽略 */ }
-    // 表已迁移或不存在，忽略
-  }
-
-  // 清理旧索引名（SQLite ALTER TABLE RENAME TO 不会自动重命名索引）
-  try { db.exec('DROP INDEX IF EXISTS idx_watering_logs_chip_id'); } catch { /* ignore */ }
-  try { db.exec('DROP INDEX IF EXISTS idx_watering_logs_state_id'); } catch { /* ignore */ }
-
   db.exec(`
     CREATE TABLE IF NOT EXISTS watering_device (
       chip_id TEXT PRIMARY KEY,
@@ -134,13 +118,6 @@ export async function initDb() {
     )
   `);
 
-  // 为旧数据库添加 processes_version 列
-  try {
-    db.exec('ALTER TABLE watering_device ADD COLUMN processes_version TEXT');
-  } catch {
-    // 列已存在，忽略
-  }
-
   db.exec(`
     CREATE TABLE IF NOT EXISTS watering_device_state (
       chip_id TEXT PRIMARY KEY,
@@ -152,6 +129,9 @@ export async function initDb() {
       current_index INTEGER,
       current_process JSON,
       message TEXT,
+      idle_since INTEGER,
+      last_action_type TEXT,
+      step_index INTEGER,
       last_tick_time INTEGER DEFAULT 0,
       last_write_time TEXT NOT NULL,
       FOREIGN KEY (chip_id) REFERENCES watering_device(chip_id)
@@ -177,42 +157,11 @@ export async function initDb() {
     ON watering_state_log(chip_id, created_time DESC)
   `);
 
-  // 新增独立列迁移（v2: 从 state JSON 提取高频字段）
-  try {
-    db.exec('ALTER TABLE watering_state_log ADD COLUMN mac_address TEXT');
-  } catch { /* 列已存在 */ }
-  try {
-    db.exec('ALTER TABLE watering_state_log ADD COLUMN state_id TEXT');
-  } catch { /* 列已存在 */ }
-  try {
-    db.exec('ALTER TABLE watering_state_log ADD COLUMN message TEXT');
-  } catch { /* 列已存在 */ }
-  try {
-    db.exec('CREATE INDEX IF NOT EXISTS idx_watering_state_log_state_id ON watering_state_log(state_id)');
-  } catch { /* 索引已存在 */ }
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_watering_state_log_state_id
+    ON watering_state_log(state_id)
+  `);
 
-  // 为旧数据库添加 idle_since 列（设备空闲计时起点）
-  try {
-    db.exec('ALTER TABLE watering_device_state ADD COLUMN idle_since INTEGER');
-  } catch {
-    // 列已存在，忽略
-  }
-
-  // 为旧数据库添加 last_action_type 列（设备最后一次动作类型）
-  try {
-    db.exec('ALTER TABLE watering_device_state ADD COLUMN last_action_type TEXT');
-  } catch {
-    // 列已存在，忽略
-  }
-
-  // 为旧数据库添加 step_index 列（步骤进度追踪）
-  try {
-    db.exec('ALTER TABLE watering_device_state ADD COLUMN step_index INTEGER');
-  } catch {
-    // 列已存在，忽略
-  }
-
-  // 计划任务执行日志表（防重复执行）
   db.exec(`
     CREATE TABLE IF NOT EXISTS watering_schedule_log (
       chip_id TEXT NOT NULL,
@@ -223,7 +172,6 @@ export async function initDb() {
     )
   `);
 
-  // 传感器采样日志表（每 15 分钟一条）
   db.exec(`
     CREATE TABLE IF NOT EXISTS watering_sensor_log (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -240,25 +188,10 @@ export async function initDb() {
     ON watering_sensor_log(chip_id, record_time)
   `);
 
-  // 唯一约束：同一设备同一时间点仅一条采样记录
   db.exec(`
     CREATE UNIQUE INDEX IF NOT EXISTS idx_sensor_log_unique
     ON watering_sensor_log(chip_id, record_time)
   `);
-
-  // ---- voltage → sensors 迁移 ----
-  try {
-    db.exec("ALTER TABLE watering_device ADD COLUMN sensors JSON NOT NULL DEFAULT '[]'");
-  } catch { /* 列已存在 */ }
-  try {
-    db.exec('ALTER TABLE watering_device DROP COLUMN voltage');
-  } catch { /* 列不存在或 SQLite 版本不支持 */ }
-  try {
-    db.exec('ALTER TABLE watering_state_log ADD COLUMN readings JSON');
-  } catch { /* 列已存在 */ }
-  try {
-    db.exec('ALTER TABLE watering_state_log DROP COLUMN voltage');
-  } catch { /* 列不存在 */ }
 }
 
 /**
