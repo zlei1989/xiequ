@@ -12,6 +12,7 @@
 import { Button, ErrorBlock, Toast } from 'antd-mobile';
 import { forwardRef, useImperativeHandle, useEffect, useRef, useState } from 'react';
 
+import { MAP_CENTER_KEY, MAP_ZOOM_KEY, DEFAULT_CENTER } from '../lib/calc-distance';
 import { readTheme, STYLE_MAP, useMapTheme } from '../hooks/use-map-theme';
 import { getCurrentPosition, loadAmap } from '../services/amap';
 import { createMarkerEngine } from '../services/marker-engine';
@@ -166,11 +167,11 @@ export const TripMap = forwardRef<
 
           const container = containerRef.current;
 
-          const centerStr = localStorage.getItem('TRAVEL_MAP_CENTER');
-          const zoomStr = localStorage.getItem('TRAVEL_MAP_ZOOM');
+          const centerStr = localStorage.getItem(MAP_CENTER_KEY);
+          const zoomStr = localStorage.getItem(MAP_ZOOM_KEY);
           const center: [number, number] = centerStr
             ? (JSON.parse(centerStr) as [number, number])
-            : [116.397477, 39.908692];
+            : DEFAULT_CENTER;
           const zoom: number = zoomStr ? (JSON.parse(zoomStr) as number) : 13;
 
           const map = new AMap.Map(container, {
@@ -183,10 +184,10 @@ export const TripMap = forwardRef<
 
           map.on('moveend', () => {
             const c = map.getCenter();
-            localStorage.setItem('TRAVEL_MAP_CENTER', JSON.stringify([c.lng, c.lat]));
+            localStorage.setItem(MAP_CENTER_KEY, JSON.stringify([c.lng, c.lat]));
           });
           map.on('zoomend', () => {
-            localStorage.setItem('TRAVEL_MAP_ZOOM', JSON.stringify(map.getZoom()));
+            localStorage.setItem(MAP_ZOOM_KEY, JSON.stringify(map.getZoom()));
           });
 
           // aborted 由 cleanup 跨异步设置，TypeScript 无法追踪此突变
