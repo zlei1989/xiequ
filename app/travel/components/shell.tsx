@@ -86,6 +86,19 @@ export function Shell({ children }: { children: ReactNode }) {
       case 'overview':
         showStats();
         break;
+      case 'add':
+        window.dispatchEvent(new CustomEvent('travel:open-search'));
+        break;
+      case 'my-location':
+        window.dispatchEvent(new CustomEvent('travel:go-my-location'));
+        break;
+    }
+  }
+
+  /** 筛选 ActionSheet 菜单分发 */
+  function handleFilterAction(action: { key: string | number }) {
+    const key = String(action.key);
+    switch (key) {
       case 'all':
         router.replace(pathname);
         break;
@@ -95,14 +108,15 @@ export function Shell({ children }: { children: ReactNode }) {
       case 'uncheck':
         router.replace(`${pathname}?filter=uncheck`);
         break;
-      case 'add':
-        window.dispatchEvent(new CustomEvent('travel:open-search'));
-        break;
-      case 'my-location':
-        window.dispatchEvent(new CustomEvent('travel:go-my-location'));
-        break;
     }
   }
+
+  /** 筛选选项 */
+  const filterActions = [
+    { key: 'all', text: '显示全部' },
+    { key: 'checked', text: '筛选已去' },
+    { key: 'uncheck', text: '筛选待去' },
+  ];
 
   /**
    * 根据当前 tab 决定 ActionSheet 菜单项
@@ -115,9 +129,6 @@ export function Shell({ children }: { children: ReactNode }) {
     }
     const base = [
       { key: 'overview', text: '概览' },
-      { key: 'all', text: '显示全部' },
-      { key: 'checked', text: '筛选已去' },
-      { key: 'uncheck', text: '筛选待去' },
       { key: 'add', text: '添加位置' },
     ];
     if (pathname === TRAVEL_BASE_PATH) {
@@ -134,7 +145,16 @@ export function Shell({ children }: { children: ReactNode }) {
           <AppstoreOutline />
         }
         right={
-          <MoreOutline className="text-2xl" onClick={() => { setActionVisible(true); }} />
+          <Space>
+            {pathname !== TRAVEL_ROUTES_PATH && (
+              <FilterOutline
+                className="text-2xl"
+                style={{ color: isFiltering ? 'var(--adm-color-primary)' : undefined }}
+                onClick={() => { setFilterVisible(true); }}
+              />
+            )}
+            <MoreOutline className="text-2xl" onClick={() => { setActionVisible(true); }} />
+          </Space>
         }
         onBack={() => { router.push('/'); }}
       >
@@ -158,6 +178,14 @@ export function Shell({ children }: { children: ReactNode }) {
         visible={actionVisible}
         onAction={handleAction}
         onClose={() => { setActionVisible(false); }}
+      />
+      <ActionSheet
+        closeOnAction
+        safeArea
+        actions={filterActions}
+        visible={filterVisible}
+        onAction={handleFilterAction}
+        onClose={() => { setFilterVisible(false); }}
       />
     </div>
   );
