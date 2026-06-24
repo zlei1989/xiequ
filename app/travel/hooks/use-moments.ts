@@ -74,12 +74,14 @@ export function useMoments(locationId: string) {
   /**
    * 切换位置打卡状态（收敛地图页和收藏页的共同逻辑）
    *
-   * 待去 → 已去：检查是否存在精彩瞬间，不存在则自动创建当天日期的空文本记录；
-   * 已存在则直接切换，不重复创建。
+   * 待去 → 已去：从 Context 中获取最新位置数据，检查是否已存在精彩瞬间；
+   * 不存在则自动创建当天日期的空文本记录；已存在则直接切换，不重复创建。
+   * 注意：不使用 loc 参数的 moments 字段，因为 loc 可能来自 UI 状态的旧引用，
+   * 而 Context 中的 locations 在每次操作后都会刷新，才是最新数据。
    * 已去 → 待去：直接切换，无任何限制。
    * 完成后刷新数据以同步 moments 列表。
    *
-   * @param location - 当前被切换的位置对象
+   * @param loc - 当前被切换的位置对象
    * @param onUpdate - useLocations 的 update 方法，用于持久化 checked 状态
    */
   const toggleChecked = useCallback(async (
@@ -89,8 +91,11 @@ export function useMoments(locationId: string) {
     try {
       // 待去 → 已去：检查是否需要自动创建精彩瞬间
       if (!loc.checked) {
-        const has = loc.moments && Object.keys(loc.moments).length > 0;
-        if (!has) {
+        // 从 Context 中取最新位置数据判断历史精彩瞬间
+        // loc 可能是 UI 状态的旧引用，context 中才是最新数据
+        const latest = locations.find((l) => l.id === loc.id);
+        const hasMoments = latest?.moments && Object.keys(latest.moments).length > 0;
+        if (!hasMoments) {
           // 不存在精彩瞬间，自动创建当天日期的空文本记录
           await createMoment(loc.id, {
             date: new Date().toISOString().slice(0, 10),
@@ -107,7 +112,7 @@ export function useMoments(locationId: string) {
       if (err instanceof Error && err.stack) console.error(err.stack);
       throw err;
     }
-  }, [refreshLocations]);
+  }, [refreshLocations, locations]);
 
   /**
    * 编辑精彩瞬间
