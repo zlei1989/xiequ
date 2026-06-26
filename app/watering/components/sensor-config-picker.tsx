@@ -230,7 +230,7 @@ function SensorFormBody({
 
             {/* ADC 校准系数（仅模拟信号） */}
             <Form.Item
-              help="校准系数 = 实际值 ÷ 显示值。如电压显示 10.8V 实际 12V，则填 1.11"
+              help="校准系数直接缩放最终值。如显示 10.8 实际 12，则填 1.11（12÷10.8）"
               label="校准系数"
             >
               <Stepper

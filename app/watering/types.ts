@@ -93,7 +93,7 @@ export type SensorConfig = {
   r1?: number;
   /** 下拉电阻 R2（Ω），仅 resistor_divider 显示，默认 10000 */
   r2?: number;
-  /** ADC 校准系数，乘以原始值后再做物理换算，默认 1（不校准）。例如显示偏低 10% 则设为 1.1 */
+  /** 校准系数，统一乘以最终物理值（电压/温度），默认 1（不校准）。例如显示偏低 10% 则设为 1.1 */
   adcMultiplier?: number;
 };
 

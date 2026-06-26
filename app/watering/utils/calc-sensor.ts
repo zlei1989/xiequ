@@ -29,27 +29,27 @@ export function calcSensorReadings(
       return { label: config.name, value: raw > 0 ? 1 : 0 };
     }
 
-    // 模拟信号 — 先应用 ADC 校准系数，再进行物理换算
-    const corrected = raw * (config.adcMultiplier ?? 1);
+    // 校准系数 — 统一在最终物理值上生效，保证 k<1→值变小 的直觉一致
+    const k = config.adcMultiplier ?? 1;
 
     if (config.conversion === 'resistor_divider') {
-      const vSensor = (corrected / 4095) * 3.3;
+      const vSensor = (raw / 4095) * 3.3;
       const r1 = config.r1 ?? 30000;
       const r2 = config.r2 ?? 10000;
       const value = r1 > 0 && r2 > 0 ? vSensor * ((r1 + r2) / r2) : vSensor;
-      return { label: config.name, value: Math.round(value * 100) / 100, unit: 'V' };
+      return { label: config.name, value: Math.round(value * k * 100) / 100, unit: 'V' };
     }
 
     if (config.conversion === 'ntc_10k') {
-      const vAdc = (corrected / 4095) * 3.3;
+      const vAdc = (raw / 4095) * 3.3;
       const rNtc = 10000 * vAdc / (3.3 - vAdc);
       const B = config.bValue ?? 3435;
       const tempK = 1 / (1 / 298.15 + Math.log(rNtc / 10000) / B);
       const tempC = tempK - 273.15;
-      return { label: config.name, value: Math.round(tempC * 100) / 100, unit: '°C' };
+      return { label: config.name, value: Math.round(tempC * k * 100) / 100, unit: '°C' };
     }
 
-    // 无转换 — 校准后四舍五入为整数
-    return { label: config.name, value: Math.round(corrected) };
+    // 无转换 — 显示 ADC 原始值，校准后四舍五入为整数
+    return { label: config.name, value: Math.round(raw * k) };
   });
 }
