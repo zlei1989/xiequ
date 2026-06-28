@@ -656,8 +656,6 @@ void buttonChangeHandler(int type, float value, Button *button, void *context)
               return ok;
             },
             pIdx);
-            },
-            pIdx);
         return;
       }
       procIndex++;
