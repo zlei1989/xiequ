@@ -144,11 +144,12 @@ void buttonChangeHandler(int type, float value, Button *button, void *context);
 void setup()
 {
   // ---- 配置数字输入引脚 ----
-  pinMode(GPIO_BUTTON0, INPUT);
-  pinMode(GPIO_BUTTON1, INPUT);
-  pinMode(GPIO_BUTTON2, INPUT);
-  pinMode(GPIO_BUTTON3, INPUT);
-  pinMode(GPIO_BUTTON4, INPUT);
+  // 按钮使用 INPUT_PULLUP：空闲时内部上拉保持 HIGH，按下接地拉 LOW
+  pinMode(GPIO_BUTTON0, INPUT_PULLUP);
+  pinMode(GPIO_BUTTON1, INPUT_PULLUP);
+  pinMode(GPIO_BUTTON2, INPUT_PULLUP);
+  pinMode(GPIO_BUTTON3, INPUT_PULLUP);
+  pinMode(GPIO_BUTTON4, INPUT_PULLUP);
 
   // ---- 配置传感器输入引脚 ----
   pinMode(GPIO_SENSOR0, INPUT); // 温度传感器
@@ -615,9 +616,20 @@ void buttonChangeHandler(int type, float value, Button *button, void *context)
 
     // 遍历 processes 数组，匹配 trigger
     JsonArray processes = processesDoc.as<JsonArray>();
+    int procCount = processes.size();
+    log("Button Debug {\"key\":\"%s\",\"processCount\":%d,\"cache\":\"%s\"}",
+        buttonKey.c_str(), procCount, processesJson.c_str());
+    int procIndex = 0;
     for (JsonObject proc : processes) {
-      if (!proc["trigger"].is<const char*>()) continue;
+      if (!proc["trigger"].is<const char*>()) {
+        log("Button Debug {\"message\":\"no trigger field\",\"name\":\"%s\"}",
+            proc["name"].as<const char*>());
+        procIndex++;
+        continue;
+      }
       String trigger = proc["trigger"].as<String>();
+      log("Button Debug {\"message\":\"checking trigger\",\"trigger\":\"%s\",\"name\":\"%s\"}",
+          trigger.c_str(), proc["name"].as<const char*>());
       if (trigger == buttonKey) {
         log("Button Trigger {\"key\":\"%s\",\"process\":\"%s\"}",
             buttonKey.c_str(), proc["name"].as<const char*>());
@@ -630,9 +642,27 @@ void buttonChangeHandler(int type, float value, Button *button, void *context)
         _idled = false;
         // 清除睡眠时长，防止流程执行完毕后用旧的 sleepDuration 立即入睡
         network.setSleepDuration(0);
+        // 上报按钮触发事件（含 process 索引），通知服务端更新状态
+        int *pIdx = new int(procIndex);
+        network.invoke(
+            [](NetworkExt *net, void *context) {
+              int *idx = reinterpret_cast<int *>(context);
+              JsonDocument fields;
+              JsonObject object = fields.to<JsonObject>();
+              object["index"] = *idx;
+              object["trigger"] = "button";
+              bool ok = net->pushState("execute", &fields);
+              delete idx;
+              return ok;
+            },
+            pIdx);
+            },
+            pIdx);
         return;
       }
+      procIndex++;
     }
     // 未匹配到 trigger（灯已在函数开头闪烁）
+    log("Button Debug {\"message\":\"no matching trigger found\",\"key\":\"%s\"}", buttonKey.c_str());
   }
 }

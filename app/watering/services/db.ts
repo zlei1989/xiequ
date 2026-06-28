@@ -421,7 +421,7 @@ export async function updateTick(chipId: string) {
 // eslint-disable-next-line @typescript-eslint/require-await -- SQLite WASM 驱动为同步，保持 async 契约
 export async function updateIdleSince(
   chipId: string,
-  actionType: 'bootstrap' | 'button' | 'change' | 'finish' | 'heartbeat',
+  actionType: 'bootstrap' | 'button' | 'change' | 'finish' | 'heartbeat' | 'execute',
   customIdleSince?: number,
 ) {
   const db = getDbSync();

@@ -163,6 +163,35 @@ export async function GET(request: NextRequest) {
       await updateIdleSince(chipId, 'finish');
       break;
     }
+    case 'execute': {
+      // 设备主动上报"开始执行流程"事件（按钮触发等）
+      const trigger = searchParams.get('trigger') || '';
+      const procIndex = parseInt(searchParams.get('index') || '-1', 10);
+      console.info('[Watering] execute 事件', { chipId, trigger, procIndex });
+
+      const state = await getDeviceState(chipId);
+      if (
+        state &&
+        state.switch === 'off' &&
+        config &&
+        procIndex >= 0 &&
+        procIndex < config.processes.length
+      ) {
+        state.switch = 'on';
+        state.index = procIndex;
+        state.process = JSON.parse(
+          JSON.stringify(config.processes[procIndex]),
+        ) as typeof state.process;
+        // 不生成新 stateId：保持与 ROM 同步，确保后续 change 事件的 stateId 能匹配
+        state.lastWriteTime = new Date().toISOString();
+        await saveDeviceState(state);
+        execCallback(chipId);
+      }
+      const executeReadings = calcSensorReadings(config?.sensors ?? [], gpioState.sensors);
+      await writeDeviceLog(chipId, 'execute', macAddress, { index: procIndex, trigger }, executeReadings, state?.stateId);
+      await updateIdleSince(chipId, 'execute');
+      break;
+    }
     default: {
       await writeDeviceLog(chipId, event || 'heartbeat', macAddress, { sensors: gpioState.sensors, loads: gpioState.loads }, defaultReadings);
       // event 来自固件上报，值域受控；兜底为 heartbeat

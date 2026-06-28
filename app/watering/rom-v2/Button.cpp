@@ -78,8 +78,9 @@ void Button::next() {
     yield();
     return;
   }
-  // 以静默模式持续检测电平变化（不触发 Sensor 自身的回调）
-  sensor.next(true);
+  // 非静默模式检测电平变化，触发 Sensor 回调 → sensorChangeHandler →
+  // pressDown/pressType 更新
+  sensor.next();
 
   // 检测长按超时
   if (pressDown) {
