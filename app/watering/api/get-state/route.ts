@@ -283,6 +283,7 @@ async function checkAndExecuteSchedule(
       state.process = filterProcess(
         JSON.parse(JSON.stringify(config.processes[schedule.process])) as ProcessConfig,
       );
+      state.lastActionStartedAt = Date.now();
       // 标记执行
       await insertScheduleLog(config.chipId, triggerTime, schedule.process);
       // once 类型触发后自动禁用

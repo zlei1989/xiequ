@@ -96,6 +96,7 @@ export async function GET(request: NextRequest) {
         state.process = JSON.parse(
           JSON.stringify(config.processes[config.bootExec]),
         ) as typeof state.process;
+        state.lastActionStartedAt = Date.now();
         if (config.execDelay > 0 && state.process?.steps.length && state.process.steps.length > 0) {
           const firstStep = state.process.steps[0];
           if (firstStep) {
@@ -182,6 +183,7 @@ export async function GET(request: NextRequest) {
         state.process = JSON.parse(
           JSON.stringify(config.processes[procIndex]),
         ) as typeof state.process;
+        state.lastActionStartedAt = Date.now();
         // 不生成新 stateId：保持与 ROM 同步，确保后续 change 事件的 stateId 能匹配
         state.lastWriteTime = new Date().toISOString();
         await saveDeviceState(state);

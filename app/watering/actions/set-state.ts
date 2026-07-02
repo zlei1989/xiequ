@@ -58,6 +58,7 @@ export async function setDeviceSwitch(
         throw new Error('流程不存在');
       }
       state.process = filterProcess(process);
+      state.lastActionStartedAt = Date.now();
       state.stepIndex = stepIndex ?? 0;
       state.message = undefined;
     } else {
