@@ -41,6 +41,10 @@ interface StateRow {
   step_index: number | null;
   last_tick_time: number;
   last_write_time: string;
+  last_action_name: string | null;
+  last_action_duration: number | null;
+  last_action_started_at: number | null;
+  last_action_finished_at: number | null;
 }
 
 /** watering_device LEFT JOIN watering_device_state 原始行 */
@@ -61,6 +65,10 @@ interface JoinRow extends DeviceRow {
   state_last_tick_time: number | null;
   /** s.last_write_time 别名 */
   state_last_write_time: string | null;
+  last_action_name: string | null;
+  last_action_duration: number | null;
+  last_action_started_at: number | null;
+  last_action_finished_at: number | null;
 }
 
 /** watering_state_log 表 SQLite 原始行 */
@@ -192,6 +200,18 @@ export async function initDb() {
     CREATE UNIQUE INDEX IF NOT EXISTS idx_sensor_log_unique
     ON watering_sensor_log(chip_id, record_time)
   `);
+
+  // 新增列——使用 PRAGMA table_info 检查避免重复添加（SQLite 不支持 ADD COLUMN IF NOT EXISTS）
+  const addColumn = (table: string, column: string, definition: string) => {
+    const rows = db.all(`PRAGMA table_info(${table})`) as unknown as { name: string }[];
+    if (!rows.some((r) => r.name === column)) {
+      db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+    }
+  };
+  addColumn('watering_device_state', 'last_action_name', 'TEXT');
+  addColumn('watering_device_state', 'last_action_duration', 'INTEGER');
+  addColumn('watering_device_state', 'last_action_started_at', 'INTEGER');
+  addColumn('watering_device_state', 'last_action_finished_at', 'INTEGER');
 }
 
 /**
@@ -206,7 +226,8 @@ export async function getAllDevices(): Promise<DeviceItem[]> {
            s.state_id, s.switch, s.buttons, s.sensors as state_sensors, s.loads,
            s.current_index, s.current_process, s.message,
            s.idle_since, s.last_action_type, s.step_index,
-           s.last_tick_time as state_last_tick_time, s.last_write_time as state_last_write_time
+           s.last_tick_time as state_last_tick_time, s.last_write_time as state_last_write_time,
+           s.last_action_name, s.last_action_duration, s.last_action_started_at, s.last_action_finished_at
     FROM watering_device d
     LEFT JOIN watering_device_state s ON d.chip_id = s.chip_id
     ORDER BY d.name
@@ -251,6 +272,14 @@ export async function getAllDevices(): Promise<DeviceItem[]> {
       item.lastTickTime = row.state_last_tick_time ?? undefined;
       // 60 秒内心跳视为在线
       item.isOnline = !!(row.state_last_tick_time && (now - row.state_last_tick_time) <= 60 * 1000);
+      // 最后执行信息（仅在有完成的进程时构造）
+      if (row.last_action_name && row.last_action_finished_at != null) {
+        item.lastFinish = {
+          actionName: row.last_action_name,
+          duration: row.last_action_duration ?? 0,
+          finishedAt: row.last_action_finished_at,
+        };
+      }
     }
 
     return item;
@@ -367,13 +396,15 @@ export async function getDeviceState(chipId: string): Promise<DeviceState | null
 export async function saveDeviceState(state: DeviceState) {
   const db = getDb();
   db.run(`
-    INSERT INTO watering_device_state (chip_id, state_id, switch, buttons, sensors, loads, current_index, current_process, message, last_tick_time, last_write_time, idle_since, last_action_type, step_index)
-    VALUES (@chip_id, @state_id, @switch, @buttons, @sensors, @loads, @current_index, @current_process, @message, @last_tick_time, @last_write_time, @idle_since, @last_action_type, @step_index)
+    INSERT INTO watering_device_state (chip_id, state_id, switch, buttons, sensors, loads, current_index, current_process, message, last_tick_time, last_write_time, idle_since, last_action_type, step_index, last_action_name, last_action_duration, last_action_started_at, last_action_finished_at)
+    VALUES (@chip_id, @state_id, @switch, @buttons, @sensors, @loads, @current_index, @current_process, @message, @last_tick_time, @last_write_time, @idle_since, @last_action_type, @step_index, @last_action_name, @last_action_duration, @last_action_started_at, @last_action_finished_at)
     ON CONFLICT(chip_id) DO UPDATE SET
       state_id=@state_id, switch=@switch, buttons=@buttons, sensors=@sensors, loads=@loads,
       current_index=@current_index, current_process=@current_process, message=@message,
       last_tick_time=@last_tick_time, last_write_time=@last_write_time,
-      idle_since=@idle_since, last_action_type=@last_action_type, step_index=@step_index
+      idle_since=@idle_since, last_action_type=@last_action_type, step_index=@step_index,
+      last_action_name=@last_action_name, last_action_duration=@last_action_duration,
+      last_action_started_at=@last_action_started_at, last_action_finished_at=@last_action_finished_at
   `, {
     '@chip_id': state.chipId,
     '@state_id': state.stateId,
@@ -387,6 +418,10 @@ export async function saveDeviceState(state: DeviceState) {
     '@idle_since': state.idleSince ?? null,
     '@last_action_type': state.lastActionType ?? null,
     '@step_index': state.stepIndex ?? null,
+    '@last_action_name': state.lastActionName ?? null,
+    '@last_action_duration': state.lastActionDuration ?? null,
+    '@last_action_started_at': state.lastActionStartedAt ?? null,
+    '@last_action_finished_at': state.lastActionFinishedAt ?? null,
     '@last_tick_time': Date.now(),
     '@last_write_time': state.lastWriteTime,
   });
