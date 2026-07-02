@@ -15,6 +15,7 @@ import { useState } from 'react';
 import { removeDevice, setDeviceSwitch } from '../actions';
 import { calcSensorReadings } from '../utils/calc-sensor';
 
+import { formatRelativeTime, formatActionDuration } from '../utils/format-time';
 import { StepProgress } from './step-progress';
 
 import type { DeviceItem } from '../types';
@@ -324,6 +325,18 @@ export function DeviceCard({
             })()}
           </div>
         )}
+
+        {/* 最后执行信息 — 仅在有记录且不超过 3 天时显示 */}
+        {device.lastFinish &&
+          Date.now() - device.lastFinish.finishedAt < 3 * 24 * 60 * 60 * 1000 && (
+            <div className="mt-2 text-xs text-gray-400">
+              {formatRelativeTime(Date.now() - device.lastFinish.finishedAt)}
+              {' · '}
+              {device.lastFinish.actionName}
+              {' · '}
+              {formatActionDuration(device.lastFinish.duration)}
+            </div>
+          )}
 
         {/* 步骤进度 — 设备运行且当前流程有步骤配置时展示 */}
         {device.state?.switch === 'on' && device.state.process && (
