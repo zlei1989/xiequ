@@ -531,6 +531,15 @@ export async function clearDeviceLogs(chipId: string) {
 }
 
 /**
+ * 清空传感器采样日志
+ */
+// eslint-disable-next-line @typescript-eslint/require-await -- SQLite WASM 驱动为同步，保持 async 契约
+export async function clearSensorLogs(chipId: string) {
+  const db = getDb();
+  db.run('DELETE FROM watering_sensor_log WHERE chip_id = ?', chipId);
+}
+
+/**
  * 写入传感器采样日志
  *
  * 每次写入后附带清理 7 天前的数据，保持表规模可控。

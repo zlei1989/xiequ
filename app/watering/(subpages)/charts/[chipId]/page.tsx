@@ -8,7 +8,8 @@
 
 'use client';
 
-import { CapsuleTabs, DotLoading, ErrorBlock, NavBar } from 'antd-mobile';
+import { Button, CapsuleTabs, Dialog, DotLoading, ErrorBlock, NavBar, Toast } from 'antd-mobile';
+import { DeleteOutline } from 'antd-mobile-icons';
 import { useParams, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import {
@@ -21,7 +22,7 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 
-import { getSensorLogs } from '@/app/watering/actions';
+import { clearSensorLogs, getSensorLogs } from '@/app/watering/actions';
 
 /** 时间范围选项 */
 const RANGES = [
@@ -132,10 +133,38 @@ export default function SensorChartPage() {
     void fetchData();
   }, [fetchData]);
 
+  /** 清空传感器采样日志：弹窗确认 → 执行清空 → Toast 提示 */
+  async function handleClear() {
+    const confirmed = await Dialog.confirm({
+      title: '确认清空环境日志？',
+      content: '操作不可撤销',
+    });
+    if (!confirmed) return;
+
+    try {
+      await clearSensorLogs(chipId);
+      Toast.show({ icon: 'success', content: '环境日志已清空' });
+      await fetchData();
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : '清空环境日志失败';
+      console.error('[Watering] 清空环境日志失败:', { chipId, message, stack: err instanceof Error ? err.stack : undefined });
+      Toast.show({ icon: 'fail', content: message });
+    }
+  }
+
   return (
     <>
       <div className="sticky top-0 z-10 bg-[var(--background)]">
-        <NavBar onBack={() => { router.back(); }}>传感器趋势</NavBar>
+        <NavBar
+          right={
+            <Button size="small" onClick={() => { void handleClear(); }}>
+              <DeleteOutline />
+            </Button>
+          }
+          onBack={() => { router.back(); }}
+        >
+          传感器趋势
+        </NavBar>
       </div>
 
       <div className="px-3 pb-6">
