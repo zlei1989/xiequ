@@ -384,6 +384,10 @@ export async function getDeviceState(chipId: string): Promise<DeviceState | null
     message: row.message ?? undefined,
     idleSince: row.idle_since ?? undefined,
     lastActionType: (row.last_action_type ?? undefined) as DeviceState['lastActionType'],
+    lastActionName: row.last_action_name ?? undefined,
+    lastActionDuration: row.last_action_duration ?? undefined,
+    lastActionStartedAt: row.last_action_started_at ?? undefined,
+    lastActionFinishedAt: row.last_action_finished_at ?? undefined,
     stepIndex: row.step_index ?? undefined,
     lastWriteTime: row.last_write_time,
   };
