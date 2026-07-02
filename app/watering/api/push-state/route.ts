@@ -148,6 +148,12 @@ export async function GET(request: NextRequest) {
       console.info('[Watering] finish 清除执行状态', { chipId });
       const state = await getDeviceState(chipId);
       if (state && state.switch !== 'off') {
+        // 持久化最后执行信息：进程名、耗时、完成时间
+        state.lastActionName = state.process?.name;
+        state.lastActionDuration = state.lastActionStartedAt != null
+          ? Date.now() - state.lastActionStartedAt
+          : 0;
+        state.lastActionFinishedAt = Date.now();
         state.switch = 'off';
         state.index = undefined;
         state.process = undefined;
