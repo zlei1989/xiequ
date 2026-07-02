@@ -10,12 +10,12 @@
 import { ActionSheet, Button, Card, Dialog, Tag, Toast } from 'antd-mobile';
 import { TextOutline, SetOutline } from 'antd-mobile-icons';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { removeDevice, setDeviceSwitch } from '../actions';
 import { calcSensorReadings } from '../utils/calc-sensor';
-
 import { formatRelativeTime, formatActionDuration } from '../utils/format-time';
+
 import { StepProgress } from './step-progress';
 
 import type { DeviceItem } from '../types';
@@ -30,6 +30,23 @@ export function DeviceCard({
   const router = useRouter();
   const [actionVisible, setActionVisible] = useState(false);
   const [logsVisible, setLogsVisible] = useState(false);
+  /** 当前时间戳（毫秒），用于计算相对时间。每 10 秒刷新一次。 */
+  const [now, setNow] = useState<number>(0);
+
+  useEffect(() => {
+    if (!device.lastFinish) return;
+    const id = setTimeout(() => {
+      setNow(Date.now());
+      timer = setInterval(() => {
+        setNow(Date.now());
+      }, 10000);
+    }, 0);
+    let timer: ReturnType<typeof setInterval> | undefined;
+    return () => {
+      clearTimeout(id);
+      if (timer) clearInterval(timer);
+    };
+  }, [device.lastFinish]);
 
   /** ActionSheet 菜单分发 */
   function handleAction(action: { key: string | number }) {
@@ -328,15 +345,15 @@ export function DeviceCard({
 
         {/* 最后执行信息 — 仅在有记录且不超过 3 天时显示 */}
         {device.lastFinish &&
-          Date.now() - device.lastFinish.finishedAt < 3 * 24 * 60 * 60 * 1000 && (
-            <div className="mt-2 text-xs text-gray-400">
-              {formatRelativeTime(Date.now() - device.lastFinish.finishedAt)}
-              {' · '}
-              {device.lastFinish.actionName}
-              {' · '}
-              {formatActionDuration(device.lastFinish.duration)}
-            </div>
-          )}
+          now - device.lastFinish.finishedAt < 3 * 24 * 60 * 60 * 1000 && (
+          <div className="mt-2 text-xs text-gray-400">
+            {formatRelativeTime(now - device.lastFinish.finishedAt)}
+            {' · '}
+            {device.lastFinish.actionName}
+            {' · '}
+            {formatActionDuration(device.lastFinish.duration)}
+          </div>
+        )}
 
         {/* 步骤进度 — 设备运行且当前流程有步骤配置时展示 */}
         {device.state?.switch === 'on' && device.state.process && (
