@@ -9,6 +9,7 @@
 
 import { Card, Space, Steps, Tag } from 'antd-mobile';
 import React, { useEffect, useState } from 'react';
+import { formatSimpleDuration } from '../utils/format-time';
 
 /** ── 常量 ── */
 
@@ -251,20 +252,7 @@ export function formatDuration(items: LogItem[]): string {
   return formatSimpleDuration(seconds);
 }
 
-/**
- * 格式化秒数为中文简化形式
- *
- * 用于流程用时和休眠时长。
- */
-export function formatSimpleDuration(seconds: number): string {
-  if (seconds < 60) return '刚刚';
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${String(minutes)}分钟`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${String(hours)}小时`;
-  const days = Math.floor(hours / 24);
-  return `${String(days)}天`;
-}
+export { formatSimpleDuration } from '../utils/format-time';
 
 /**
  * 将秒数转为中文可读格式
