@@ -161,6 +161,14 @@ export type DeviceState = {
   lastActionType?: 'bootstrap' | 'button' | 'change' | 'finish' | 'heartbeat';
   /** 当前执行的步骤索引（ROM change 上报，undefined 表示未追踪） */
   stepIndex?: number;
+  /** 最后完成的进程名 */
+  lastActionName?: string;
+  /** 最后完成的进程耗时（毫秒） */
+  lastActionDuration?: number;
+  /** 最后进程开始时间戳（毫秒），持久保留 */
+  lastActionStartedAt?: number;
+  /** 最后进程完成时间戳（毫秒） */
+  lastActionFinishedAt?: number;
   lastWriteTime: string;
 };
 
@@ -171,4 +179,13 @@ export type DeviceItem = DeviceConfig & {
   lastTickTime?: number;
   /** 是否在线（基于心跳超时判断） */
   isOnline?: boolean;
+  /** 最后一次完成的进程执行信息 */
+  lastFinish?: {
+    /** 进程名 */
+    actionName: string;
+    /** 进程耗时（毫秒） */
+    duration: number;
+    /** 完成时间戳（毫秒） */
+    finishedAt: number;
+  };
 };
