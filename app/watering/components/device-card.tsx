@@ -243,8 +243,10 @@ export function DeviceCard({
             <span className="text-xs text-gray-400">网卡: </span>
             <span className="text-xs">{device.macAddress}</span>
           </div>
-          {/* 传感器展示 — 设备信息区下方 */}
+          {/* 传感器展示 — 设备信息区下方。超过 30 分钟无状态更新则隐藏（数据已过时） */}
           {sensorReadings.length > 0 &&
+            device.state?.lastWriteTime &&
+            now - new Date(device.state.lastWriteTime).getTime() < 30 * 60 * 1000 &&
             sensorReadings.map((reading, idx) => {
               const config = device.sensors[idx];
               if (!config) return null;
