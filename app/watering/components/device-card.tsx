@@ -34,7 +34,6 @@ export function DeviceCard({
   const [now, setNow] = useState<number>(0);
 
   useEffect(() => {
-    if (!device.lastFinish) return;
     const id = setTimeout(() => {
       setNow(Date.now());
       timer = setInterval(() => {
@@ -46,7 +45,7 @@ export function DeviceCard({
       clearTimeout(id);
       if (timer) clearInterval(timer);
     };
-  }, [device.lastFinish]);
+  }, []);
 
   /** ActionSheet 菜单分发 */
   function handleAction(action: { key: string | number }) {
