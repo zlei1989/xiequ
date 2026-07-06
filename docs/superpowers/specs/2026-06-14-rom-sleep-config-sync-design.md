@@ -58,21 +58,108 @@ ALTER TABLE watering_device_state ADD COLUMN last_action_type TEXT;
 
 ## 完整数据流
 
+### 定时器唤醒（无任务→立即休眠）
+
 ```
-用户在 UI 配置:
-  idleSleep = true
-  idleTimeout = 60000 (1分钟)
-  switch = 'off'
-  schedules = [{ type: 'day', value: 28800000, interval: 1 }]  // 每天 8:00
+ROM 定时器唤醒 (cause=4)
          │
          ▼
   ┌───────────────────────────────────────┐
   │           push-state/route.ts          │
-  │  每次收到 ROM 动作 (bootstrap/change/   │
-  │  finish/heartbeat) → 更新 idle_since   │
+  │  bootstrap:                            │
+  │    cause=4 → idleSince = 过去时间      │
+  │    无 bootExec → switch 保持 'off'     │
+  └───────────────────────────────────────┘
+         │
+         ▼  ROM 立即轮询 get-state
+  ┌───────────────────────────────────────┐
+  │          get-state/route.ts            │
+  │                                       │
+  │  ① 检查计划任务 → 无到期任务            │
+  │  ② idleSleep === true?               │→ yes
+  │  ③ switch === 'off'?                 │→ yes
+  │  ④ now - idleSince >= idleTimeout?   │→ yes（idleSince 是过去时间）
+  │  ⑤ calcSleepDuration():              │
+  │     距下次计划任务 10 分钟              │
+  │     → sleepDuration = 600000          │
+  └───────────────────────────────────────┘
+         │ JSON: { sleepDuration: 600000 }
+         ▼
+  ┌───────────────────────────────────────┐
+  │            ESP32 ROM                  │
+  │  sleepDuration > 0 && _idled           │
+  │  → esp_deep_sleep_start()             │
+  │  → 10 分钟后定时唤醒                   │
+  └───────────────────────────────────────┘
+```
+
+### 正常上电（需等待 idleTimeout）
+
+```
+ROM 正常上电 (cause=0)
+         │
+         ▼
+  ┌───────────────────────────────────────┐
+  │           push-state/route.ts          │
+  │  bootstrap:                            │
+  │    cause=0 → idleSince = Date.now()   │
+  │    bootExec 命中 → switch = 'on'       │
+  └───────────────────────────────────────┘
+         │
+         ▼  ROM 执行 bootExec 流程...
+         ▼  finish 后 → switch='off', idleSince=当前时间(重置)
+         ▼  ROM 每 15 秒轮询 get-state
+  ┌───────────────────────────────────────┐
+  │          get-state/route.ts            │
+  │                                       │
+  │  ① 检查计划任务 → 未到时间              │
+  │  ② idleSleep === true?               │→ yes
+  │  ③ switch === 'off'?                 │→ yes
+  │  ④ now - idleSince >= idleTimeout?   │→ 等待中... (idleSince 是当前时间)
+  │     ... 1 分钟后 ...                  │→ yes！
+  │  ⑤ calcSleepDuration():              │
+  │     → sleepDuration = 600000          │
+  └───────────────────────────────────────┘
+         │ JSON: { sleepDuration: 600000 }
+         ▼
+  ┌───────────────────────────────────────┐
+  │            ESP32 ROM                  │
+  │  → esp_deep_sleep_start()             │
+  └───────────────────────────────────────┘
+```
+
+### 正常上电无 bootExec（直接等待超时）
+
+```
+ROM 正常上电 (cause=0)
+         │
+         ▼
+  ┌───────────────────────────────────────┐
+  │           push-state/route.ts          │
+  │  bootstrap:                            │
+  │    cause=0 → idleSince = Date.now()   │
+  │    bootExec=-1 → switch 保持 'off'     │
   └───────────────────────────────────────┘
          │
          ▼  ROM 每 15 秒轮询 get-state
+  ┌───────────────────────────────────────┐
+  │          get-state/route.ts            │
+  │                                       │
+  │  ① 检查计划任务 → 无到期任务            │
+  │  ② idleSleep === true?               │→ yes
+  │  ③ switch === 'off'?                 │→ yes
+  │  ④ now - idleSince >= idleTimeout?   │→ no（idleSince 是当前时间，刚启动）
+  │     → 不下发 sleepDuration            │
+  │     ... 等待 idleTimeout ...          │→ yes！
+  │     → sleepDuration = 600000          │
+  └───────────────────────────────────────┘
+         │ JSON: { sleepDuration: 600000 }
+         ▼
+  ┌───────────────────────────────────────┐
+  │            ESP32 ROM                  │
+  │  → esp_deep_sleep_start()             │
+  └───────────────────────────────────────┘
+```
   ┌───────────────────────────────────────┐
   │          get-state/route.ts            │
   │                                       │
@@ -266,6 +353,25 @@ if (_sleepDuration > 0 && _idled) {
 
 `getStateQuery` 中 `sleepDuration` 已排除（不变），无需额外修改。
 
+## bootstrap idleSince 策略
+
+`pushState` 处理 `bootstrap` 事件时，`idleSince` 的设置取决于 ROM 上报的启动原因（`cause` 字段）：
+
+| 启动原因 | cause 值 | idleSince | 行为 |
+|----------|----------|-----------|------|
+| 正常上电（冷启动） | `0` | `Date.now()` | 重新计时，需等待 `idleTimeout` 后才允许休眠 |
+| 外部引脚唤醒 | `2` | `Date.now()` | 用户可能想操作，重新计时 |
+| 定时器唤醒（深睡眠醒来） | `4` | `Date.now() - idleTimeout - 1s` | 设为过去时间，无任务时首次 `get-state` 即可立即休眠 |
+
+**设计理由**：
+
+- **定时器唤醒**：设备是按计划自己醒来的，唯一目的是检查有没有待执行的任务。如果无任务，应该尽快回到睡眠以省电。
+- **正常上电/外部唤醒**：用户主动接通电源或按了按钮，很可能打算进行配置或手动操作。立即进入睡眠会让用户来不及操作，白白耗电等待下次唤醒。
+
+**与 bootExec 的关系**：
+
+正常上电触发 `bootExec` 时，`switch` 变为 `'on'`，流程执行期间不会休眠。流程 `finish` 后 `idleSince` 被当前时间重置，重新开始计时。即使用户没开 `idleSleep`，`bootExec` 的流程执行也不受影响。
+
 ## 不变的部分
 
 | 组件 | 状态 |
@@ -289,6 +395,8 @@ if (_sleepDuration > 0 && _idled) {
 - [ ] `get-state` 在 `idleSleep=false` 时不包含 `sleepDuration`
 - [ ] `get-state` 在 `switch='on'` 时不包含 `sleepDuration`
 - [ ] `get-state` 在 `idleSince` 未超时时不包含 `sleepDuration`
+- [ ] bootstrap 时正常上电(cause=0/2)→`idleSince`=当前时间，需等待 `idleTimeout`
+- [ ] bootstrap 时定时器唤醒(cause=4)→`idleSince`=过去时间，无任务立即休眠
 - [ ] ROM 收到 `sleepDuration > 0` 直接深睡，不做倒数
 - [ ] ROM 深睡带定时唤醒，到期自动重启联网
 - [ ] ROM 移除 `_lastOperationTime` 相关代码
