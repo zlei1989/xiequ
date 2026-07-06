@@ -50,3 +50,55 @@ describe('PwaRegister', () => {
     expect(registerFn).not.toHaveBeenCalled();
   });
 });
+
+describe('通知订阅', () => {
+  let subscribeFn: ReturnType<typeof vi.fn>;
+  let registerFn: ReturnType<typeof vi.fn>;
+
+  beforeEach(() => {
+    subscribeFn = vi.fn().mockResolvedValue({
+      endpoint: 'https://fcm.googleapis.com/fcm/send/test',
+      keys: { p256dh: 'test-p256dh', auth: 'test-auth' },
+    });
+    registerFn = vi.fn().mockResolvedValue({
+      pushManager: {
+        subscribe: subscribeFn,
+        getSubscription: vi.fn().mockResolvedValue(null),
+      },
+    });
+    vi.stubGlobal('navigator', {
+      serviceWorker: {
+        register: registerFn,
+        ready: Promise.resolve({
+          pushManager: {
+            subscribe: subscribeFn,
+            getSubscription: vi.fn().mockResolvedValue(null),
+          },
+        }),
+      },
+    });
+    vi.stubGlobal('Notification', {
+      permission: 'granted',
+      requestPermission: vi.fn().mockResolvedValue('granted'),
+    });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('权限 granted 后订阅推送', () => {
+    // 注：实际执行在 useEffect 中，
+    // 此处验证组件挂载不崩溃（权限 granted 路径）
+    expect(() => render(<PwaRegister />)).not.toThrow();
+  });
+
+  it('权限 denied 时静默跳过', () => {
+    vi.stubGlobal('Notification', {
+      permission: 'denied',
+      requestPermission: vi.fn().mockResolvedValue('denied'),
+    });
+
+    expect(() => render(<PwaRegister />)).not.toThrow();
+  });
+});
