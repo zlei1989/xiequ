@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { execCallback } from '@/app/watering/services/callback-map';
-import { calcSensorReadings, getDeviceConfig, getDeviceState, saveDeviceConfig, saveDeviceState, updateIdleSince, updateTick, writeDeviceLog } from '@/app/watering/services/db';
+import { calcSensorReadings, getDeviceConfig, getDeviceState, resetOfflineNotified, saveDeviceConfig, saveDeviceState, updateIdleSince, updateTick, writeDeviceLog } from '@/app/watering/services/db';
 import { newId } from '@/lib/utils';
 
 import type { NextRequest } from 'next/server';
@@ -18,6 +18,9 @@ export async function GET(request: NextRequest) {
 
   // 刷新心跳
   await updateTick(chipId);
+
+  // 设备在线心跳 → 复位离线通知状态（允许下次离线时再次通知）
+  await resetOfflineNotified(chipId);
 
   // 解析 GPIO 状态
   const gpioState: {
@@ -117,10 +120,15 @@ export async function GET(request: NextRequest) {
       if (state.switch === 'on' && state.process) {
         await writeDeviceLog(chipId, 'execute', macAddress, { index: state.index, trigger: 'bootstrap' }, bootstrapReadings, state.stateId);
       }
-      // 将 idleSince 设为过去的时间点（now - idleTimeout - 1s），
-      // 使唤醒后首次 get-state 立即满足空闲超时检查，无需等待即可休眠。
+      // 根据启动原因设置 idleSince：
+      // - 正常上电(cause=0)或外部唤醒(cause=2)：设为当前时间，需等待 idleTimeout 后才允许休眠
+      // - 定时器唤醒(cause=4)：设为过去时间，无任务时首次 get-state 即可立即休眠
       // 若设备有 pending 工作（bootExec/计划任务），switch 已为 'on' 不会触发休眠。
-      const bootstrapIdleSince = Date.now() - config.idleTimeout - 1000;
+      const cause = searchParams.get('cause') || '';
+      const isColdBoot = cause === '0' || cause === '2';
+      const bootstrapIdleSince = isColdBoot
+        ? Date.now()
+        : Date.now() - config.idleTimeout - 1000;
       await updateIdleSince(chipId, 'bootstrap', bootstrapIdleSince);
       break;
     }
