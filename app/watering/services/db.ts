@@ -65,6 +65,8 @@ interface JoinRow extends DeviceRow {
   state_last_tick_time: number | null;
   /** s.last_write_time 别名 */
   state_last_write_time: string | null;
+  /** s.offline_notified */
+  state_offline_notified: number | null;
   last_action_name: string | null;
   last_action_duration: number | null;
   last_action_started_at: number | null;
@@ -212,6 +214,20 @@ export async function initDb() {
   addColumn('watering_device_state', 'last_action_duration', 'INTEGER');
   addColumn('watering_device_state', 'last_action_started_at', 'INTEGER');
   addColumn('watering_device_state', 'last_action_finished_at', 'INTEGER');
+
+  // 新增列——offline_notified（设备离线通知状态）
+  addColumn('watering_device_state', 'offline_notified', 'INTEGER DEFAULT 0');
+
+  // push_subscriptions——Web Push 浏览器订阅
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS push_subscriptions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      endpoint TEXT NOT NULL UNIQUE,
+      p256dh_key TEXT NOT NULL,
+      auth_key TEXT NOT NULL,
+      created_time TEXT NOT NULL
+    )
+  `);
 }
 
 /**
@@ -227,6 +243,7 @@ export async function getAllDevices(): Promise<DeviceItem[]> {
            s.current_index, s.current_process, s.message,
            s.idle_since, s.last_action_type, s.step_index,
            s.last_tick_time as state_last_tick_time, s.last_write_time as state_last_write_time,
+           s.offline_notified as state_offline_notified,
            s.last_action_name, s.last_action_duration, s.last_action_started_at, s.last_action_finished_at
     FROM watering_device d
     LEFT JOIN watering_device_state s ON d.chip_id = s.chip_id
@@ -270,6 +287,7 @@ export async function getAllDevices(): Promise<DeviceItem[]> {
         lastWriteTime: row.state_last_write_time as string,
       };
       item.lastTickTime = row.state_last_tick_time ?? undefined;
+      item.offlineNotified = row.state_offline_notified ?? undefined;
       // 60 秒内心跳视为在线
       item.isOnline = !!(row.state_last_tick_time && (now - row.state_last_tick_time) <= 60 * 1000);
       // 最后执行信息（仅在有完成的进程时构造）
@@ -440,7 +458,10 @@ export async function updateTick(chipId: string) {
   const now = Date.now();
   const existing = db.get('SELECT 1 FROM watering_device_state WHERE chip_id = ?', chipId);
   if (existing) {
-    db.run('UPDATE watering_device_state SET last_tick_time = ? WHERE chip_id = ?', [now, chipId]);
+    db.run(
+      'UPDATE watering_device_state SET last_tick_time = ?, last_write_time = ? WHERE chip_id = ?',
+      [now, new Date().toISOString(), chipId],
+    );
   }
 }
 
@@ -467,8 +488,10 @@ export async function updateIdleSince(
   const now = customIdleSince ?? Date.now();
   const existing = db.get('SELECT 1 FROM watering_device_state WHERE chip_id = ?', chipId);
   if (existing) {
-    db.run('UPDATE watering_device_state SET idle_since = ?, last_action_type = ? WHERE chip_id = ?',
-      [now, actionType, chipId]);
+    db.run(
+      'UPDATE watering_device_state SET idle_since = ?, last_action_type = ?, last_write_time = ? WHERE chip_id = ?',
+      [now, actionType, new Date().toISOString(), chipId],
+    );
   }
 }
 
@@ -667,4 +690,91 @@ export async function hasScheduleLog(
     [chipId, triggerTime],
   );
   return !!row;
+}
+
+/** push_subscriptions 原始行 */
+interface PushSubscriptionRow {
+  endpoint: string;
+  p256dh_key: string;
+  auth_key: string;
+  created_time: string;
+}
+
+/**
+ * 获取所有 Web Push 订阅
+ *
+ * 遍历所有订阅逐个推送，调用方负责处理单个推送失败。
+ */
+// eslint-disable-next-line @typescript-eslint/require-await -- SQLite WASM 驱动为同步，保持 async 契约
+export async function getPushSubscriptions(): Promise<
+  { endpoint: string; keys: { p256dh: string; auth: string } }[]
+> {
+  const db = getDb();
+  const rows = db.all(
+    'SELECT * FROM push_subscriptions ORDER BY created_time DESC',
+  ) as unknown as PushSubscriptionRow[];
+  return rows.map((r) => ({
+    endpoint: r.endpoint,
+    keys: { p256dh: r.p256dh_key, auth: r.auth_key },
+  }));
+}
+
+/**
+ * 保存或更新 Web Push 订阅
+ *
+ * endpoint 为唯一键，重复订阅覆盖密钥和创建时间。
+ */
+// eslint-disable-next-line @typescript-eslint/require-await -- SQLite WASM 驱动为同步，保持 async 契约
+export async function upsertPushSubscription(sub: {
+  endpoint: string;
+  keys: { p256dh: string; auth: string };
+}): Promise<void> {
+  const db = getDb();
+  const now = new Date().toISOString();
+  db.run(
+    `INSERT INTO push_subscriptions (endpoint, p256dh_key, auth_key, created_time)
+     VALUES (?, ?, ?, ?)
+     ON CONFLICT(endpoint) DO UPDATE SET p256dh_key=?, auth_key=?, created_time=?`,
+    [sub.endpoint, sub.keys.p256dh, sub.keys.auth, now, sub.keys.p256dh, sub.keys.auth, now],
+  );
+}
+
+/**
+ * 删除 Web Push 订阅
+ *
+ * endpoint 不存在时静默跳过。
+ */
+// eslint-disable-next-line @typescript-eslint/require-await -- SQLite WASM 驱动为同步，保持 async 契约
+export async function deletePushSubscription(endpoint: string): Promise<void> {
+  const db = getDb();
+  db.run('DELETE FROM push_subscriptions WHERE endpoint = ?', [endpoint]);
+}
+
+/**
+ * 标记设备离线通知已发送
+ *
+ * 将 offline_notified 设为 1，避免重复通知。
+ */
+// eslint-disable-next-line @typescript-eslint/require-await -- SQLite WASM 驱动为同步，保持 async 契约
+export async function markOfflineNotified(chipId: string): Promise<void> {
+  const db = getDbSync();
+  db.run(
+    'UPDATE watering_device_state SET offline_notified = 1, last_write_time = ? WHERE chip_id = ?',
+    [new Date().toISOString(), chipId],
+  );
+}
+
+/**
+ * 复位设备离线通知状态
+ *
+ * 设备恢复在线（收到心跳）时调用，使设备下次离线时能被再次通知。
+ * 设备不存在时静默跳过。
+ */
+// eslint-disable-next-line @typescript-eslint/require-await -- SQLite WASM 驱动为同步，保持 async 契约
+export async function resetOfflineNotified(chipId: string): Promise<void> {
+  const db = getDbSync();
+  db.run(
+    'UPDATE watering_device_state SET offline_notified = 0, last_write_time = ? WHERE chip_id = ? AND offline_notified = 1',
+    [new Date().toISOString(), chipId],
+  );
 }

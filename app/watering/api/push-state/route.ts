@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 
 import { execCallback } from '@/app/watering/services/callback-map';
-import { calcSensorReadings, getDeviceConfig, getDeviceState, saveDeviceConfig, saveDeviceState, updateIdleSince, updateTick, writeDeviceLog } from '@/app/watering/services/db';
+import { calcSensorReadings, getDeviceConfig, getDeviceState, resetOfflineNotified, saveDeviceConfig, saveDeviceState, updateIdleSince, updateTick, writeDeviceLog } from '@/app/watering/services/db';
+import { parseGpioParams } from '@/app/watering/utils/parse-gpio';
 import { newId } from '@/lib/utils';
 
 import type { NextRequest } from 'next/server';
@@ -19,21 +20,11 @@ export async function GET(request: NextRequest) {
   // 刷新心跳
   await updateTick(chipId);
 
+  // 设备在线心跳 → 复位离线通知状态（允许下次离线时再次通知）
+  await resetOfflineNotified(chipId);
+
   // 解析 GPIO 状态
-  const gpioState: {
-    sensors: Record<string, number>;
-    loads: Record<string, number>;
-  } = { sensors: {}, loads: {} };
-  searchParams.forEach((value, key) => {
-    const match = key.match(/^(sensor|load):(.+)$/);
-    if (match) {
-      const category = match[1] === 'sensor' ? 'sensors' : 'loads';
-      const gpioKey = match[2];
-      if (gpioKey) {
-        gpioState[category][gpioKey] = parseInt(value) || 0;
-      }
-    }
-  });
+  const gpioState = parseGpioParams(searchParams);
 
   // 获取设备配置用于电压计算（bootstrap 分支内可能重新获取/创建）
   const config = await getDeviceConfig(chipId);
@@ -117,10 +108,15 @@ export async function GET(request: NextRequest) {
       if (state.switch === 'on' && state.process) {
         await writeDeviceLog(chipId, 'execute', macAddress, { index: state.index, trigger: 'bootstrap' }, bootstrapReadings, state.stateId);
       }
-      // 将 idleSince 设为过去的时间点（now - idleTimeout - 1s），
-      // 使唤醒后首次 get-state 立即满足空闲超时检查，无需等待即可休眠。
+      // 根据启动原因设置 idleSince：
+      // - 正常上电(cause=0)或外部唤醒(cause=2)：设为当前时间，需等待 idleTimeout 后才允许休眠
+      // - 定时器唤醒(cause=4)：设为过去时间，无任务时首次 get-state 即可立即休眠
       // 若设备有 pending 工作（bootExec/计划任务），switch 已为 'on' 不会触发休眠。
-      const bootstrapIdleSince = Date.now() - config.idleTimeout - 1000;
+      const cause = searchParams.get('cause') || '';
+      const isColdBoot = cause === '0' || cause === '2';
+      const bootstrapIdleSince = isColdBoot
+        ? Date.now()
+        : Date.now() - config.idleTimeout - 1000;
       await updateIdleSince(chipId, 'bootstrap', bootstrapIdleSince);
       break;
     }
@@ -130,14 +126,17 @@ export async function GET(request: NextRequest) {
       const message = searchParams.get('message') || '';
       // 持久化步骤索引（ROM 新增上报）
       const stepIndex = searchParams.get('stepIndex');
-      if (stepIndex !== null) {
-        const state = await getDeviceState(chipId);
+      const state = await getDeviceState(chipId);
+      if (state) {
+        // 更新传感器数据（每次 push-state 都写入最新 GPIO 采样）
+        state.sensors = gpioState.sensors;
+        state.lastWriteTime = new Date().toISOString();
         // 仅当 stateId 匹配时接受 ROM 上报的 stepIndex：
         // 防止用户手动切换步骤后，ROM 延迟到达的旧 change 事件覆盖新值
-        if (state && state.stateId === stateId) {
+        if (stepIndex !== null && state.stateId === stateId) {
           state.stepIndex = parseInt(stepIndex, 10);
-          await saveDeviceState(state);
         }
+        await saveDeviceState(state);
       }
       const changeReadings = calcSensorReadings(config?.sensors ?? [], gpioState.sensors);
       await writeDeviceLog(chipId, 'change', macAddress, { sensors: gpioState.sensors, loads: gpioState.loads, type, stepIndex: stepIndex ?? undefined }, changeReadings, stateId, message);
@@ -147,23 +146,27 @@ export async function GET(request: NextRequest) {
     case 'finish': {
       console.info('[Watering] finish 清除执行状态', { chipId });
       const state = await getDeviceState(chipId);
-      if (state && state.switch !== 'off') {
-        // 持久化最后执行信息：进程名、耗时、完成时间
-        state.lastActionName = state.process?.name;
-        state.lastActionDuration = state.lastActionStartedAt != null
-          ? Date.now() - state.lastActionStartedAt
-          : 0;
-        state.lastActionFinishedAt = Date.now();
-        state.switch = 'off';
-        state.index = undefined;
-        state.process = undefined;
-        state.stepIndex = undefined;
-        state.message = undefined;
-        state.stateId = newId();
+      if (state) {
+        // 更新传感器数据
+        state.sensors = gpioState.sensors;
+        if (state.switch !== 'off') {
+          // 持久化最后执行信息：进程名、耗时、完成时间
+          state.lastActionName = state.process?.name;
+          state.lastActionDuration = state.lastActionStartedAt != null
+            ? Date.now() - state.lastActionStartedAt
+            : 0;
+          state.lastActionFinishedAt = Date.now();
+          state.switch = 'off';
+          state.index = undefined;
+          state.process = undefined;
+          state.stepIndex = undefined;
+          state.message = undefined;
+          state.stateId = newId();
+          // 唤醒正在长轮询等待的设备
+          execCallback(chipId);
+        }
         state.lastWriteTime = new Date().toISOString();
         await saveDeviceState(state);
-        // 唤醒正在长轮询等待的设备
-        execCallback(chipId);
       }
       const finishReadings = calcSensorReadings(config?.sensors ?? [], gpioState.sensors);
       await writeDeviceLog(chipId, 'finish', macAddress, undefined, finishReadings, state?.stateId);
@@ -177,23 +180,26 @@ export async function GET(request: NextRequest) {
       console.info('[Watering] execute 事件', { chipId, trigger, procIndex });
 
       const state = await getDeviceState(chipId);
-      if (
-        state &&
-        state.switch === 'off' &&
-        config &&
-        procIndex >= 0 &&
-        procIndex < config.processes.length
-      ) {
-        state.switch = 'on';
-        state.index = procIndex;
-        state.process = JSON.parse(
-          JSON.stringify(config.processes[procIndex]),
-        ) as typeof state.process;
-        state.lastActionStartedAt = Date.now();
-        // 不生成新 stateId：保持与 ROM 同步，确保后续 change 事件的 stateId 能匹配
+      if (state) {
+        // 更新传感器数据
+        state.sensors = gpioState.sensors;
+        if (
+          state.switch === 'off' &&
+          config &&
+          procIndex >= 0 &&
+          procIndex < config.processes.length
+        ) {
+          state.switch = 'on';
+          state.index = procIndex;
+          state.process = JSON.parse(
+            JSON.stringify(config.processes[procIndex]),
+          ) as typeof state.process;
+          state.lastActionStartedAt = Date.now();
+          // 不生成新 stateId：保持与 ROM 同步，确保后续 change 事件的 stateId 能匹配
+          execCallback(chipId);
+        }
         state.lastWriteTime = new Date().toISOString();
         await saveDeviceState(state);
-        execCallback(chipId);
       }
       const executeReadings = calcSensorReadings(config?.sensors ?? [], gpioState.sensors);
       await writeDeviceLog(chipId, 'execute', macAddress, { index: procIndex, trigger }, executeReadings, state?.stateId);
@@ -201,6 +207,13 @@ export async function GET(request: NextRequest) {
       break;
     }
     default: {
+      // 更新传感器数据到状态表
+      const state = await getDeviceState(chipId);
+      if (state) {
+        state.sensors = gpioState.sensors;
+        state.lastWriteTime = new Date().toISOString();
+        await saveDeviceState(state);
+      }
       await writeDeviceLog(chipId, event || 'heartbeat', macAddress, { sensors: gpioState.sensors, loads: gpioState.loads }, defaultReadings);
       // event 来自固件上报，值域受控；兜底为 heartbeat
       await updateIdleSince(chipId, (event || 'heartbeat') as 'bootstrap' | 'button' | 'change' | 'finish' | 'heartbeat');
