@@ -9,7 +9,7 @@
 
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createAmapMock } from '@/__tests__/__mocks__/amap';
 import { createMarkerEngine } from '@/app/travel/services/marker-engine';

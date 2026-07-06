@@ -8,13 +8,13 @@
 'use client';
 
 import { ActionSheet, Button, Card, Dialog, Tag, Toast } from 'antd-mobile';
-import { TextOutline, SetOutline } from 'antd-mobile-icons';
+import { SetOutline, TextOutline } from 'antd-mobile-icons';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 import { removeDevice, setDeviceSwitch } from '../actions';
 import { calcSensorReadings } from '../utils/calc-sensor';
-import { formatRelativeTime, formatActionDuration } from '../utils/format-time';
+import { formatActionDuration, formatRelativeTime } from '../utils/format-time';
 
 import { StepProgress } from './step-progress';
 

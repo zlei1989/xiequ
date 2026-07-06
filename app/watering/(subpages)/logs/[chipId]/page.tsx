@@ -10,19 +10,19 @@
 
 import {
   Button,
-  NavBar,
-  PullToRefresh,
+  Dialog,
   DotLoading,
   ErrorBlock,
+  NavBar,
+  PullToRefresh,
   Space,
-  Dialog,
   Toast,
 } from 'antd-mobile';
 import { DeleteOutline } from 'antd-mobile-icons';
 import { useRouter } from 'next/navigation';
 import { use, useEffect } from 'react';
 
-import { BootCard, ProcessCard, groupByProcess, mergeConsecutiveBoots, type ProcessGroup } from '../../../components/log-card';
+import { BootCard, groupByProcess, mergeConsecutiveBoots, ProcessCard, type ProcessGroup } from '../../../components/log-card';
 import { useDeviceLogs } from '../../../hooks/use-device-logs';
 
 /** 设备日志页 */

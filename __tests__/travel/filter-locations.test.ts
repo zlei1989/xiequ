@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { filterLocations } from '@/app/travel/lib/filter-locations';
 import type { Location } from '@/app/travel/types';

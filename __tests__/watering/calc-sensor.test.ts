@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import type { SensorConfig } from '@/app/watering/types';
 import { calcSensorReadings } from '@/app/watering/utils/calc-sensor';

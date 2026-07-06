@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
-import { render, screen, cleanup } from '@testing-library/react';
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { cleanup, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { ProcessConfigPicker } from '@/app/watering/components/process-config-picker';
 import type { GpioInfo } from '@/app/watering/hooks/use-device-config';

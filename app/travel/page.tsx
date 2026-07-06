@@ -8,7 +8,7 @@
 
 'use client';
 
-import { useCallback, useRef, useState, useEffect } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { LocationEditPopup } from './components/location-edit-popup';
 import { LocationViewPopup } from './components/location-view-popup';

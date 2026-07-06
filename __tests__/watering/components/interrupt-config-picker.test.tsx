@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import { render, screen } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { InterruptConfigPicker } from '@/app/watering/components/interrupt-config-picker';
 import type { GpioInfo } from '@/app/watering/hooks/use-device-config';

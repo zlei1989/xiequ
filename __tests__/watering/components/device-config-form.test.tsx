@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 
-import { render, screen, act, cleanup } from '@testing-library/react';
+import { act, cleanup, render, screen } from '@testing-library/react';
 import React from 'react';
-import { afterEach, describe, it, expect, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { DeviceConfigForm } from '@/app/watering/components/device-config-form';
 import type { GpioInfo } from '@/app/watering/hooks/use-device-config';

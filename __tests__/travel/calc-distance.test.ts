@@ -5,13 +5,13 @@
  * 以及 readMapCenter 在 localStorage 各类数据场景下的防御性读取行为。
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
-  haversineDistance,
-  readMapCenter,
-  MAP_CENTER_KEY,
   DEFAULT_CENTER,
+  haversineDistance,
+  MAP_CENTER_KEY,
+  readMapCenter,
 } from '@/app/travel/lib/calc-distance';
 
 // ── localStorage / window mock ──

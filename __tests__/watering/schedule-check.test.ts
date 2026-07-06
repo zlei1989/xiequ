@@ -9,7 +9,7 @@
  * - 时区解耦：计算结果不依赖服务器本地时区
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 /** 计划任务检查的最大误差容忍（毫秒） */
 const SCHEDULE_OFFSET = 45 * 60 * 1000;

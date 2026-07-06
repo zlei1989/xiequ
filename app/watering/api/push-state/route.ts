@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { execCallback } from '@/app/watering/services/callback-map';
-import { getDeviceConfig, saveDeviceConfig, getDeviceState, saveDeviceState, writeDeviceLog, updateTick, updateIdleSince, calcSensorReadings } from '@/app/watering/services/db';
+import { calcSensorReadings, getDeviceConfig, getDeviceState, saveDeviceConfig, saveDeviceState, updateIdleSince, updateTick, writeDeviceLog } from '@/app/watering/services/db';
 import { newId } from '@/lib/utils';
 
 import type { NextRequest } from 'next/server';

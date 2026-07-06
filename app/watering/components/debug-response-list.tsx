@@ -6,8 +6,8 @@
 
 'use client';
 
-import { Button, Card, ErrorBlock, List, Tag, Space } from 'antd-mobile';
-import { useState, useCallback } from 'react';
+import { Button, Card, ErrorBlock, List, Space, Tag } from 'antd-mobile';
+import { useCallback, useState } from 'react';
 
 import type { LogEntry } from '../hooks/use-iot-simulator';
 

@@ -15,9 +15,9 @@
 
 import { NextResponse } from 'next/server';
 
-import { setCallback, deleteCallback } from '@/app/watering/services/callback-map';
-import { getDeviceState, getDeviceConfig, updateTick, insertScheduleLog, hasScheduleLog, saveDeviceState, saveDeviceConfig, writeDeviceLog, writeSensorLog, getSensorLogs } from '@/app/watering/services/db';
-import type { DeviceState, DeviceConfig, ScheduleConfig, ProcessConfig } from '@/app/watering/types';
+import { deleteCallback, setCallback } from '@/app/watering/services/callback-map';
+import { getDeviceConfig, getDeviceState, getSensorLogs, hasScheduleLog, insertScheduleLog, saveDeviceConfig, saveDeviceState, updateTick, writeDeviceLog, writeSensorLog } from '@/app/watering/services/db';
+import type { DeviceConfig, DeviceState, ProcessConfig, ScheduleConfig } from '@/app/watering/types';
 import type { SensorConfig } from '@/app/watering/types';
 import { calcSensorReadings } from '@/app/watering/utils/calc-sensor';
 import { filterProcess, filterProcesses } from '@/app/watering/utils/filter-process';

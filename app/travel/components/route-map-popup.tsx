@@ -9,7 +9,7 @@
 'use client';
 
 import { ErrorBlock, List, NavBar, Popup, Toast } from 'antd-mobile';
-import { UnorderedListOutline,EnvironmentOutline } from 'antd-mobile-icons';
+import { EnvironmentOutline,UnorderedListOutline } from 'antd-mobile-icons';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useBackButton } from '@/lib/back-button';
@@ -23,7 +23,7 @@ import { LocationViewPopup } from './location-view-popup';
 import { MomentEditPopup } from './moment-edit-popup';
 import { TripMap } from './trip-map';
 
-import type { Route, RouteMarker, Location, Moment, RouteEntry } from '../types';
+import type { Location, Moment, Route, RouteEntry, RouteMarker } from '../types';
 
 export function RouteMapPopup({
   route,

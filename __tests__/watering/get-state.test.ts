@@ -5,7 +5,7 @@
  * 注意：Promise 阻塞的长轮询行为依赖 callback-map，已在 callback-map.test.ts 中覆盖。
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 /**
  * 模拟 buildResponse 的核心逻辑（纯函数版本，便于测试）

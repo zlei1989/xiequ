@@ -2,7 +2,7 @@
  * 传感器采样逻辑单元测试
  */
 /* eslint-disable @typescript-eslint/no-non-null-assertion -- 测试中断言元素存在后使用 ! 是标准做法 */
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 /**
  * 单元测试 — calcLatestSlot 15分钟自然时间对齐

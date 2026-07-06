@@ -8,7 +8,7 @@
  * - uploadToOss 仅接受 .db 后缀文件
  */
 
-import { existsSync, readFileSync, readdirSync, statSync, unlinkSync } from 'fs';
+import { existsSync, readdirSync, readFileSync, statSync, unlinkSync } from 'fs';
 import path from 'path';
 
 import { getOssAdapter, isOssConfigured } from '@/lib/oss';

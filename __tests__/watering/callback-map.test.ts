@@ -2,7 +2,7 @@
  * callback-map 服务模块单元测试
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // 每个测试用例前重置模块状态：重新导入以清空 Map
 let setCallback: (chipId: string, cb: () => void) => void;

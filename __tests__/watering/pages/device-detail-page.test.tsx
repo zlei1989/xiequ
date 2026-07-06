@@ -8,8 +8,8 @@
  * @vitest-environment jsdom
  */
 
-import { render, cleanup } from '@testing-library/react';
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { cleanup, render } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 // Mock Next.js router + useParams
 vi.mock('next/navigation', () => ({

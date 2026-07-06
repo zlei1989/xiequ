@@ -5,17 +5,17 @@
  * formatScheduleDesc / formatProcessDesc / formatSensorDesc。
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
-import type { StepConfig, InterruptConfig, ScheduleConfig, ProcessConfig, SensorConfig } from '@/app/watering/types';
+import type { InterruptConfig, ProcessConfig, ScheduleConfig, SensorConfig, StepConfig } from '@/app/watering/types';
 import {
-  formatMs,
-  formatStepDesc,
   formatInterruptDesc,
+  formatMs,
+  formatProcessDesc,
   formatScheduleDesc,
   formatScheduleTitle,
-  formatProcessDesc,
   formatSensorDesc,
+  formatStepDesc,
 } from '@/app/watering/utils/format-desc';
 
 // ================================================================

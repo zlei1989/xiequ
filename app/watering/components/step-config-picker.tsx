@@ -7,10 +7,10 @@
 
 'use client';
 
-import { List, Input, Stepper, Switch, Selector, ErrorBlock, Button, Popup, NavBar, Form, SwipeAction, Dialog } from 'antd-mobile';
+import { Button, Dialog, ErrorBlock, Form, Input, List, NavBar, Popup, Selector, Stepper, SwipeAction, Switch } from 'antd-mobile';
 import { renderToBody } from 'antd-mobile/es/utils/render-to-body';
 import { AddOutline, DeleteOutline } from 'antd-mobile-icons';
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import type { GpioInfo } from '@/app/watering/hooks/use-device-config';
 import { useBackButton } from '@/lib/back-button';

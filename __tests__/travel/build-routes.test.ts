@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { buildRoutes } from '@/app/travel/lib/build-routes';
 import type { Location, Route, RouteMarker } from '@/app/travel/types';

@@ -8,7 +8,7 @@
 
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { getDevices } from '../actions';
 import { removeDevice } from '../actions/delete-device';

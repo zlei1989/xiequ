@@ -8,7 +8,7 @@
 // @vitest-environment jsdom
 
 import { renderHook } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 let eventListeners: Record<string, EventListener[]>;
 let pushState: ReturnType<typeof vi.fn>;

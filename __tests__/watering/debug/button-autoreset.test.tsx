@@ -15,8 +15,8 @@
 
 // @vitest-environment jsdom
 
-import { render, screen, fireEvent, act, cleanup } from '@testing-library/react';
-import { describe, it, expect, vi, beforeAll, afterAll, afterEach } from 'vitest';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { DebugForm } from '@/app/watering/components/debug-form';
 import type { DeviceIdentity, GpioState } from '@/app/watering/hooks/use-iot-simulator';

@@ -12,15 +12,15 @@
 import { isOssConfigured } from '@/lib/oss';
 
 import {
-  getLocations,
   addLocation,
-  updateLocation,
-  deleteLocation,
   addMoment,
-  updateMoment,
+  deleteLocation,
   deleteMoment,
-  getPosterUploadUrl,
+  getLocations,
   getPosterStyledUrl,
+  getPosterUploadUrl,
+  updateLocation,
+  updateMoment,
 } from './services/oss';
 
 import type { Location } from './types';

@@ -7,9 +7,9 @@
 
 'use client';
 
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 
-import { fetchLocations, createLocation, editLocation, removeLocation } from '../actions';
+import { createLocation, editLocation, fetchLocations, removeLocation } from '../actions';
 
 import type { Location, Summary } from '../types';
 

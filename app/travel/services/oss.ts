@@ -1,6 +1,6 @@
 import { getOssAdapter, isOssConfigured } from '@/lib/oss';
 import type { OssPutOptions } from '@/lib/oss';
-import { newId, formatDateTime } from '@/lib/utils';
+import { formatDateTime, newId } from '@/lib/utils';
 
 import type { Location } from '../types';
 

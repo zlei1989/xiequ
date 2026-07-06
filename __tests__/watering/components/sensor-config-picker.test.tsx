@@ -8,8 +8,8 @@
 
 // @vitest-environment jsdom
 
-import { fireEvent, render, cleanup } from '@testing-library/react';
-import { afterEach, describe, it, expect, vi } from 'vitest';
+import { cleanup, fireEvent, render } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { SensorConfigPicker } from '@/app/watering/components/sensor-config-picker';
 import type { SensorConfig } from '@/app/watering/types';

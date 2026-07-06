@@ -7,9 +7,9 @@
 
 'use client';
 
-import { NavBar, Button, DotLoading, Dialog, Toast } from 'antd-mobile';
+import { Button, Dialog, DotLoading, NavBar, Toast } from 'antd-mobile';
 import { CheckOutline } from 'antd-mobile-icons';
-import { useRouter, useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useRef } from 'react';
 
 import { DeviceConfigForm } from '../../../components/device-config-form';

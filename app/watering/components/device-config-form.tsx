@@ -12,25 +12,25 @@
 
 import { arrayMove } from '@dnd-kit/sortable';
 import {
-  Input,
-  Stepper,
-  Switch,
   Button,
-  List,
-  Form,
   Dialog,
-  Toast,
-  Picker,
   ErrorBlock,
+  Form,
+  Input,
+  List,
+  Picker,
+  Stepper,
   SwipeAction,
+  Switch,
+  Toast,
 } from 'antd-mobile';
 import {
   AddOutline,
 } from 'antd-mobile-icons';
 import dayjs from 'dayjs';
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
-import { formatProcessDesc, formatScheduleTitle, formatScheduleDesc, formatSensorDesc } from '../utils/format-desc';
+import { formatProcessDesc, formatScheduleDesc, formatScheduleTitle, formatSensorDesc } from '../utils/format-desc';
 
 import { InterruptConfigPicker } from './interrupt-config-picker';
 import { ProcessConfigPicker } from './process-config-picker';
@@ -40,7 +40,7 @@ import { SortableList } from './sortable-list';
 import { StepConfigPicker } from './step-config-picker';
 
 import type { GpioInfo } from '../hooks/use-device-config';
-import type { DeviceConfig, ProcessConfig, StepConfig, InterruptConfig, ScheduleConfig, SensorConfig } from '../types';
+import type { DeviceConfig, InterruptConfig, ProcessConfig, ScheduleConfig, SensorConfig, StepConfig } from '../types';
 
 /** 带 key 的扩展类型（运行时由 crypto.randomUUID() 生成，不存入数据库，仅供 antd Table rowKey 使用） */
 interface WithKey { key?: string; }

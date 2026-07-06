@@ -9,20 +9,20 @@
  */
 
 import { renderToString } from 'react-dom/server';
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import {
+  calcSleepDuration,
+  countSteps,
+  extractProcessNames,
+  formatCause,
+  formatDuration,
+  formatLoadValue,
+  formatMessage,
+  formatSeconds,
   groupByProcess,
   mergeConsecutiveBoots,
-  formatDuration,
-  formatMessage,
-  formatCause,
-  extractProcessNames,
-  countSteps,
-  calcSleepDuration,
-  formatSeconds,
   parseLogMessage,
-  formatLoadValue,
 } from '@/app/watering/components/log-card';
 import type { LogItem, ProcessGroup } from '@/app/watering/components/log-card';
 

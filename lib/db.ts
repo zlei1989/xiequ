@@ -12,7 +12,7 @@
  * @see instrumentation.ts — 应用启动时预初始化数据库
  */
 
-import { mkdirSync, existsSync, rmdirSync } from 'fs';
+import { existsSync, mkdirSync, rmdirSync } from 'fs';
 import path from 'path';
 
 import { Database } from 'node-sqlite3-wasm';

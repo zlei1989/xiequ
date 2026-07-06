@@ -7,7 +7,7 @@
 
 import dayjs from 'dayjs';
 
-import type { ProcessConfig, StepConfig, InterruptConfig, ScheduleConfig, SensorConfig } from '../types';
+import type { InterruptConfig, ProcessConfig, ScheduleConfig, SensorConfig, StepConfig } from '../types';
 
 /**
  * 将毫秒转为中文时间字符串

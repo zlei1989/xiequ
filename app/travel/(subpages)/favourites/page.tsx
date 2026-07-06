@@ -7,8 +7,8 @@
 
 'use client';
 
-import { PullToRefresh, List, DotLoading, ErrorBlock, SearchBar } from 'antd-mobile';
-import { useState, useEffect, useMemo } from 'react';
+import { DotLoading, ErrorBlock, List, PullToRefresh, SearchBar } from 'antd-mobile';
+import { useEffect, useMemo, useState } from 'react';
 
 import { LocationEditPopup } from '../../components/location-edit-popup';
 import { LocationListItem } from '../../components/location-list-item';

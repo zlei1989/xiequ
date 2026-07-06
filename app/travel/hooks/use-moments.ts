@@ -9,7 +9,7 @@
 
 'use client';
 
-import { useMemo, useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 
 import { createMoment, editMoment, removeMoment } from '../actions';
 

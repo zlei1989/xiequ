@@ -3,7 +3,7 @@ import { newId } from '@/lib/utils';
 
 import { calcSensorReadings } from '../utils/calc-sensor';
 
-import type { DeviceConfig, DeviceState, DeviceItem } from '../types';
+import type { DeviceConfig, DeviceItem, DeviceState } from '../types';
 
 /** 日志保留天数 */
 const LOG_RETENTION_DAYS = 7;

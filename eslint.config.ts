@@ -80,6 +80,20 @@ const eslintConfig = tseslint.config(
   },
   // Tailwind CSS — class 排序 + 冲突检测 + 简写建议
   ...tailwindcss.configs["flat/recommended"],
+  // 导入成员排序 — --fix 自动按名称排序 import { ... } 内的命名导出
+  {
+    rules: {
+      "sort-imports": [
+        "warn",
+        {
+          ignoreCase: true,
+          ignoreDeclarationSort: true, // 声明排序由 import-x/order 处理
+          ignoreMemberSort: false,
+          memberSyntaxSortOrder: ["none", "all", "multiple", "single"],
+        },
+      ],
+    },
+  },
   // TypeScript 专项规则
   {
     rules: {
