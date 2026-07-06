@@ -9,10 +9,11 @@ import { useCallback, useEffect, useState } from 'react';
  * - 在客户端注册 Service Worker（/sw.js）
  * - 注册失败静默处理，不影响主功能
  * - 通知权限 granted 时自动订阅 Web Push
- * - 通知权限 denied/missing 时展示订阅按钮
+ * - 通知权限 denied 时展示"通知已关闭"提示
+ * - 通知权限 granted 时展示状态和取消订阅入口
+ * - 通知权限 default 时展示订阅按钮
  *
  * 注意：仅在浏览器环境下执行，"use client" + useEffect 确保 SSR 安全。
- * 不渲染任何 DOM（return null），纯副作用组件。
  */
 export function PwaRegister() {
   /** 通知权限状态：'prompt' | 'granted' | 'denied' | 'unsupported' */
@@ -64,6 +65,30 @@ export function PwaRegister() {
   }, []);
 
   /**
+   * 取消订阅 Web Push 通知
+   *
+   * 流程：获取当前订阅 → pushManager.unsubscribe() → 服务端删除。
+   * 完成后将 UI 重置为"通知已关闭"状态。
+   */
+  const unsubscribe = useCallback(async () => {
+    try {
+      const registration = await navigator.serviceWorker.ready;
+      const currentSub = await registration.pushManager.getSubscription();
+      if (currentSub) {
+        await currentSub.unsubscribe();
+        // 通知服务端删除订阅记录
+        await fetch(`/api/push/subscribe?endpoint=${encodeURIComponent(currentSub.endpoint)}`, {
+          method: 'DELETE',
+        });
+      }
+    } catch (err: unknown) {
+      console.warn('Web Push 取消订阅失败:', err);
+    } finally {
+      setPermission('denied');
+    }
+  }, []);
+
+  /**
    * 请求通知权限
    *
    * 用户点击按钮后显式调用，避免页面加载时弹权限弹窗。
@@ -102,32 +127,62 @@ export function PwaRegister() {
       });
   }, [getPermission, subscribe]);
 
-  // 权限已明确（denied/granted/unsupported），无需渲染按钮
-  if (permission !== 'default') {
+  // 不支持通知的浏览器静默跳过
+  if (permission === 'unsupported') {
     return null;
+  }
+
+  const containerStyle: React.CSSProperties = {
+    position: 'fixed',
+    bottom: 16,
+    right: 16,
+    zIndex: 1000,
+  };
+
+  const buttonStyle: React.CSSProperties = {
+    padding: '10px 20px',
+    backgroundColor: '#1677ff',
+    color: '#fff',
+    border: 'none',
+    borderRadius: 8,
+    fontSize: 14,
+    cursor: 'pointer',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+  };
+
+  // 用户已拒绝通知权限，显示提示文字
+  if (permission === 'denied') {
+    return (
+      <div style={containerStyle}>
+        <span style={{ fontSize: 13, color: '#999' }}>🔕 通知已关闭</span>
+      </div>
+    );
+  }
+
+  // 已授权通知，显示状态和取消订阅入口
+  if (permission === 'granted') {
+    return (
+      <div style={containerStyle}>
+        <span style={{ fontSize: 13, color: '#666' }}>🔔 已开启通知</span>
+        <span style={{ margin: '0 4px', fontSize: 13, color: '#ccc' }}>·</span>
+        <span
+          role="button"
+          style={{ fontSize: 13, color: '#1677ff', cursor: 'pointer' }}
+          tabIndex={0}
+          onClick={() => { void unsubscribe(); }}
+          onKeyDown={(e) => { if (e.key === 'Enter') void unsubscribe(); }}
+        >
+          关闭
+        </span>
+      </div>
+    );
   }
 
   // 首次访问、权限未决定时渲染订阅按钮
   return (
-    <div
-      style={{
-        position: 'fixed',
-        bottom: 16,
-        right: 16,
-        zIndex: 1000,
-      }}
-    >
+    <div style={containerStyle}>
       <button
-        style={{
-          padding: '10px 20px',
-          backgroundColor: '#1677ff',
-          color: '#fff',
-          border: 'none',
-          borderRadius: 8,
-          fontSize: 14,
-          cursor: 'pointer',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-        }}
+        style={buttonStyle}
         onClick={() => { void requestPermission(); }}
       >
         🔔 开启浇水通知
