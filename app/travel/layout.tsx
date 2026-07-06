@@ -15,7 +15,7 @@ import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 
 import { Shell } from './components/shell';
-import { useLocations, TravelContext } from './hooks/use-locations';
+import { TravelContext, useLocations } from './hooks/use-locations';
 
 import type { ReactNode } from 'react';
 

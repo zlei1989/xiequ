@@ -30,7 +30,7 @@ export function UploadImage({
   onSuccess?: () => void;
 }) {
   const [uploading, setUploading] = useState(false);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   const [_previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 

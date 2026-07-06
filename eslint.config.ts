@@ -9,6 +9,7 @@ import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
 import stylistic from "@stylistic/eslint-plugin";
 import importX from "eslint-plugin-import-x";
+import unusedImports from "eslint-plugin-unused-imports";
 import tseslint from "typescript-eslint";
 import tailwindcss from "eslint-plugin-tailwindcss";
 
@@ -45,7 +46,7 @@ const eslintConfig = tseslint.config(
       }],
     },
   },
-  // import-x 排序规则 — 初始 warn
+  // import-x 排序规则 — 初始 warn，--fix 自动调整顺序
   {
     plugins: { "import-x": importX },
     rules: {
@@ -61,6 +62,22 @@ const eslintConfig = tseslint.config(
       "import-x/no-cycle": "warn",
     },
   },
+  // unused-imports — --fix 自动删除未使用的导入和变量
+  {
+    plugins: { "unused-imports": unusedImports },
+    rules: {
+      "unused-imports/no-unused-imports": "error",
+      "unused-imports/no-unused-vars": [
+        "warn",
+        {
+          vars: "all",
+          varsIgnorePattern: "^_",
+          args: "after-used",
+          argsIgnorePattern: "^_",
+        },
+      ],
+    },
+  },
   // Tailwind CSS — class 排序 + 冲突检测 + 简写建议
   ...tailwindcss.configs["flat/recommended"],
   // TypeScript 专项规则
@@ -68,7 +85,8 @@ const eslintConfig = tseslint.config(
     rules: {
       "@typescript-eslint/no-explicit-any": "warn",
       "@typescript-eslint/consistent-type-imports": ["error", { prefer: "type-imports" }],
-      "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
+      // 未使用变量由 unused-imports 插件处理（可 --fix 自动删除）
+      "@typescript-eslint/no-unused-vars": "off",
       // allowNumber: 日志中常嵌入数值型 ID、坐标等，强制 String() 包裹反而降低可读性
       "@typescript-eslint/restrict-template-expressions": ["error", { allowNumber: true }],
     },
