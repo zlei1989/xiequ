@@ -65,6 +65,8 @@ interface JoinRow extends DeviceRow {
   state_last_tick_time: number | null;
   /** s.last_write_time 别名 */
   state_last_write_time: string | null;
+  /** s.offline_notified */
+  state_offline_notified: number | null;
   last_action_name: string | null;
   last_action_duration: number | null;
   last_action_started_at: number | null;
@@ -241,6 +243,7 @@ export async function getAllDevices(): Promise<DeviceItem[]> {
            s.current_index, s.current_process, s.message,
            s.idle_since, s.last_action_type, s.step_index,
            s.last_tick_time as state_last_tick_time, s.last_write_time as state_last_write_time,
+           s.offline_notified as state_offline_notified,
            s.last_action_name, s.last_action_duration, s.last_action_started_at, s.last_action_finished_at
     FROM watering_device d
     LEFT JOIN watering_device_state s ON d.chip_id = s.chip_id
@@ -284,6 +287,7 @@ export async function getAllDevices(): Promise<DeviceItem[]> {
         lastWriteTime: row.state_last_write_time as string,
       };
       item.lastTickTime = row.state_last_tick_time ?? undefined;
+      item.offlineNotified = row.state_offline_notified ?? undefined;
       // 60 秒内心跳视为在线
       item.isOnline = !!(row.state_last_tick_time && (now - row.state_last_tick_time) <= 60 * 1000);
       // 最后执行信息（仅在有完成的进程时构造）
