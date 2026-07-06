@@ -21,6 +21,7 @@ import type { DeviceConfig, DeviceState, ProcessConfig, ScheduleConfig } from '@
 import type { SensorConfig } from '@/app/watering/types';
 import { calcSensorReadings } from '@/app/watering/utils/calc-sensor';
 import { filterProcess, filterProcesses } from '@/app/watering/utils/filter-process';
+import { parseGpioParams } from '@/app/watering/utils/parse-gpio';
 import { newId } from '@/lib/utils';
 
 import type { NextRequest } from 'next/server';
@@ -59,17 +60,8 @@ async function sampleSensorIfNeeded(
   config: { sensors: SensorConfig[] } | null,
   chipId: string,
 ): Promise<void> {
-  // 解析传感器参数（同 push-state 解析方式）
-  const rawSensors: Record<string, number> = {};
-  searchParams.forEach((value, key) => {
-    const match = key.match(/^sensor:(.+)$/);
-    if (match) {
-      const gpioKey = match[1];
-      if (gpioKey) {
-        rawSensors[gpioKey] = parseInt(value) || 0;
-      }
-    }
-  });
+  // 解析传感器参数
+  const { sensors: rawSensors } = parseGpioParams(searchParams);
 
   // 无传感器数据或未配置传感器 — 跳过
   if (!config || Object.keys(rawSensors).length === 0 || !config.sensors.length) return;
@@ -482,6 +474,17 @@ export async function GET(request: NextRequest) {
 
     // 读取设备状态
     const state = await getDeviceState(chipId);
+
+    // 持久化 GPIO 数据（每次 get-state 都写入最新 sensors 和 loads 到状态表）
+    if (state) {
+      const gpio = parseGpioParams(searchParams);
+      if (Object.keys(gpio.sensors).length > 0 || Object.keys(gpio.loads).length > 0) {
+        state.sensors = gpio.sensors;
+        state.loads = gpio.loads;
+        state.lastWriteTime = new Date().toISOString();
+        await saveDeviceState(state);
+      }
+    }
 
     // 计划任务检查（可能更新 state）
     if (state && config) {

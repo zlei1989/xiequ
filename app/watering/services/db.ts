@@ -458,7 +458,10 @@ export async function updateTick(chipId: string) {
   const now = Date.now();
   const existing = db.get('SELECT 1 FROM watering_device_state WHERE chip_id = ?', chipId);
   if (existing) {
-    db.run('UPDATE watering_device_state SET last_tick_time = ? WHERE chip_id = ?', [now, chipId]);
+    db.run(
+      'UPDATE watering_device_state SET last_tick_time = ?, last_write_time = ? WHERE chip_id = ?',
+      [now, new Date().toISOString(), chipId],
+    );
   }
 }
 
@@ -485,8 +488,10 @@ export async function updateIdleSince(
   const now = customIdleSince ?? Date.now();
   const existing = db.get('SELECT 1 FROM watering_device_state WHERE chip_id = ?', chipId);
   if (existing) {
-    db.run('UPDATE watering_device_state SET idle_since = ?, last_action_type = ? WHERE chip_id = ?',
-      [now, actionType, chipId]);
+    db.run(
+      'UPDATE watering_device_state SET idle_since = ?, last_action_type = ?, last_write_time = ? WHERE chip_id = ?',
+      [now, actionType, new Date().toISOString(), chipId],
+    );
   }
 }
 
@@ -753,7 +758,10 @@ export async function deletePushSubscription(endpoint: string): Promise<void> {
 // eslint-disable-next-line @typescript-eslint/require-await -- SQLite WASM 驱动为同步，保持 async 契约
 export async function markOfflineNotified(chipId: string): Promise<void> {
   const db = getDbSync();
-  db.run('UPDATE watering_device_state SET offline_notified = 1 WHERE chip_id = ?', [chipId]);
+  db.run(
+    'UPDATE watering_device_state SET offline_notified = 1, last_write_time = ? WHERE chip_id = ?',
+    [new Date().toISOString(), chipId],
+  );
 }
 
 /**
@@ -766,7 +774,7 @@ export async function markOfflineNotified(chipId: string): Promise<void> {
 export async function resetOfflineNotified(chipId: string): Promise<void> {
   const db = getDbSync();
   db.run(
-    'UPDATE watering_device_state SET offline_notified = 0 WHERE chip_id = ? AND offline_notified = 1',
-    [chipId],
+    'UPDATE watering_device_state SET offline_notified = 0, last_write_time = ? WHERE chip_id = ? AND offline_notified = 1',
+    [new Date().toISOString(), chipId],
   );
 }
