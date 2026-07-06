@@ -34,3 +34,49 @@ self.addEventListener('fetch', (event) => {
     );
   }
 });
+
+/**
+ * Web Push — 接收推送并在设备上展示通知
+ *
+ * 服务端发送的 payload 需包含 title、body 和可选的 data.url。
+ * requireInteraction: true 防止通知自动消失。
+ */
+self.addEventListener('push', (event) => {
+  let payload = { title: '谐趣', body: '' };
+  if (event.data) {
+    try {
+      payload = event.data.json();
+    } catch {
+      // payload 非 JSON 时使用默认标题
+    }
+  }
+  event.waitUntil(
+    self.registration.showNotification(payload.title, {
+      body: payload.body,
+      icon: '/icons/icon-192.png',
+      badge: '/icons/icon-192.png',
+      data: payload.data,
+      requireInteraction: true,
+    })
+  );
+});
+
+/**
+ * 通知点击 — 打开或聚焦目标页面
+ *
+ * 优先查找已打开的窗口并聚焦，无匹配窗口则新开标签。
+ */
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const url = event.notification.data?.url || '/watering';
+  event.waitUntil(
+    clients.matchAll({ type: 'window' }).then((clientList) => {
+      for (const client of clientList) {
+        if (client.url.includes(url) && 'focus' in client) {
+          return client.focus();
+        }
+      }
+      return clients.openWindow(url);
+    })
+  );
+});
