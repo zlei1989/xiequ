@@ -179,8 +179,6 @@ export type DeviceItem = DeviceConfig & {
   lastTickTime?: number;
   /** 是否在线（基于心跳超时判断） */
   isOnline?: boolean;
-  /** 离线通知是否已发送（0=未通知, 1=已通知），用于抑制重复推送 */
-  offlineNotified?: number;
   /** 最后一次完成的进程执行信息 */
   lastFinish?: {
     /** 进程名 */

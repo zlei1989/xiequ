@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { execCallback } from '@/app/watering/services/callback-map';
-import { calcSensorReadings, getDeviceConfig, getDeviceState, resetOfflineNotified, saveDeviceConfig, saveDeviceState, updateIdleSince, updateTick, writeDeviceLog } from '@/app/watering/services/db';
+import { calcSensorReadings, getDeviceConfig, getDeviceState, saveDeviceConfig, saveDeviceState, updateIdleSince, updateTick, writeDeviceLog } from '@/app/watering/services/db';
 import { parseGpioParams } from '@/app/watering/utils/parse-gpio';
 import { newId } from '@/lib/utils';
 
@@ -19,9 +19,6 @@ export async function GET(request: NextRequest) {
 
   // 刷新心跳
   await updateTick(chipId);
-
-  // 设备在线心跳 → 复位离线通知状态（允许下次离线时再次通知）
-  await resetOfflineNotified(chipId);
 
   // 解析 GPIO 状态
   const gpioState = parseGpioParams(searchParams);
